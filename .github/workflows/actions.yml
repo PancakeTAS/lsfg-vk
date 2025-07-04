@@ -19,9 +19,9 @@ jobs:
             ninja \
             meson \
             vulkan-icd-loader \
-            vulkan-headers \
             lib32-vulkan-icd-loader \
             lib32-vulkan-headers \
+            vulkan-tools \
             vulkan-headers \
             spirv-headers \
             sdl2 \
