@@ -22,7 +22,8 @@ jobs:
             spirv-headers \
             sdl2 \
             sdl3 \
-            glfw
+            glfw \
+            glslang
 
       - name: Add non-root user
         run: |
