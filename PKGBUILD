@@ -1,4 +1,4 @@
-# Maintainer: Fatih Bakal <fatihbakal7@protonmail.com>
+# Maintainer: Placeholder <placeholder@mail.com>
 
 pkgname=lsfg-vk
 pkgver=r75.9611a70
