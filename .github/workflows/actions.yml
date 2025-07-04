@@ -1,4 +1,4 @@
-name: Build LSFG-VK
+name: Build
 
 on: workflow_dispatch
 
@@ -44,3 +44,9 @@ jobs:
             cmake --build build
             cmake --install build
           '
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: binaries
+          path: install/
