@@ -19,7 +19,10 @@ jobs:
             ninja \
             meson \
             vulkan-headers \
-            spirv-headers
+            spirv-headers \
+            sdl2 \
+            sdl3 \
+            glfw
 
       - name: Add non-root user
         run: |
