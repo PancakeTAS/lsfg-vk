@@ -1,24 +1,45 @@
-name: Build PKGBUILD (Arch)
+name: Build LSFG-VK
 
-on: workflow_dispatch
+on:
+  push:
+    branches: [ main ]
+  pull_request:
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    container: archlinux:base-devel
+    container:
+      image: archlinux:latest
 
     steps:
-      - name: Update system and install dependencies
+      - name: Install dependencies
         run: |
-          pacman -Syu --noconfirm
-          pacman -S --noconfirm git cmake ninja clang \
-            base-devel vulkan-headers spirv-headers openssl
+          pacman -Sy --noconfirm --needed \
+            base-devel \
+            git \
+            clang \
+            cmake \
+            ninja \
+            meson \
+            vulkan-headers \
+            spirv-headers
 
-      - name: Checkout repository
-        uses: actions/checkout@v3
-
-      - name: Build with makepkg
+      - name: Add non-root user
         run: |
           useradd -m builder
-          chown -R builder:builder .
-          sudo -u builder bash -c 'makepkg -si --noconfirm'
+          echo 'builder ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers
+          chown -R builder .
+
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Build as builder
+        run: |
+          sudo -u builder bash -c '
+            mkdir -p build
+            CC=clang CXX=clang++ cmake -B build -G Ninja \
+              -DCMAKE_BUILD_TYPE=Release \
+              -DCMAKE_INSTALL_PREFIX=$PWD/install
+            cmake --build build
+            cmake --install build
+          '
