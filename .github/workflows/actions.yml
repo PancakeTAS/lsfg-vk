@@ -1,0 +1,27 @@
+name: Build PKGBUILD (Arch)
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container: archlinux:base-devel
+
+    steps:
+      - name: Update system and install dependencies
+        run: |
+          pacman -Syu --noconfirm
+          pacman -S --noconfirm git cmake ninja clang \
+            base-devel vulkan-headers spirv-headers openssl
+
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Build with makepkg
+        run: |
+          useradd -m builder
+          chown -R builder:builder .
+          sudo -u builder bash -c 'makepkg -si --noconfirm'
