@@ -1,0 +1,112 @@
+name: Code Quality and Documentation
+
+on:
+  push:
+    branches: [ main, master, develop ]
+  pull_request:
+    branches: [ main, master, develop ]
+
+jobs:
+  format-check:
+    name: Check Code Formatting
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Install clang-format
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y clang-format
+        
+    - name: Check C++ formatting
+      run: |
+        find src/ lsfg-vk-gen/src/ include/ lsfg-vk-gen/include/ \
+          -name "*.cpp" -o -name "*.hpp" -o -name "*.h" | \
+          xargs clang-format --dry-run --Werror --style=file || {
+            echo "Code formatting issues found!"
+            echo "Run 'clang-format -i' on the files above to fix formatting."
+            exit 1
+          }
+
+  documentation-check:
+    name: Check Documentation
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Check README completeness
+      run: |
+        # Check if README has essential sections
+        grep -q "## Building" README.md || {
+          echo "README.md missing 'Building' section"
+          exit 1
+        }
+        grep -q "## How does it work" README.md || {
+          echo "README.md missing 'How does it work' section"
+          exit 1
+        }
+        
+    - name: Check for TODO and FIXME comments
+      run: |
+        echo "Checking for TODO and FIXME comments:"
+        find src/ lsfg-vk-gen/src/ include/ lsfg-vk-gen/include/ \
+          -name "*.cpp" -o -name "*.hpp" -o -name "*.h" | \
+          xargs grep -n -i "TODO\|FIXME" || echo "No TODO/FIXME found"
+
+  build-docs:
+    name: Build Documentation
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Install Doxygen
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y doxygen graphviz
+        
+    - name: Create Doxygen config
+      run: |
+        cat > Doxyfile << EOF
+        PROJECT_NAME = "lsfg-vk"
+        PROJECT_VERSION = "0.0.1"
+        PROJECT_BRIEF = "LSFG on Linux through Vulkan"
+        
+        INPUT = src/ lsfg-vk-gen/src/ include/ lsfg-vk-gen/include/ README.md
+        RECURSIVE = YES
+        
+        GENERATE_HTML = YES
+        GENERATE_LATEX = NO
+        
+        EXTRACT_ALL = YES
+        EXTRACT_PRIVATE = YES
+        EXTRACT_STATIC = YES
+        
+        SOURCE_BROWSER = YES
+        INLINE_SOURCES = YES
+        
+        CALL_GRAPH = YES
+        CALLER_GRAPH = YES
+        
+        HAVE_DOT = YES
+        DOT_GRAPH_MAX_NODES = 100
+        
+        OUTPUT_DIRECTORY = docs
+        HTML_OUTPUT = html
+        EOF
+        
+    - name: Generate documentation
+      run: |
+        doxygen Doxyfile
+        
+    - name: Upload documentation
+      uses: actions/upload-artifact@v4
+      with:
+        name: documentation
+        path: docs/html/
+        retention-days: 30

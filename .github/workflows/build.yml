@@ -1,0 +1,206 @@
+name: Build lsfg-vk
+
+on:
+  push:
+    branches: [ main, master, develop ]
+  pull_request:
+    branches: [ main, master, develop ]
+  workflow_dispatch:
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        build-type: [Release, Debug]
+        
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+        
+    - name: Setup environment
+      run: |
+        sudo apt-get update
+        
+    - name: Install system dependencies
+      run: |
+        sudo apt-get install -y \
+          build-essential \
+          clang \
+          cmake \
+          ninja-build \
+          meson \
+          git \
+          bash \
+          sed \
+          pkg-config \
+          libvulkan-dev \
+          vulkan-tools \
+          vulkan-validationlayers-dev \
+          spirv-tools \
+          libspirv-cross-dev \
+          glslang-tools
+          
+    - name: Verify Vulkan installation
+      run: |
+        pkg-config --modversion vulkan
+        which glslangValidator
+        
+    - name: Setup build directory
+      run: |
+        mkdir -p build
+        mkdir -p install
+        
+    - name: Configure CMake
+      env:
+        CC: clang
+        CXX: clang++
+      run: |
+        cmake -B build -G Ninja \
+          -DCMAKE_BUILD_TYPE=${{ matrix.build-type }} \
+          -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}/install \
+          -DCMAKE_VERBOSE_MAKEFILE=ON
+          
+    - name: Build project
+      run: |
+        cmake --build build --verbose
+        
+    - name: Install project
+      run: |
+        cmake --install build
+        
+    - name: List installed files
+      run: |
+        find install -type f -name "*.so" -exec ls -la {} \;
+        
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: lsfg-vk-${{ matrix.build-type }}-linux
+        path: |
+          install/
+          build/compile_commands.json
+        retention-days: 30
+        
+    - name: Run basic tests
+      run: |
+        # Check if libraries were built successfully
+        test -f install/lib/liblsfg-vk.so
+        test -f install/lib/liblsfg-vk-gen.so
+        
+        # Check library dependencies
+        ldd install/lib/liblsfg-vk.so || true
+        ldd install/lib/liblsfg-vk-gen.so || true
+
+  build-ubuntu-versions:
+    runs-on: ${{ matrix.os }}
+    
+    strategy:
+      matrix:
+        os: [ubuntu-20.04, ubuntu-22.04]
+        build-type: [Release]
+        
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+        
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          build-essential \
+          clang \
+          cmake \
+          ninja-build \
+          meson \
+          git \
+          bash \
+          sed \
+          pkg-config \
+          libvulkan-dev \
+          vulkan-tools \
+          vulkan-validationlayers-dev \
+          spirv-tools \
+          libspirv-cross-dev \
+          glslang-tools
+          
+    - name: Configure and build
+      env:
+        CC: clang
+        CXX: clang++
+      run: |
+        cmake -B build -G Ninja \
+          -DCMAKE_BUILD_TYPE=${{ matrix.build-type }} \
+          -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}/install
+        cmake --build build
+        cmake --install build
+        
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: lsfg-vk-${{ matrix.os }}-${{ matrix.build-type }}
+        path: install/
+        retention-days: 15
+
+  static-analysis:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+        
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          clang \
+          clang-tidy \
+          cmake \
+          ninja-build \
+          meson \
+          libvulkan-dev \
+          vulkan-tools \
+          spirv-tools
+          
+    - name: Run clang-tidy
+      env:
+        CC: clang
+        CXX: clang++
+      run: |
+        cmake -B build -G Ninja \
+          -DCMAKE_BUILD_TYPE=Debug \
+          -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+        
+        # Run clang-tidy on source files
+        find src/ -name "*.cpp" -exec clang-tidy {} -p build \; || true
+        find lsfg-vk-gen/src/ -name "*.cpp" -exec clang-tidy {} -p build \; || true
+
+  release:
+    if: github.event_name == 'push' && contains(github.ref, 'refs/tags/')
+    needs: [build-linux, build-ubuntu-versions]
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Download all artifacts
+      uses: actions/download-artifact@v4
+      
+    - name: Create release archive
+      run: |
+        mkdir -p release
+        tar -czf release/lsfg-vk-linux-x64.tar.gz lsfg-vk-Release-linux/
+        
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: release/*.tar.gz
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

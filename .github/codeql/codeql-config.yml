@@ -1,0 +1,21 @@
+name: "lsfg-vk CodeQL Configuration"
+
+queries:
+  - uses: security-and-quality
+
+paths:
+  - src/
+  - lsfg-vk-gen/src/
+  - include/
+  - lsfg-vk-gen/include/
+
+paths-ignore:
+  - build/
+  - install/
+  - "**/*.md"
+  - "**/*.txt"
+  - LICENSE*
+
+query-filters:
+  - exclude:
+      problem.severity: "note"
