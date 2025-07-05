@@ -52,7 +52,8 @@ jobs:
           libvulkan-dev \
           vulkan-tools \
           spirv-tools \
-          glslang-tools
+          glslang-tools \
+          libsdl2-dev
         
         # Install validation layers (may not be available on all versions)
         sudo apt-get install -y vulkan-validationlayers-dev || \
@@ -156,7 +157,8 @@ jobs:
           libvulkan-dev \
           vulkan-tools \
           spirv-tools \
-          glslang-tools
+          glslang-tools \
+          libsdl2-dev
           
         # Install validation layers (may not be available on all versions)
         sudo apt-get install -y vulkan-validationlayers-dev || \
@@ -201,7 +203,8 @@ jobs:
           meson \
           libvulkan-dev \
           vulkan-tools \
-          spirv-tools
+          spirv-tools \
+          libsdl2-dev
           
     - name: Run clang-tidy
       env:
