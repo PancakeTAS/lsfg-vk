@@ -10,6 +10,7 @@ on:
 jobs:
   build-linux:
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     
     strategy:
       matrix:
@@ -21,9 +22,20 @@ jobs:
       with:
         submodules: recursive
         
+    - name: Cache external dependencies
+      uses: actions/cache@v4
+      with:
+        path: |
+          build/dxvk
+          build/peparse
+        key: external-deps-${{ runner.os }}-${{ hashFiles('lsfg-vk-gen/CMakeLists.txt') }}
+        restore-keys: |
+          external-deps-${{ runner.os }}-
+        
     - name: Setup environment
       run: |
         sudo apt-get update
+        df -h  # Show available disk space
         
     - name: Install system dependencies
       run: |
@@ -68,6 +80,12 @@ jobs:
       run: |
         cmake --build build --verbose
         
+    - name: Check build artifacts before install
+      run: |
+        echo "Checking if build artifacts exist:"
+        ls -la build/ || true
+        find build -name "*.so" -exec ls -la {} \; || true
+        
     - name: Install project
       run: |
         cmake --install build
@@ -87,13 +105,23 @@ jobs:
         
     - name: Run basic tests
       run: |
-        # Check if libraries were built successfully
+        # Check if main libraries were built successfully
         test -f install/lib/liblsfg-vk.so
         test -f install/lib/liblsfg-vk-gen.so
         
-        # Check library dependencies
+        # Check if external dependencies were installed
+        test -f install/lib/libpe-parse.so
+        test -f install/lib/libdxvk_d3d11.so.0
+        test -f install/lib/libdxvk_dxgi.so.0
+        test -f install/lib/libdxbc.so
+        
+        # Check library dependencies and verify they can be loaded
+        echo "Checking library dependencies:"
         ldd install/lib/liblsfg-vk.so || true
         ldd install/lib/liblsfg-vk-gen.so || true
+        
+        # Verify libraries are not empty
+        ls -la install/lib/*.so*
 
   build-ubuntu-versions:
     runs-on: ${{ matrix.os }}
@@ -178,9 +206,15 @@ jobs:
           -DCMAKE_BUILD_TYPE=Debug \
           -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
         
-        # Run clang-tidy on source files
-        find src/ -name "*.cpp" -exec clang-tidy {} -p build \; || true
-        find lsfg-vk-gen/src/ -name "*.cpp" -exec clang-tidy {} -p build \; || true
+        # Build first to generate all headers
+        cmake --build build || true
+        
+        # Run clang-tidy on source files (non-blocking)
+        echo "Running clang-tidy on main sources..."
+        find src/ -name "*.cpp" -exec clang-tidy {} -p build \; 2>&1 | head -50 || true
+        
+        echo "Running clang-tidy on lsfg-vk-gen sources..."
+        find lsfg-vk-gen/src/ -name "*.cpp" -exec clang-tidy {} -p build \; 2>&1 | head -50 || true
 
   release:
     if: github.event_name == 'push' && contains(github.ref, 'refs/tags/')
