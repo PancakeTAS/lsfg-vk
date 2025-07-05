@@ -1,3 +1,34 @@
+
+<div align="right">
+  <details>
+    <summary >🌐 Language</summary>
+    <div>
+      <div align="right">
+        <p><a href="https://openaitx.github.io/view.html?user=PancakeTAS&project=lsfg-vk&lang=en">English</a></p>
+        <p><a href="https://openaitx.github.io/view.html?user=PancakeTAS&project=lsfg-vk&lang=zh-CN">简体中文</a></p>
+        <p><a href="https://openaitx.github.io/view.html?user=PancakeTAS&project=lsfg-vk&lang=zh-TW">繁體中文</a></p>
+        <p><a href="https://openaitx.github.io/view.html?user=PancakeTAS&project=lsfg-vk&lang=ja">日本語</a></p>
+        <p><a href="https://openaitx.github.io/view.html?user=PancakeTAS&project=lsfg-vk&lang=ko">한국어</a></p>
+        <p><a href="https://openaitx.github.io/view.html?user=PancakeTAS&project=lsfg-vk&lang=hi">हिन्दी</a></p>
+        <p><a href="https://openaitx.github.io/view.html?user=PancakeTAS&project=lsfg-vk&lang=th">ไทย</a></p>
+        <p><a href="https://openaitx.github.io/view.html?user=PancakeTAS&project=lsfg-vk&lang=fr">Français</a></p>
+        <p><a href="https://openaitx.github.io/view.html?user=PancakeTAS&project=lsfg-vk&lang=de">Deutsch</a></p>
+        <p><a href="https://openaitx.github.io/view.html?user=PancakeTAS&project=lsfg-vk&lang=es">Español</a></p>
+        <p><a href="https://openaitx.github.io/view.html?user=PancakeTAS&project=lsfg-vk&lang=it">Itapano</a></p>
+        <p><a href="https://openaitx.github.io/view.html?user=PancakeTAS&project=lsfg-vk&lang=ru">Русский</a></p>
+        <p><a href="https://openaitx.github.io/view.html?user=PancakeTAS&project=lsfg-vk&lang=pt">Português</a></p>
+        <p><a href="https://openaitx.github.io/view.html?user=PancakeTAS&project=lsfg-vk&lang=nl">Nederlands</a></p>
+        <p><a href="https://openaitx.github.io/view.html?user=PancakeTAS&project=lsfg-vk&lang=pl">Polski</a></p>
+        <p><a href="https://openaitx.github.io/view.html?user=PancakeTAS&project=lsfg-vk&lang=ar">العربية</a></p>
+        <p><a href="https://openaitx.github.io/view.html?user=PancakeTAS&project=lsfg-vk&lang=fa">فارسی</a></p>
+        <p><a href="https://openaitx.github.io/view.html?user=PancakeTAS&project=lsfg-vk&lang=tr">Türkçe</a></p>
+        <p><a href="https://openaitx.github.io/view.html?user=PancakeTAS&project=lsfg-vk&lang=vi">Tiếng Việt</a></p>
+        <p><a href="https://openaitx.github.io/view.html?user=PancakeTAS&project=lsfg-vk&lang=id">Bahasa Indonesia</a></p>
+      </div>
+    </div>
+  </details>
+</div>
+
 # lsfg-vk
 This project brings [Lossless Scaling's Frame Generation](https://store.steampowered.com/app/993090/Lossless_Scaling/) to Linux!
 >[!NOTE]
