@@ -7,22 +7,24 @@ By specifying an `LD_PRELOAD`, lsfg-vk can place itself inbetween your game and 
 
 ## Building, Installing and Running
 In order to compile LSFG, make sure you have the following components installed on your system:
-- Traditional build tools (+ bash, sed, git)
+- Traditional build tools (+ sed, git)
 - Clang compiler (this project does NOT compile easily with GCC)
-- Vulkan and SPIR-V header files
+- Vulkan header files
 - CMake build system
 - Meson build system (for DXVK)
 - Ninja build system (backend for CMake)
 
 Compiling lsfg-vk is relatively straight forward, as everything is neatly integrated into CMake:
 ```bash
-$ CC=clang CXX=clang++ cmake -B build -G Ninja \
+$ cmake -B build -G Ninja \
     -DCMAKE_BUILD_TYPE=Release \
-    -DCMAKE_INSTALL_PREFIX=absolute-install-path-here
+    -DCMAKE_INSTALL_PREFIX=$PWD/release \
+    -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=ON \
+    -DCMAKE_CXX_CLANG_TIDY=""
 $ cmake --build build
 $ cmake --install build
 ```
-(Make sure you change `absolute-install-path-here` to the path you'd like to install this project to)
+(Make sure you change `$PWD/release` to the path you'd like to install this project to)
 
 Next, you'll need to download Lossless Scaling from Steam. Switch to the `legacy_2.13` branch or download the corresponding depot.
 Copy or note down the path of "Lossless.dll" from the game files.

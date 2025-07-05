@@ -1,19 +1,22 @@
 cmake_minimum_required(VERSION 3.29)
 
 # cmake options
-
 set(CMAKE_CXX_COMPILER clang++)
+set(CMAKE_CXX_CLANG_TIDY clang-tidy)
+
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-set(CMAKE_SKIP_BUILD_RPATH FALSE)
-set(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
-set(CMAKE_INSTALL_RPATH "$\{ORIGIN\}")
-
+set(CMAKE_SKIP_RPATH ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-# main project
+# subprojects
+include(cmake/FetchDXVK.cmake)
+include(cmake/FetchPeParse.cmake)
 
+add_subdirectory(lsfg-vk-gen)
+
+# main project
 project(lsfg-vk
     VERSION 0.0.1
     DESCRIPTION "lsfg-vk: LSFG on Linux through Vulkan"
@@ -30,6 +33,7 @@ message(STATUS "Vulkan_VERSION: ${Vulkan_VERSION}")
 
 add_subdirectory(lsfg-vk-gen)
 
+
 file(GLOB SOURCES
     "src/loader/*.cpp"
     "src/mini/*.cpp"
@@ -44,6 +48,7 @@ target_link_libraries(lsfg-vk
     PRIVATE lsfg-vk-gen Vulkan::Vulkan)
 set_target_properties(lsfg-vk
     PROPERTIES CXX_CLANG_TIDY clang-tidy)
+
 target_compile_options(lsfg-vk PRIVATE
     -Weverything
     # disable compat c++ flags
@@ -63,9 +68,4 @@ target_compile_options(lsfg-vk PRIVATE
     -Wno-cast-function-type-strict
 )
 
-install(FILES "${CMAKE_BINARY_DIR}/peparse/src/peparse_git/pe-parser-library/build/libpe-parse.so" DESTINATION lib)
-install(FILES "${CMAKE_BINARY_DIR}/dxvk/native/usr/lib/libdxvk_d3d11.so.0.20602" DESTINATION lib RENAME libdxvk_d3d11.so.0)
-install(FILES "${CMAKE_BINARY_DIR}/dxvk/native/usr/lib/libdxvk_dxgi.so.0.20602" DESTINATION lib RENAME libdxvk_dxgi.so.0)
-install(FILES "${CMAKE_BINARY_DIR}/dxvk/libdxbc.so" DESTINATION lib)
 install(FILES "${CMAKE_BINARY_DIR}/liblsfg-vk.so" DESTINATION lib)
-install(FILES "${CMAKE_BINARY_DIR}/lsfg-vk-gen/liblsfg-vk-gen.so" DESTINATION lib)

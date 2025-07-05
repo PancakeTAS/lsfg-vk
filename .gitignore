@@ -2,6 +2,7 @@
 /build
 
 # ide/lsp files
+/.zed
 /.vscode
 /.clangd
 /.cache
