@@ -1,4 +1,5 @@
-project(lsfg-vk-gen LANGUAGES CXX)
+# lsfg-vk-gen subdirectory
+# Note: No project() declaration needed as this is a subdirectory
 
 file(GLOB BACKEND_SOURCES
     "src/core/*.cpp"
@@ -7,7 +8,7 @@ file(GLOB BACKEND_SOURCES
     "src/*.cpp"
 )
 
-add_library(lsfg-vk-gen STATIC ${BACKEND_SOURCES})
+add_library(lsfg-vk-gen SHARED ${BACKEND_SOURCES})
 
 target_include_directories(lsfg-vk-gen
     PRIVATE include

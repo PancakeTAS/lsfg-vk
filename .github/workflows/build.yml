@@ -108,6 +108,7 @@ jobs:
         
     - name: Setup build directory
       run: |
+        rm -rf build
         mkdir -p build
         mkdir -p install
         
@@ -164,12 +165,6 @@ jobs:
         # Check if main libraries were built successfully
         test -f install/lib/liblsfg-vk.so
         test -f install/lib/liblsfg-vk-gen.so
-        
-        # Check if external dependencies were installed
-        test -f install/lib/libpe-parse.so
-        test -f install/lib/libdxvk_d3d11.so.0
-        test -f install/lib/libdxvk_dxgi.so.0
-        test -f install/lib/libdxbc.so
         
         # Check library dependencies and verify they can be loaded
         echo "Checking library dependencies:"

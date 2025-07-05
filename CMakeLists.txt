@@ -14,8 +14,6 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 include(cmake/FetchDXVK.cmake)
 include(cmake/FetchPeParse.cmake)
 
-add_subdirectory(lsfg-vk-gen)
-
 # main project
 project(lsfg-vk
     VERSION 0.0.1
@@ -50,7 +48,7 @@ set_target_properties(lsfg-vk
     PROPERTIES CXX_CLANG_TIDY clang-tidy)
 
 target_compile_options(lsfg-vk PRIVATE
-    -Weverything
+    -Weverything -fPIC
     # disable compat c++ flags
     -Wno-pre-c++20-compat-pedantic
     -Wno-pre-c++17-compat
@@ -68,4 +66,5 @@ target_compile_options(lsfg-vk PRIVATE
     -Wno-cast-function-type-strict
 )
 
-install(FILES "${CMAKE_BINARY_DIR}/liblsfg-vk.so" DESTINATION lib)
+# Install libraries and dependencies
+install(TARGETS lsfg-vk lsfg-vk-gen DESTINATION lib)
