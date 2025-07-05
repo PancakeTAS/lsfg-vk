@@ -54,30 +54,32 @@ jobs:
           
     - name: Install Vulkan SDK
       run: |
-        # Install LunarG Vulkan SDK for latest headers and tools
-        VULKAN_VERSION="1.3.296"
+        # Fetch latest Vulkan SDK version dynamically
+        VULKAN_VERSION=$(curl -s https://vulkan.lunarg.com/sdk/latest/linux.txt)
+        FILENAME="vulkan-sdk-${VULKAN_VERSION}-linux.x86_64.tar.xz"
         
-        # Download and install Vulkan SDK tarball directly for latest version
+        echo "Installing Vulkan SDK version: $VULKAN_VERSION"
+        
         cd /tmp
-        wget https://sdk.lunarg.com/sdk/download/${VULKAN_VERSION}/linux/vulkansdk-linux-x86_64-${VULKAN_VERSION}.tar.xz
-        tar -xf vulkansdk-linux-x86_64-${VULKAN_VERSION}.tar.xz
+        wget "https://sdk.lunarg.com/sdk/download/${VULKAN_VERSION}/linux/${FILENAME}"
+        tar -xf "$FILENAME"
         
         # Set up Vulkan SDK
-        export VULKAN_SDK=/tmp/${VULKAN_VERSION}/x86_64
-        export PATH=$VULKAN_SDK/bin:$PATH
-        export LD_LIBRARY_PATH=$VULKAN_SDK/lib:$LD_LIBRARY_PATH
-        export VK_LAYER_PATH=$VULKAN_SDK/etc/vulkan/explicit_layer.d
+        export VULKAN_SDK="/tmp/${VULKAN_VERSION}/x86_64"
+        export PATH="$VULKAN_SDK/bin:$PATH"
+        export LD_LIBRARY_PATH="$VULKAN_SDK/lib:$LD_LIBRARY_PATH"
+        export VK_LAYER_PATH="$VULKAN_SDK/etc/vulkan/explicit_layer.d"
         
         # Make SDK available globally
         sudo mkdir -p /opt/vulkan-sdk
-        sudo cp -r /tmp/${VULKAN_VERSION}/x86_64/* /opt/vulkan-sdk/
+        sudo cp -r "$VULKAN_SDK/"* /opt/vulkan-sdk/
         
-        # Create environment file for later steps
-        echo "VULKAN_SDK=/opt/vulkan-sdk" >> $GITHUB_ENV
-        echo "VK_SDK_PATH=/opt/vulkan-sdk" >> $GITHUB_ENV
-        echo "PATH=/opt/vulkan-sdk/bin:$PATH" >> $GITHUB_ENV
-        echo "LD_LIBRARY_PATH=/opt/vulkan-sdk/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
-        echo "VK_LAYER_PATH=/opt/vulkan-sdk/etc/vulkan/explicit_layer.d" >> $GITHUB_ENV
+        # Set GitHub Actions environment variables
+        echo "VULKAN_SDK=/opt/vulkan-sdk" >> "$GITHUB_ENV"
+        echo "VK_SDK_PATH=/opt/vulkan-sdk" >> "$GITHUB_ENV"
+        echo "PATH=/opt/vulkan-sdk/bin:$PATH" >> "$GITHUB_ENV"
+        echo "LD_LIBRARY_PATH=/opt/vulkan-sdk/lib:$LD_LIBRARY_PATH" >> "$GITHUB_ENV"
+        echo "VK_LAYER_PATH=/opt/vulkan-sdk/etc/vulkan/explicit_layer.d" >> "$GITHUB_ENV"
         
         # Verify installation
         /opt/vulkan-sdk/bin/glslangValidator --version
@@ -190,21 +192,25 @@ jobs:
           wget \
           libsdl2-dev
           
-        # Install LunarG Vulkan SDK for latest headers
-        VULKAN_VERSION="1.3.296"
+        # Fetch latest Vulkan SDK version dynamically
+        VULKAN_VERSION=$(curl -s https://vulkan.lunarg.com/sdk/latest/linux.txt)
+        FILENAME="vulkan-sdk-${VULKAN_VERSION}-linux.x86_64.tar.xz"
+        
+        echo "Installing Vulkan SDK version: $VULKAN_VERSION"
+        
         cd /tmp
-        wget https://sdk.lunarg.com/sdk/download/${VULKAN_VERSION}/linux/vulkansdk-linux-x86_64-${VULKAN_VERSION}.tar.xz
-        tar -xf vulkansdk-linux-x86_64-${VULKAN_VERSION}.tar.xz
+        wget "https://sdk.lunarg.com/sdk/download/${VULKAN_VERSION}/linux/${FILENAME}"
+        tar -xf "$FILENAME"
         
         # Set up Vulkan SDK
         sudo mkdir -p /opt/vulkan-sdk
-        sudo cp -r /tmp/${VULKAN_VERSION}/x86_64/* /opt/vulkan-sdk/
+        sudo cp -r "/tmp/${VULKAN_VERSION}/x86_64/"* /opt/vulkan-sdk/
         
-        # Create environment file
-        echo "VULKAN_SDK=/opt/vulkan-sdk" >> $GITHUB_ENV
-        echo "VK_SDK_PATH=/opt/vulkan-sdk" >> $GITHUB_ENV
-        echo "PATH=/opt/vulkan-sdk/bin:$PATH" >> $GITHUB_ENV
-        echo "LD_LIBRARY_PATH=/opt/vulkan-sdk/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
+        # Set GitHub Actions environment variables
+        echo "VULKAN_SDK=/opt/vulkan-sdk" >> "$GITHUB_ENV"
+        echo "VK_SDK_PATH=/opt/vulkan-sdk" >> "$GITHUB_ENV"
+        echo "PATH=/opt/vulkan-sdk/bin:$PATH" >> "$GITHUB_ENV"
+        echo "LD_LIBRARY_PATH=/opt/vulkan-sdk/lib:$LD_LIBRARY_PATH" >> "$GITHUB_ENV"
           
     - name: Run clang-tidy
       env:
