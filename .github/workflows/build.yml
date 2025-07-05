@@ -127,62 +127,6 @@ jobs:
         # Verify libraries are not empty
         ls -la install/lib/*.so*
 
-  build-ubuntu-versions:
-    runs-on: ${{ matrix.os }}
-    
-    strategy:
-      matrix:
-        os: [ubuntu-20.04, ubuntu-22.04]
-        build-type: [Release]
-        
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-      with:
-        submodules: recursive
-        
-    - name: Install system dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y \
-          build-essential \
-          clang \
-          cmake \
-          ninja-build \
-          meson \
-          git \
-          bash \
-          sed \
-          pkg-config \
-          libvulkan-dev \
-          vulkan-tools \
-          spirv-tools \
-          glslang-tools \
-          libsdl2-dev
-          
-        # Install validation layers (may not be available on all versions)
-        sudo apt-get install -y vulkan-validationlayers-dev || \
-        sudo apt-get install -y vulkan-validationlayers || \
-        echo "Vulkan validation layers not available"
-          
-    - name: Configure and build
-      env:
-        CC: clang
-        CXX: clang++
-      run: |
-        cmake -B build -G Ninja \
-          -DCMAKE_BUILD_TYPE=${{ matrix.build-type }} \
-          -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}/install
-        cmake --build build
-        cmake --install build
-        
-    - name: Upload artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: lsfg-vk-${{ matrix.os }}-${{ matrix.build-type }}
-        path: install/
-        retention-days: 15
-
   static-analysis:
     runs-on: ubuntu-latest
     
@@ -227,7 +171,7 @@ jobs:
 
   release:
     if: github.event_name == 'push' && contains(github.ref, 'refs/tags/')
-    needs: [build-linux, build-ubuntu-versions]
+    needs: [build-linux]
     runs-on: ubuntu-latest
     
     steps:
