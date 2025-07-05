@@ -51,10 +51,13 @@ jobs:
           pkg-config \
           libvulkan-dev \
           vulkan-tools \
-          vulkan-validationlayers-dev \
           spirv-tools \
-          libspirv-cross-dev \
           glslang-tools
+        
+        # Install validation layers (may not be available on all versions)
+        sudo apt-get install -y vulkan-validationlayers-dev || \
+        sudo apt-get install -y vulkan-validationlayers || \
+        echo "Vulkan validation layers not available"
           
     - name: Verify Vulkan installation
       run: |
@@ -152,10 +155,13 @@ jobs:
           pkg-config \
           libvulkan-dev \
           vulkan-tools \
-          vulkan-validationlayers-dev \
           spirv-tools \
-          libspirv-cross-dev \
           glslang-tools
+          
+        # Install validation layers (may not be available on all versions)
+        sudo apt-get install -y vulkan-validationlayers-dev || \
+        sudo apt-get install -y vulkan-validationlayers || \
+        echo "Vulkan validation layers not available"
           
     - name: Configure and build
       env:
