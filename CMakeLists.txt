@@ -19,6 +19,15 @@ project(lsfg-vk
     DESCRIPTION "lsfg-vk: LSFG on Linux through Vulkan"
     LANGUAGES CXX)
 
+# Find Vulkan
+find_package(Vulkan REQUIRED)
+
+# Debug Vulkan configuration
+message(STATUS "Vulkan_FOUND: ${Vulkan_FOUND}")
+message(STATUS "Vulkan_INCLUDE_DIRS: ${Vulkan_INCLUDE_DIRS}")
+message(STATUS "Vulkan_LIBRARIES: ${Vulkan_LIBRARIES}")
+message(STATUS "Vulkan_VERSION: ${Vulkan_VERSION}")
+
 add_subdirectory(lsfg-vk-gen)
 
 file(GLOB SOURCES
@@ -32,7 +41,7 @@ add_library(lsfg-vk SHARED ${SOURCES})
 target_include_directories(lsfg-vk
     PRIVATE include)
 target_link_libraries(lsfg-vk
-    PRIVATE lsfg-vk-gen vulkan)
+    PRIVATE lsfg-vk-gen Vulkan::Vulkan)
 set_target_properties(lsfg-vk
     PROPERTIES CXX_CLANG_TIDY clang-tidy)
 target_compile_options(lsfg-vk PRIVATE

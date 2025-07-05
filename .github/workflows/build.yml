@@ -116,13 +116,21 @@ jobs:
         CC: clang
         CXX: clang++
       run: |
+        # Debug Vulkan detection
+        echo "Debugging Vulkan paths:"
+        echo "VULKAN_SDK: $VULKAN_SDK"
+        ls -la $VULKAN_SDK/include/vulkan/ || echo "Vulkan include directory not found"
+        ls -la $VULKAN_SDK/lib/libvulkan* || echo "Vulkan library not found"
+        
         cmake -B build -G Ninja \
           -DCMAKE_BUILD_TYPE=${{ matrix.build-type }} \
           -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}/install \
           -DCMAKE_VERBOSE_MAKEFILE=ON \
           -DVULKAN_SDK=$VULKAN_SDK \
           -DVulkan_INCLUDE_DIR=$VULKAN_SDK/include \
-          -DVulkan_LIBRARY=$VULKAN_SDK/lib/libvulkan.so
+          -DVulkan_LIBRARY=$VULKAN_SDK/lib/libvulkan.so \
+          -DVulkan_FOUND=ON \
+          -DCMAKE_PREFIX_PATH=$VULKAN_SDK
           
     - name: Build project
       run: |
@@ -170,47 +178,6 @@ jobs:
         
         # Verify libraries are not empty
         ls -la install/lib/*.so*
-
-  static-analysis:
-    runs-on: ubuntu-latest
-    
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-      with:
-        submodules: recursive
-        
-    - name: Install dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y \
-          clang \
-          clang-tidy \
-          cmake \
-          ninja-build \
-          meson \
-          wget \
-          libsdl2-dev
-          
-        # Fetch latest Vulkan SDK version dynamically
-        VULKAN_VERSION=$(curl -s https://vulkan.lunarg.com/sdk/latest/linux.txt)
-        FILENAME="vulkan-sdk-${VULKAN_VERSION}-linux.x86_64.tar.xz"
-        
-        echo "Installing Vulkan SDK version: $VULKAN_VERSION"
-        
-        cd /tmp
-        wget "https://sdk.lunarg.com/sdk/download/${VULKAN_VERSION}/linux/${FILENAME}"
-        tar -xf "$FILENAME"
-        
-        # Set up Vulkan SDK
-        sudo mkdir -p /opt/vulkan-sdk
-        sudo cp -r "/tmp/${VULKAN_VERSION}/x86_64/"* /opt/vulkan-sdk/
-        
-        # Set GitHub Actions environment variables
-        echo "VULKAN_SDK=/opt/vulkan-sdk" >> "$GITHUB_ENV"
-        echo "VK_SDK_PATH=/opt/vulkan-sdk" >> "$GITHUB_ENV"
-        echo "PATH=/opt/vulkan-sdk/bin:$PATH" >> "$GITHUB_ENV"
-        echo "LD_LIBRARY_PATH=/opt/vulkan-sdk/lib:$LD_LIBRARY_PATH" >> "$GITHUB_ENV"
           
     - name: Run clang-tidy
       env:
@@ -222,7 +189,9 @@ jobs:
           -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
           -DVULKAN_SDK=$VULKAN_SDK \
           -DVulkan_INCLUDE_DIR=$VULKAN_SDK/include \
-          -DVulkan_LIBRARY=$VULKAN_SDK/lib/libvulkan.so
+          -DVulkan_LIBRARY=$VULKAN_SDK/lib/libvulkan.so \
+          -DVulkan_FOUND=ON \
+          -DCMAKE_PREFIX_PATH=$VULKAN_SDK
         
         # Build first to generate all headers
         cmake --build build || true
