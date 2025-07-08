@@ -6,6 +6,7 @@
 
 #include <lsfg.hpp>
 
+#include <algorithm>
 #include <string>
 #include <unordered_map>
 #include <vulkan/vulkan_core.h>
