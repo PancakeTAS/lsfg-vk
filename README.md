@@ -7,5 +7,5 @@ This project brings [Lossless Scaling's Frame Generation](https://store.steampow
 Please see the [Wiki](https://github.com/PancakeTAS/lsfg-vk/wiki) for install instructions and join the [Discord](https://discord.gg/losslessscaling) for help (In order to see the linux channels, verify your Steam account.)
 
 >[!WARNING]
-> Please do note open GitHub issues for anything other than feature requests. Due to the nature of this project, it is much easier to deal with issues through Discord, than GitHub. Use the #linux-reports channel for game compatibility.
+> Please do not open GitHub issues for anything other than feature requests. Due to the nature of this project, it is much easier to deal with issues through Discord, than GitHub. Use the #linux-reports channel for game compatibility.
 
