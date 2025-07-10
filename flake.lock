@@ -1,0 +1,63 @@
+{
+  "nodes": {
+    "dxvk_2_git": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1752147070,
+        "narHash": "sha256-FsjTB7yalDZ/qvMh2iFk3i4sRnKVS0lzT30aqBnFvLQ=",
+        "ref": "refs/heads/master",
+        "rev": "e940893bdc00c3f76529bd05df4616d90ddb2444",
+        "revCount": 7209,
+        "submodules": true,
+        "type": "git",
+        "url": "https://github.com/doitsujin/dxvk"
+      },
+      "original": {
+        "submodules": true,
+        "type": "git",
+        "url": "https://github.com/doitsujin/dxvk"
+      }
+    },
+    "nixpkgs": {
+      "locked": {
+        "lastModified": 1751943650,
+        "narHash": "sha256-7orTnNqkGGru8Je6Un6mq1T8YVVU/O5kyW4+f9C1mZQ=",
+        "owner": "nixos",
+        "repo": "nixpkgs",
+        "rev": "88983d4b665fb491861005137ce2b11a9f89f203",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nixos",
+        "ref": "nixos-25.05",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
+    "pe_parse_git": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1732739339,
+        "narHash": "sha256-DMwgFvEbsAf3hm7BdfN168qlFkDcoMcdIK7FMV/QGUQ=",
+        "owner": "trailofbits",
+        "repo": "pe-parse",
+        "rev": "31ac5966503689d5693cd9fb520bd525a8710e17",
+        "type": "github"
+      },
+      "original": {
+        "owner": "trailofbits",
+        "repo": "pe-parse",
+        "type": "github"
+      }
+    },
+    "root": {
+      "inputs": {
+        "dxvk_2_git": "dxvk_2_git",
+        "nixpkgs": "nixpkgs",
+        "pe_parse_git": "pe_parse_git"
+      }
+    }
+  },
+  "root": "root",
+  "version": 7
+}
