@@ -30,26 +30,26 @@ llvmPackages.libcxxStdenv.mkDerivation rec {
     git
     glslang
     gnused
-    hwdata
     llvmPackages.clang-tools
     meson
     ninja
-    openssl
     python3
     spirv-headers
-    vulkan-headers
-    vulkan-loader
   ];
 
   buildInputs = [
     SDL2
     glfw
+    hwdata
+    openssl
     sdl3
+    vulkan-headers
+    vulkan-loader
   ];
 
   cmakeFlags = [
     "-DCMAKE_BUILD_TYPE=Release"
-    "-DCMAKE_INSTALL_PREFIX=${placeholder "out"}/share/lsfg-vk"
+    "-DCMAKE_INSTALL_PREFIX=${placeholder "out"}"
     "-DCMAKE_CXX_FLAGS=-I${vulkan-headers}/include"
   ];
 
@@ -61,7 +61,6 @@ llvmPackages.libcxxStdenv.mkDerivation rec {
     # to avoid recompiling but this should be fine for now
     mkdir -p build/dxvk/
     cp -r ${dxvk_2_git}/. build/dxvk/
-    # cp -r ${dxvk_2_git}/.github build/dxvk/.git
     chmod -R +rwX build/dxvk
 
     mkdir -p build/pe_parse/
@@ -80,9 +79,6 @@ llvmPackages.libcxxStdenv.mkDerivation rec {
         -i CMakeLists.txt
 
     patchShebangs build/dxvk/
-
-    cat CMakeLists.txt
-    cat cmake/FetchDXVK.cmake
   '';
 
   meta = {
@@ -90,7 +86,6 @@ llvmPackages.libcxxStdenv.mkDerivation rec {
     homepage = "https://github.com/PancakeTAS/lsfg-vk";
     license = with lib.licenses; [mit];
     mainProgram = "lsfg-vk";
-    # maintainers = with lib.maintainers; [];
     platforms = [
       "x86_64-linux"
     ];
