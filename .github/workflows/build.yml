@@ -1,0 +1,58 @@
+name: Build
+
+on:
+  push:
+    branches: [ develop, alpha/lsfg-3.1-build ]
+  pull_request:
+    branches: [ develop, alpha/lsfg-3.1 ]
+  release:
+    types: [created]
+
+jobs:
+
+  build-arch:
+    runs-on: ubuntu-latest
+    container:
+      image: archlinux:latest
+    
+    steps:
+    - name: Install dependencies
+      run: |
+        pacman -Syu --noconfirm
+        pacman -S --noconfirm base-devel clang llvm vulkan-headers vulkan-devel vulkan-icd-loader cmake meson ninja git glslang sdl2
+    
+    - uses: actions/checkout@v4
+      with:
+        submodules: recursive
+        fetch-depth: 0
+    
+    - name: Configure CMake
+      run: |
+        cmake -B build -G Ninja \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DCMAKE_INSTALL_PREFIX=./install \
+          -DCMAKE_C_COMPILER=clang \
+          -DCMAKE_CXX_COMPILER=clang++
+    
+    - name: Build
+      run: cmake --build build
+    
+    - name: Install
+      run: cmake --install build
+    
+    - name: Verify installation
+      run: |
+        echo "Checking installed files:"
+        ls -la install/lib/
+        ls -la install/share/vulkan/implicit_layer.d/
+        file install/lib/liblsfg-vk.so
+        file install/share/vulkan/implicit_layer.d/VkLayer_LS_frame_generation.json
+    
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: lsfg-vk
+        path: |
+          install/lib/liblsfg-vk.so
+          install/share/vulkan/implicit_layer.d/VkLayer_LS_frame_generation.json
+        retention-days: 30
