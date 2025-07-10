@@ -1,0 +1,222 @@
+name: Build lsfg-vk
+
+on:
+  push:
+    branches: [ develop, new-build-action ]
+  pull_request:
+    branches: [ develop, new-build-action ]
+  workflow_dispatch:
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    
+    strategy:
+      matrix:
+        build-type: [Release, Debug]
+        
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+        
+    - name: Cache external dependencies
+      uses: actions/cache@v4
+      with:
+        path: |
+          build/dxvk
+          build/peparse
+        key: external-deps-${{ runner.os }}-${{ hashFiles('lsfg-vk-gen/CMakeLists.txt') }}
+        restore-keys: |
+          external-deps-${{ runner.os }}-
+        
+    - name: Setup environment
+      run: |
+        sudo apt-get update
+        df -h  # Show available disk space
+        
+    - name: Install system dependencies
+      run: |
+        sudo apt-get install -y \
+          build-essential \
+          clang \
+          cmake \
+          ninja-build \
+          meson \
+          git \
+          bash \
+          sed \
+          pkg-config \
+          wget \
+          libsdl2-dev
+          
+    - name: Install Vulkan SDK
+      run: |
+        # Fetch latest Vulkan SDK version dynamically
+        VULKAN_VERSION=$(curl -s https://vulkan.lunarg.com/sdk/latest/linux.txt)
+        FILENAME="vulkan-sdk-${VULKAN_VERSION}-linux.x86_64.tar.xz"
+        
+        echo "Installing Vulkan SDK version: $VULKAN_VERSION"
+        
+        cd /tmp
+        wget "https://sdk.lunarg.com/sdk/download/${VULKAN_VERSION}/linux/${FILENAME}"
+        tar -xf "$FILENAME"
+        
+        # Set up Vulkan SDK
+        export VULKAN_SDK="/tmp/${VULKAN_VERSION}/x86_64"
+        export PATH="$VULKAN_SDK/bin:$PATH"
+        export LD_LIBRARY_PATH="$VULKAN_SDK/lib:$LD_LIBRARY_PATH"
+        export VK_LAYER_PATH="$VULKAN_SDK/etc/vulkan/explicit_layer.d"
+        
+        # Make SDK available globally
+        sudo mkdir -p /opt/vulkan-sdk
+        sudo cp -r "$VULKAN_SDK/"* /opt/vulkan-sdk/
+        
+        # Set GitHub Actions environment variables
+        echo "VULKAN_SDK=/opt/vulkan-sdk" >> "$GITHUB_ENV"
+        echo "VK_SDK_PATH=/opt/vulkan-sdk" >> "$GITHUB_ENV"
+        echo "PATH=/opt/vulkan-sdk/bin:$PATH" >> "$GITHUB_ENV"
+        echo "LD_LIBRARY_PATH=/opt/vulkan-sdk/lib:$LD_LIBRARY_PATH" >> "$GITHUB_ENV"
+        echo "VK_LAYER_PATH=/opt/vulkan-sdk/etc/vulkan/explicit_layer.d" >> "$GITHUB_ENV"
+        
+        # Verify installation
+        /opt/vulkan-sdk/bin/glslangValidator --version
+        echo "Vulkan SDK installed to: /opt/vulkan-sdk"
+          
+    - name: Verify Vulkan installation
+      run: |
+        # Check Vulkan installation
+        echo "VULKAN_SDK: $VULKAN_SDK"
+        echo "VK_SDK_PATH: $VK_SDK_PATH"
+        
+        which vulkaninfo || echo "vulkaninfo not found"
+        which glslangValidator
+        $VULKAN_SDK/bin/vulkaninfo --summary || echo "vulkaninfo failed - no Vulkan devices available in CI"
+        
+        # Check for newer Vulkan headers
+        echo "Checking for Vulkan 1.3 headers..."
+        echo '#include <vulkan/vulkan.h>' | gcc -I$VULKAN_SDK/include -E -dM - | grep -i "VK_HEADER_VERSION" || true
+        
+        # Check for specific missing extensions
+        echo "Checking for KHR_maintenance7 extension..."
+        grep -r "VK_KHR_MAINTENANCE_7_EXTENSION_NAME" $VULKAN_SDK/include/ || echo "KHR_maintenance7 not found"
+        
+        echo "Checking for NV_raw_access_chains extension..."  
+        grep -r "VK_NV_RAW_ACCESS_CHAINS_EXTENSION_NAME" $VULKAN_SDK/include/ || echo "NV_raw_access_chains not found"
+        
+    - name: Setup build directory
+      run: |
+        rm -rf build
+        mkdir -p build
+        mkdir -p install
+        
+    - name: Configure CMake
+      env:
+        CC: clang
+        CXX: clang++
+      run: |
+        # Debug Vulkan detection
+        echo "Debugging Vulkan paths:"
+        echo "VULKAN_SDK: $VULKAN_SDK"
+        ls -la $VULKAN_SDK/include/vulkan/ || echo "Vulkan include directory not found"
+        ls -la $VULKAN_SDK/lib/libvulkan* || echo "Vulkan library not found"
+        
+        cmake -B build -G Ninja \
+          -DCMAKE_BUILD_TYPE=${{ matrix.build-type }} \
+          -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}/install \
+          -DCMAKE_VERBOSE_MAKEFILE=ON \
+          -DVULKAN_SDK=$VULKAN_SDK \
+          -DVulkan_INCLUDE_DIR=$VULKAN_SDK/include \
+          -DVulkan_LIBRARY=$VULKAN_SDK/lib/libvulkan.so \
+          -DVulkan_FOUND=ON \
+          -DCMAKE_PREFIX_PATH=$VULKAN_SDK
+          
+    - name: Build project
+      run: |
+        cmake --build build --verbose
+        
+    - name: Check build artifacts before install
+      run: |
+        echo "Checking if build artifacts exist:"
+        ls -la build/ || true
+        find build -name "*.so" -exec ls -la {} \; || true
+        
+    - name: Install project
+      run: |
+        cmake --install build
+        
+    - name: List installed files
+      run: |
+        find install -type f -name "*.so" -exec ls -la {} \;
+        
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: lsfg-vk-${{ matrix.build-type }}-linux
+        path: |
+          install/
+          build/compile_commands.json
+        retention-days: 30
+        
+    - name: Run basic tests
+      run: |
+        # Check if main libraries were built successfully
+        test -f install/lib/liblsfg-vk.so
+        test -f install/lib/liblsfg-vk-gen.so
+        
+        # Check library dependencies and verify they can be loaded
+        echo "Checking library dependencies:"
+        ldd install/lib/liblsfg-vk.so || true
+        ldd install/lib/liblsfg-vk-gen.so || true
+        
+        # Verify libraries are not empty
+        ls -la install/lib/*.so*
+          
+    - name: Run clang-tidy
+      env:
+        CC: clang
+        CXX: clang++
+      run: |
+        cmake -B build -G Ninja \
+          -DCMAKE_BUILD_TYPE=Debug \
+          -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+          -DVULKAN_SDK=$VULKAN_SDK \
+          -DVulkan_INCLUDE_DIR=$VULKAN_SDK/include \
+          -DVulkan_LIBRARY=$VULKAN_SDK/lib/libvulkan.so \
+          -DVulkan_FOUND=ON \
+          -DCMAKE_PREFIX_PATH=$VULKAN_SDK
+        
+        # Build first to generate all headers
+        cmake --build build || true
+        
+        # Run clang-tidy on source files (non-blocking)
+        echo "Running clang-tidy on main sources..."
+        find src/ -name "*.cpp" -exec clang-tidy {} -p build \; 2>&1 | head -50 || true
+        
+        echo "Running clang-tidy on lsfg-vk-gen sources..."
+        find lsfg-vk-gen/src/ -name "*.cpp" -exec clang-tidy {} -p build \; 2>&1 | head -50 || true
+
+  release:
+    if: github.event_name == 'push' && contains(github.ref, 'refs/tags/')
+    needs: [build-linux]
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Download all artifacts
+      uses: actions/download-artifact@v4
+      
+    - name: Create release archive
+      run: |
+        mkdir -p release
+        tar -czf release/lsfg-vk-linux-x64.tar.gz lsfg-vk-Release-linux/
+        
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: release/*.tar.gz
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
