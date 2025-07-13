@@ -1,6 +1,6 @@
-[submodule "dxbc"]
-	path = dxbc
-	url = https://github.com/PancakeTAS/dxbc.git
-[submodule "pe-parse"]
-	path = pe-parse
+[submodule "thirdparty/pe-parse"]
+	path = thirdparty/pe-parse
 	url = https://github.com/trailofbits/pe-parse
+[submodule "thirdparty/dxbc"]
+	path = thirdparty/dxbc
+	url = https://github.com/PancakeTAS/dxbc.git

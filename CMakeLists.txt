@@ -14,8 +14,8 @@ add_compile_options(-fPIC
     -Wno-deprecated-declarations
     -Wno-unused-template)
 
-add_subdirectory(dxbc EXCLUDE_FROM_ALL)
-add_subdirectory(pe-parse/pe-parser-library EXCLUDE_FROM_ALL)
+add_subdirectory(thirdparty/dxbc EXCLUDE_FROM_ALL)
+add_subdirectory(thirdparty/pe-parse/pe-parser-library EXCLUDE_FROM_ALL)
 add_subdirectory(lsfg-vk-common)
 add_subdirectory(lsfg-vk-v3.1)
 add_subdirectory(lsfg-vk-v3.1p)
@@ -27,6 +27,7 @@ project(lsfg-vk
     LANGUAGES CXX)
 
 file(GLOB SOURCES
+    "src/config/*.cpp"
     "src/extract/*.cpp"
     "src/mini/*.cpp"
     "src/utils/*.cpp"
