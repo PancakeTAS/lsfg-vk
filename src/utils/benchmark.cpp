@@ -9,6 +9,7 @@
 #include <cstdint>
 #include <chrono>
 #include <cstdlib>
+#include <format>
 #include <string>
 #include <vector>
 
@@ -64,7 +65,7 @@ namespace {
 
         Log::info("bench", "Running {}x benchmark with {}x{} extent and flow scale of {} {} HDR{}",
             multiplier, width, height, flowScale, isHdr ? "with" : "without",
-            framePacingDelay > 0 ? fmt::format(" (frame pacing: {}ms)", framePacingDelay) : "");
+            framePacingDelay > 0 ? std::format(" (frame pacing: {}ms)", framePacingDelay) : "");
 
         // create the benchmark context
         const char* lsfgDeviceUUID = std::getenv("LSFG_DEVICE_UUID");
