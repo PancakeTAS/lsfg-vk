@@ -36,6 +36,7 @@ namespace {
         const char* lsfgExtentWidth = std::getenv("LSFG_EXTENT_WIDTH");
         const char* lsfgExtentHeight = std::getenv("LSFG_EXTENT_HEIGHT");
         const char* lsfgPerfMode = std::getenv("LSFG_PERF_MODE");
+        const char* lsfgFramePacing = std::getenv("LSFG_FRAME_PACING_DELAY");
 
         const float flowScale = lsfgFlowScale
             ? std::stof(lsfgFlowScale) : 1.0F;
@@ -49,6 +50,8 @@ namespace {
             ? static_cast<uint32_t>(std::stoul(lsfgExtentHeight)) : 1080;
         const bool perfMode = lsfgPerfMode
             ? *lsfgPerfMode == '1' : false;
+        const uint32_t framePacingDelay = lsfgFramePacing
+            ? static_cast<uint32_t>(std::max(0, std::stoi(lsfgFramePacing))) : 0;
 
         auto* lsfgInitialize = LSFG_3_1::initialize;
         auto* lsfgCreateContext = LSFG_3_1::createContext;
@@ -59,8 +62,9 @@ namespace {
             lsfgPresentContext = LSFG_3_1P::presentContext;
         }
 
-        Log::info("bench", "Running {}x benchmark with {}x{} extent and flow scale of {} {} HDR",
-            multiplier, width, height, flowScale, isHdr ? "with" : "without");
+        Log::info("bench", "Running {}x benchmark with {}x{} extent and flow scale of {} {} HDR{}",
+            multiplier, width, height, flowScale, isHdr ? "with" : "without",
+            framePacingDelay > 0 ? fmt::format(" (frame pacing: {}ms)", framePacingDelay) : "");
 
         // create the benchmark context
         const char* lsfgDeviceUUID = std::getenv("LSFG_DEVICE_UUID");

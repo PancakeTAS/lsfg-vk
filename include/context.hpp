@@ -64,6 +64,7 @@ private:
     Mini::CommandPool cmdPool;
     uint64_t frameIdx{0};
     bool isPerfMode{false};
+    uint32_t framePacingDelayMs{0}; // frame pacing delay in milliseconds
 
     struct RenderPassInfo {
         Mini::CommandBuffer preCopyBuf; // copy from swapchain image to frame_0/frame_1

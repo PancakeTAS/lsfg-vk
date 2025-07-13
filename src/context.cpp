@@ -17,6 +17,8 @@
 #include <string>
 #include <memory>
 #include <vector>
+#include <chrono>
+#include <thread>
 
 LsContext::LsContext(const Hooks::DeviceInfo& info, VkSwapchainKHR swapchain,
         VkExtent2D extent, const std::vector<VkImage>& swapchainImages)
@@ -38,6 +40,11 @@ LsContext::LsContext(const Hooks::DeviceInfo& info, VkSwapchainKHR swapchain,
     const bool perfMode = lsfgPerfModeStr
         ? *lsfgPerfModeStr == '1'
         : false;
+
+    const char* lsfgFramePacingStr = getenv("LSFG_FRAME_PACING_DELAY");
+    const uint32_t framePacingDelay = lsfgFramePacingStr
+        ? static_cast<uint32_t>(std::max(0, std::stoi(lsfgFramePacingStr)))
+        : 0;
 
     // we could take the format from the swapchain,
     // but honestly this is safer.
@@ -79,6 +86,11 @@ LsContext::LsContext(const Hooks::DeviceInfo& info, VkSwapchainKHR swapchain,
     }
 
     this->isPerfMode = false;
+    this->framePacingDelayMs = framePacingDelay;
+    if (this->framePacingDelayMs > 0) {
+        Log::info("context", "Frame pacing enabled with {}ms delay per generated frame",
+            this->framePacingDelayMs);
+    }
     auto* lsfgInitialize = LSFG_3_1::initialize;
     auto* lsfgCreateContext = LSFG_3_1::createContext;
     auto* lsfgDeleteContext = LSFG_3_1::deleteContext;
@@ -234,6 +246,11 @@ VkResult LsContext::present(const Hooks::DeviceInfo& info, const void* pNext, Vk
         res = Layer::ovkQueuePresentKHR(queue, &presentInfo);
         if (res != VK_SUCCESS && res != VK_SUBOPTIMAL_KHR)
             throw LSFG::vulkan_error(res, "Failed to present swapchain image");
+
+        // Apply frame pacing delay if configured
+        if (this->framePacingDelayMs > 0) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(this->framePacingDelayMs));
+        }
     }
 
     // 6. present actual next frame
