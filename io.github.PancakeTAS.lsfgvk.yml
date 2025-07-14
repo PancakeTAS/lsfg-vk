@@ -56,7 +56,7 @@ modules:
       - python3 -m compileall -d /app /app || true
       - python3 -O -m compileall -d /app /app || true
 
-    #spirv-Headers
+    #spirv-headers
   - name: spirv-headers
     buildsystem: cmake
     builddir: false
