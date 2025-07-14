@@ -36,7 +36,7 @@ jobs:
 
       - name: Create Flatpak repo and bundle
         run: |
-          flatpak-builder --repo=repo --force-clean --user build-dir io.github.PancakeTAS.lsfgvk
+          flatpak-builder --repo=repo --force-clean --user build-dir io.github.PancakeTAS.lsfgvk.yml
           flatpak build-bundle repo lsfg-vk.flatpak io.github.PancakeTAS.lsfgvk
 
       - name: Upload Flatpak bundle artifact
