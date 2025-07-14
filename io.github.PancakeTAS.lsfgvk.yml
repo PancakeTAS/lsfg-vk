@@ -1,4 +1,4 @@
-app-id: io.github.PancakeTAS.lsfgvk.yml
+app-id: io.github.PancakeTAS.lsfgvk
 runtime: org.freedesktop.Platform
 runtime-version: '24.08'
 sdk: org.freedesktop.Sdk
