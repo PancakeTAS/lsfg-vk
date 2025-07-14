@@ -1,0 +1,132 @@
+app-id: io.github.PancakeTAS.lsfgvk.yml
+runtime: org.freedesktop.Platform
+runtime-version: '24.08'
+sdk: org.freedesktop.Sdk
+sdk-extensions:
+  - org.freedesktop.Sdk.Extension.llvm20
+finish-args:
+  - --share=network
+  - --device=dri
+  - --filesystem=home
+  - --socket=wayland
+  - --socket=x11
+
+modules:
+  # sdl with clang
+  - name: SDL2
+    buildsystem: cmake
+    builddir: true
+    build-options:
+      append-path: /usr/lib/sdk/llvm20/bin
+      env:
+        CC: clang
+        CXX: clang++
+    config-opts:
+      - -DCMAKE_INSTALL_PREFIX=/app
+      - -DSDL_STATIC=OFF
+      - -DSDL_SHARED=ON
+      - -DSDL_TEST=OFF
+    sources:
+      - type: archive
+        url: https://github.com/libsdl-org/SDL/archive/refs/tags/release-2.30.3.tar.gz
+        sha256: ba67e012a3b0cfba2987f486ebbff13a517905e32bae627f07a327edb10dfd85
+
+  # vulkan-headers without patch, in-source build
+  - name: vulkan-headers
+    buildsystem: cmake
+    builddir: false
+    build-options:
+      append-path: /usr/lib/sdk/llvm20/bin
+      env:
+        CC: clang
+        CXX: clang++
+    config-opts:
+      - -DCMAKE_BUILD_TYPE=Release
+      - -DCMAKE_INSTALL_PREFIX=/app
+      - -DCMAKE_SKIP_INSTALL_RPATH=ON
+    sources:
+      - type: git
+        url: https://github.com/KhronosGroup/Vulkan-Headers.git
+        tag: vulkan-sdk-1.4.313.0
+    build-commands:
+      - cmake ${CMAKE_ARGS}
+      - cmake --build .
+      - cmake --install .
+    post-install:
+      - python3 -m compileall -d /app /app || true
+      - python3 -O -m compileall -d /app /app || true
+
+    #spirv-Headers
+  - name: spirv-headers
+    buildsystem: cmake
+    builddir: false
+    build-options:
+      append-path: /usr/lib/sdk/llvm20/bin
+      env:
+        CC: clang
+        CXX: clang++
+    config-opts:
+      - -DCMAKE_BUILD_TYPE=Release
+      - -DCMAKE_INSTALL_PREFIX=/app
+      - -DCMAKE_SKIP_INSTALL_RPATH=ON
+    sources:
+      - type: git
+        url: https://github.com/KhronosGroup/Spirv-Headers.git
+        tag: vulkan-sdk-1.4.313.0
+    build-commands:
+      - cmake ${CMAKE_ARGS}
+      - cmake --build .
+      - cmake --install .
+    #post-install:
+      #- install -Dm644 LICENSE /app/usr/share/licenses/spirv-headers/LICENSE
+
+    #vulkan-loader
+  - name: vulkan-loader
+    buildsystem: cmake
+    builddir: false
+    build-options:
+      append-path: /usr/lib/sdk/llvm20/bin
+      env:
+        CC: clang
+        CXX: clang++
+    config-opts:
+      - -DCMAKE_BUILD_TYPE=Release
+      - -DCMAKE_INSTALL_PREFIX=/app
+      - -DCMAKE_SKIP_INSTALL_RPATH=ON
+    sources:
+      - type: git
+        url: https://github.com/KhronosGroup/Vulkan-Loader.git
+        tag: vulkan-sdk-1.4.313.0
+    build-commands:
+      - cmake ${CMAKE_ARGS}
+      - cmake --build .
+      - cmake --install .
+    post-install:
+      - install -Dm644 LICENSE.txt /app/usr/share/licenses/vulkan-loader/LICENSE.txt
+
+  # lsfg-vk
+  - name: lsfg-vk
+    buildsystem: cmake
+    build-options:
+      append-path: /usr/lib/sdk/llvm20/bin
+      prepend-ld-library-path: /usr/lib/sdk/llvm20/lib
+      env:
+        CC: clang
+        CXX: clang++
+    config-opts:
+      - -DCMAKE_BUILD_TYPE=Release
+      - -DCMAKE_INSTALL_PREFIX=/app
+      - -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=ON
+      - -DCMAKE_SHARED_LINKER_FLAGS=-Wl,-z,lazy
+    sources:
+      - type: git
+        url: https://github.com/PancakeTAS/lsfg-vk.git
+        branch: develop
+    build-commands:
+      - cmake -B build -G Ninja -DCMAKE_INSTALL_PREFIX=/app -DCMAKE_BUILD_TYPE=Release -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=ON -DCMAKE_SHARED_LINKER_FLAGS=-Wl,-z,lazy
+      - ninja -C build
+      - ninja -C build install
+    post-install:
+      - install -Dm644 VkLayer_LS_frame_generation.json /app/etc/vulkan/implicit_layer.d/VkLayer_LS_frame_generation.json
+      - install -Dm644 build/liblsfg-vk.so /app/lib/liblsfg-vk.so
+      - install -Dm644 LICENSE.md /app/share/licenses/lsfg-vk/LICENSE
