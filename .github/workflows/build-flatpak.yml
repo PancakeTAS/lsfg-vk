@@ -1,0 +1,46 @@
+name: Build lsfg-vk Flatpak
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-flatpak:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Flatpak and flatpak-builder
+        run: |
+          sudo apt update
+          sudo apt install -y flatpak flatpak-builder
+
+      - name: Add flathub remote (user scope)
+        run: |
+          flatpak --user remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+
+      - name: Install Flatpak SDK/runtime (user scope)
+        run: |
+          flatpak --user install -y flathub org.freedesktop.Platform//24.08
+          flatpak --user install -y flathub org.freedesktop.Sdk//24.08
+          flatpak --user install -y org.freedesktop.Sdk.Extension.llvm20
+
+      - name: Download Flatpak manifest
+        run: |
+          curl -L -o io.github.PancakeTAS.lsfgvk.yml https://github.com/PancakeTAS/lsfg-vk/raw/refs/heads/develop/io.github.PancakeTAS.lsfgvk.yml
+
+      - name: Build Flatpak bundle
+        run: |
+          flatpak-builder --force-clean --user build-dir org.example.LSFGVK.yaml --install-deps-from=flathub
+
+      - name: Create Flatpak repo and bundle
+        run: |
+          flatpak-builder --repo=repo --force-clean --user build-dir org.example.LSFGVK.yaml
+          flatpak build-bundle repo lsfg-vk.flatpak org.example.LSFGVK
+
+      - name: Upload Flatpak bundle artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: lsfg-vk-flatpak
+          path: lsfg-vk.flatpak
