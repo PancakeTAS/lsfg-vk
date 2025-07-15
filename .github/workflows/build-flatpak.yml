@@ -1,4 +1,4 @@
-name: Build lsfg-vk Flatpak
+name: Build lsfg-vk EXTENSION (Not PR branch)
 
 on:
   workflow_dispatch:
@@ -28,19 +28,20 @@ jobs:
 
       - name: Download Flatpak manifest
         run: |
-          curl -L -o io.github.PancakeTAS.lsfgvk.yml https://github.com/PancakeTAS/lsfg-vk/raw/refs/heads/develop/io.github.PancakeTAS.lsfgvk.yml
+          curl -L -o org.freedesktop.Platform.VulkanLayer.lsfgvk.yml https://raw.githubusercontent.com/PancakeTAS/lsfg-vk/refs/heads/flatpak/org.freedesktop.Platform.VulkanLayer.lsfgvk.yml
+          curl -L -o vk_layer_library_path.patch https://raw.githubusercontent.com/PancakeTAS/lsfg-vk/refs/heads/flatpak/vk_layer_library_path.patch
 
       - name: Build Flatpak bundle
         run: |
-          flatpak-builder --force-clean --user build-dir io.github.PancakeTAS.lsfgvk.yml --install-deps-from=flathub
+          flatpak-builder --force-clean --user build-dir org.freedesktop.Platform.VulkanLayer.lsfgvk.yml --install-deps-from=flathub
 
       - name: Create Flatpak repo and bundle
         run: |
-          flatpak-builder --repo=repo --force-clean --user build-dir io.github.PancakeTAS.lsfgvk.yml
-          flatpak build-bundle repo lsfg-vk.flatpak io.github.PancakeTAS.lsfgvk
-
+          flatpak-builder --repo=repo --force-clean --user build-dir org.freedesktop.Platform.VulkanLayer.lsfgvk.yml
+          flatpak build-bundle --runtime repo org.freedesktop.Platform.VulkanLayer.lsfgvk.flatpak runtime/org.freedesktop.Platform.VulkanLayer.lsfgvk/x86_64/24.08
+      
       - name: Upload Flatpak bundle artifact
         uses: actions/upload-artifact@v4
         with:
           name: lsfg-vk-flatpak
-          path: lsfg-vk.flatpak
+          path: org.freedesktop.Platform.VulkanLayer.lsfgvk.flatpak
