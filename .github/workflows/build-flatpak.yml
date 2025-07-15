@@ -1,4 +1,4 @@
-name: Build lsfg-vk EXTENSION (Not PR branch)
+name: Build lsfg-vk Flatpak
 
 on:
   workflow_dispatch:
