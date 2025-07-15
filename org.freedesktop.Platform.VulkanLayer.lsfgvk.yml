@@ -1,28 +1,48 @@
-app-id: io.github.PancakeTAS.lsfgvk
+id: org.freedesktop.Platform.VulkanLayer.lsfgvk
+branch: '24.08'
 runtime: org.freedesktop.Platform
 runtime-version: '24.08'
 sdk: org.freedesktop.Sdk
+build-extension: true
 sdk-extensions:
-  - org.freedesktop.Sdk.Extension.llvm20
-finish-args:
-  - --share=network
-  - --device=dri
-  - --filesystem=home
-  - --socket=wayland
-  - --socket=x11
+  - org.freedesktop.Sdk.Extension.llvm18
+
+build-options:
+  prefix: /usr/lib/extensions/vulkan/lsfgvk
+  prepend-path: /usr/lib/extensions/vulkan/lsfgvk/bin
+  prepend-pkg-config-path: /usr/lib/extensions/vulkan/lsfgvk/share/pkgconfig
+  env:
+    C_INCLUDE_PATH: /usr/lib/extensions/vulkan/lsfgvk/include
+    CPLUS_INCLUDE_PATH: /usr/lib/extensions/vulkan/lsfgvk/include
+  strip: true
+
+cleanup:
+  - /bin
+  - /include
+  - /lib/*.a
+  - /lib/*.la
+  - /lib/cmake
+  - /lib/pkgconfig
+  - /share/aclocal
+  - /share/cmake
+  - /share/doc
+  - /share/licenses
+  - /share/man
+  - /share/pkgconfig
+  - /share/vulkan/registry
 
 modules:
-  # sdl with clang
+  # SDL2 dependency (same as app, for example)
   - name: SDL2
     buildsystem: cmake
     builddir: true
     build-options:
-      append-path: /usr/lib/sdk/llvm20/bin
+      append-path: /usr/lib/sdk/llvm18/bin
       env:
         CC: clang
         CXX: clang++
     config-opts:
-      - -DCMAKE_INSTALL_PREFIX=/app
+      - -DCMAKE_INSTALL_PREFIX=/usr/lib/extensions/vulkan/lsfgvk
       - -DSDL_STATIC=OFF
       - -DSDL_SHARED=ON
       - -DSDL_TEST=OFF
@@ -31,18 +51,18 @@ modules:
         url: https://github.com/libsdl-org/SDL/archive/refs/tags/release-2.30.3.tar.gz
         sha256: ba67e012a3b0cfba2987f486ebbff13a517905e32bae627f07a327edb10dfd85
 
-  # vulkan-headers without patch, in-source build
+  # Vulkan-Headers, installed to extension include
   - name: vulkan-headers
     buildsystem: cmake
     builddir: false
     build-options:
-      append-path: /usr/lib/sdk/llvm20/bin
+      append-path: /usr/lib/sdk/llvm18/bin
       env:
         CC: clang
         CXX: clang++
     config-opts:
       - -DCMAKE_BUILD_TYPE=Release
-      - -DCMAKE_INSTALL_PREFIX=/app
+      - -DCMAKE_INSTALL_PREFIX=/usr/lib/extensions/vulkan/lsfgvk
       - -DCMAKE_SKIP_INSTALL_RPATH=ON
     sources:
       - type: git
@@ -53,21 +73,21 @@ modules:
       - cmake --build .
       - cmake --install .
     post-install:
-      - python3 -m compileall -d /app /app || true
-      - python3 -O -m compileall -d /app /app || true
+      - python3 -m compileall -d /usr/lib/extensions/vulkan/lsfgvk /usr/lib/extensions/vulkan/lsfgvk || true
+      - python3 -O -m compileall -d /usr/lib/extensions/vulkan/lsfgvk /usr/lib/extensions/vulkan/lsfgvk || true
 
-    #spirv-headers
+  # Spirv-Headers
   - name: spirv-headers
     buildsystem: cmake
     builddir: false
     build-options:
-      append-path: /usr/lib/sdk/llvm20/bin
+      append-path: /usr/lib/sdk/llvm18/bin
       env:
         CC: clang
         CXX: clang++
     config-opts:
       - -DCMAKE_BUILD_TYPE=Release
-      - -DCMAKE_INSTALL_PREFIX=/app
+      - -DCMAKE_INSTALL_PREFIX=/usr/lib/extensions/vulkan/lsfgvk
       - -DCMAKE_SKIP_INSTALL_RPATH=ON
     sources:
       - type: git
@@ -77,21 +97,21 @@ modules:
       - cmake ${CMAKE_ARGS}
       - cmake --build .
       - cmake --install .
-    post-install:
-      - install -Dm644 LICENSE /app/usr/share/licenses/spirv-headers/LICENSE
 
-    #vulkan-loader
+  # Vulkan-Loader (IMPORTANT: Set CFLAGS/CXXFLAGS to use vulkan-headers in extension)
   - name: vulkan-loader
     buildsystem: cmake
     builddir: false
     build-options:
-      append-path: /usr/lib/sdk/llvm20/bin
+      append-path: /usr/lib/sdk/llvm18/bin
       env:
         CC: clang
         CXX: clang++
+        CFLAGS: "-I/usr/lib/extensions/vulkan/lsfgvk/include"
+        CXXFLAGS: "-I/usr/lib/extensions/vulkan/lsfgvk/include"
     config-opts:
       - -DCMAKE_BUILD_TYPE=Release
-      - -DCMAKE_INSTALL_PREFIX=/app
+      - -DCMAKE_INSTALL_PREFIX=/usr/lib/extensions/vulkan/lsfgvk
       - -DCMAKE_SKIP_INSTALL_RPATH=ON
     sources:
       - type: git
@@ -101,32 +121,28 @@ modules:
       - cmake ${CMAKE_ARGS}
       - cmake --build .
       - cmake --install .
-    post-install:
-      - install -Dm644 LICENSE.txt /app/usr/share/licenses/vulkan-loader/LICENSE.txt
-
-  # lsfg-vk
+ 
+  # lsfg-vk (your Vulkan layer itself)
   - name: lsfg-vk
     buildsystem: cmake
     build-options:
-      append-path: /usr/lib/sdk/llvm20/bin
-      prepend-ld-library-path: /usr/lib/sdk/llvm20/lib
+      append-path: /usr/lib/sdk/llvm18/bin
+      prepend-ld-library-path: /usr/lib/sdk/llvm18/lib
       env:
         CC: clang
         CXX: clang++
     config-opts:
       - -DCMAKE_BUILD_TYPE=Release
-      - -DCMAKE_INSTALL_PREFIX=/app
+      - -DCMAKE_INSTALL_PREFIX=${FLATPAK_DEST}
       - -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=ON
       - -DCMAKE_SHARED_LINKER_FLAGS=-Wl,-z,lazy
     sources:
       - type: git
         url: https://github.com/PancakeTAS/lsfg-vk.git
         branch: develop
+      - type: patch
+        path: vk_layer_library_path.patch
     build-commands:
-      - cmake -B build -G Ninja -DCMAKE_INSTALL_PREFIX=/app -DCMAKE_BUILD_TYPE=Release -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=ON -DCMAKE_SHARED_LINKER_FLAGS=-Wl,-z,lazy
+      - cmake -B build -G Ninja -DCMAKE_INSTALL_PREFIX=${FLATPAK_DEST} -DCMAKE_BUILD_TYPE=Release -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=ON -DCMAKE_SHARED_LINKER_FLAGS=-Wl,-z,lazy
       - ninja -C build
       - ninja -C build install
-    post-install:
-      - install -Dm644 VkLayer_LS_frame_generation.json /app/etc/vulkan/implicit_layer.d/VkLayer_LS_frame_generation.json
-      - install -Dm644 build/liblsfg-vk.so /app/lib/liblsfg-vk.so
-      - install -Dm644 LICENSE.md /app/share/licenses/lsfg-vk/LICENSE
