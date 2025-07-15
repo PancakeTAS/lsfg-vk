@@ -1,0 +1,13 @@
+diff --git a/VkLayer_LS_frame_generation.json b/VkLayer_LS_frame_generation.json
+index ece2a5f..774a027 100644
+--- a/VkLayer_LS_frame_generation.json
++++ b/VkLayer_LS_frame_generation.json
+@@ -4,7 +4,7 @@
+     "name": "VK_LAYER_LS_frame_generation",
+     "type": "GLOBAL",
+     "api_version": "1.4.313",
+-    "library_path": "../../../lib/liblsfg-vk.so",
++    "library_path": "/usr/lib/extensions/vulkan/lsfgvk/lib/liblsfg-vk.so",
+     "implementation_version": "1",
+     "description": "Lossless Scaling frame generation layer",
+     "functions": {
