@@ -46,17 +46,19 @@ namespace {
             throw std::runtime_error("Failed to initialize inotify:\n"
                 "- " + std::string(strerror(errno)));
 
-        const int wd = inotify_add_watch(fd, file.c_str(),
+        const std::string parent = std::filesystem::path(file).parent_path().string();
+        const int wd = inotify_add_watch(fd, parent.c_str(),
             IN_MODIFY | IN_CLOSE_WRITE | IN_MOVE_SELF);
         if (wd < 0) {
             close(fd);
 
-            throw std::runtime_error("Failed to add inotify watch for " + file + ":\n"
+            throw std::runtime_error("Failed to add inotify watch for " + parent + ":\n"
                 "- " + std::string(strerror(errno)));
         }
 
         // watch for changes
         std::optional<std::chrono::steady_clock::time_point> discard_until;
+        const std::string filename = std::filesystem::path(file).filename().string();
 
         std::array<char, (sizeof(inotify_event) + NAME_MAX + 1) * 20> buffer{};
         while (true) {
@@ -87,10 +89,14 @@ namespace {
             while (std::cmp_less(i, len)) {
                 auto* event = reinterpret_cast<inotify_event*>(&buffer.at(i));
                 i += sizeof(inotify_event) + event->len;
+                if (event->len <= 0 || event->mask & IN_IGNORED)
+                    continue;
+
+                std::string name(reinterpret_cast<char*>(event->name));
+                if (name != filename)
+                    continue;
 
                 // stall a bit, then mark as invalid
-                if (!discard_until.has_value())
-                    std::cerr << "lsfg-vk: Configuration file changed, invalidating config...\n";
                 discard_until.emplace(std::chrono::steady_clock::now()
                     + std::chrono::milliseconds(500));
             }
@@ -131,6 +137,7 @@ bool Config::loadAndWatchConfig(const std::string& file) {
 }
 
 bool Config::updateConfig(const std::string& file) {
+    globalConf.valid->store(true, std::memory_order_relaxed);
     if (!std::filesystem::exists(file))
         return false;
 
@@ -190,7 +197,6 @@ bool Config::updateConfig(const std::string& file) {
     }
 
     // store configurations
-    global.valid->store(true, std::memory_order_release);
     globalConf = global;
     gameConfs = std::move(games);
     return true;

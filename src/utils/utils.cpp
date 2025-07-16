@@ -229,6 +229,6 @@ std::string Utils::getConfigFile() {
         return{configFile};
     const char* homePath = std::getenv("HOME");
     if (homePath && *homePath != '\0')
-        return std::string(homePath) + "/.config/lsfg-vk.toml";
-    return "/etc/lsfg-vk.toml";
+        return std::string(homePath) + "/.config/lsfg-vk/conf.toml";
+    return "/etc/lsfg-vk/conf.toml";
 }
