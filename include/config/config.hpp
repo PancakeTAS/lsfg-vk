@@ -42,6 +42,17 @@ namespace Config {
     bool loadAndWatchConfig(const std::string& file);
 
     ///
+    /// Reread the configuration file while preserving the old configuration
+    /// in case of an error.
+    ///
+    /// @param file The path to the configuration file.
+    /// @return Whether a configuration exists or not.
+    ///
+    /// @throws std::runtime_error if an error occurs while loading the configuration file.
+    ///
+    bool updateConfig(const std::string& file);
+
+    ///
     /// Get the configuration for a game.
     ///
     /// @param name The name of the executable to fetch.

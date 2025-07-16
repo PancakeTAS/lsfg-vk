@@ -4,6 +4,7 @@
 #include "context.hpp"
 #include "layer.hpp"
 
+#include <iostream>
 #include <vulkan/vulkan_core.h>
 
 #include <unordered_map>
@@ -178,6 +179,10 @@ namespace {
                 deviceInfo, *pSwapchain, pCreateInfo->imageExtent,
                 swapchainImages
             ));
+
+            std::cerr << "lsfg-vk: Swapchain context " <<
+                    (createInfo.oldSwapchain ? "recreated" : "created")
+                << " (using " << imageCount << " images).\n";
 
             Utils::resetLimitN("swapCtxCreate");
         } catch (const std::exception& e) {

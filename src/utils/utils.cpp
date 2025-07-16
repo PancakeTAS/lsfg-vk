@@ -4,16 +4,21 @@
 #include "layer.hpp"
 
 #include <vulkan/vulkan_core.h>
+#include <sys/types.h>
+#include <string.h> // NOLINT
+#include <unistd.h>
 
 #include <unordered_map>
 #include <algorithm>
 #include <optional>
 #include <iostream>
+#include <cstdlib>
 #include <cstdint>
 #include <cstring>
 #include <utility>
 #include <string>
 #include <vector>
+#include <array>
 
 using namespace Utils;
 
@@ -205,4 +210,25 @@ void Utils::logLimitN(const std::string& id, size_t n, const std::string& messag
 
 void Utils::resetLimitN(const std::string& id) noexcept {
     logCounts().erase(id);
+}
+
+/// Get the process name
+std::string Utils::getProcessName() {
+    std::array<char, 4096> exe{};
+    const ssize_t exe_len = readlink("/proc/self/exe", exe.data(), exe.size() - 1);
+    if (exe_len <= 0)
+        return "Unknown Process";
+    exe.at(static_cast<size_t>(exe_len)) = '\0';
+    return{basename(exe.data())};
+}
+
+/// Get the config file
+std::string Utils::getConfigFile() {
+    const char* configFile = std::getenv("LSFG_CONFIG");
+    if (configFile && *configFile != '\0')
+        return{configFile};
+    const char* homePath = std::getenv("HOME");
+    if (homePath && *homePath != '\0')
+        return std::string(homePath) + "/.config/lsfg-vk.toml";
+    return "/etc/lsfg-vk.toml";
 }

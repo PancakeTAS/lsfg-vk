@@ -1,14 +1,11 @@
 #include "config/config.hpp"
+#include "extract/extract.hpp"
+#include "utils/utils.hpp"
 
-#include <array>
 #include <cstdlib>
-#include <cstring>
 #include <exception>
 #include <iostream>
 #include <string>
-
-#include <string.h> // NOLINT
-#include <unistd.h>
 
 namespace {
     /// Check if the library is preloaded or Vulkan loaded.
@@ -29,27 +26,6 @@ namespace {
         return benchmark_str == "1";
     }
 
-    /// Get the process name
-    std::string getProcessName() {
-        std::array<char, 4096> exe{};
-        const ssize_t exe_len = readlink("/proc/self/exe", exe.data(), exe.size() - 1);
-        if (exe_len <= 0)
-            return "Unknown Process";
-        exe.at(static_cast<size_t>(exe_len)) = '\0';
-        return{basename(exe.data())};
-    }
-
-    /// Get the config file
-    std::string getConfigFile() {
-        const char* configFile = std::getenv("LSFG_CONFIG");
-        if (configFile && *configFile != '\0')
-            return{configFile};
-        const char* homePath = std::getenv("HOME");
-        if (homePath && *homePath != '\0')
-            return std::string(homePath) + "/.config/lsfg-vk.toml";
-        return "/etc/lsfg-vk.toml";
-    }
-
     __attribute__((constructor)) void lsfgvk_init() {
         if (isPreload()) {
             if (requestedBenchmark()) {
@@ -63,7 +39,7 @@ namespace {
         }
 
         // read configuration (might block)
-        const std::string file = getConfigFile();
+        const std::string file = Utils::getConfigFile();
         try {
             Config::loadAndWatchConfig(file);
         } catch (const std::exception& e) {
@@ -72,7 +48,7 @@ namespace {
             exit(0);
         }
 
-        const std::string name = getProcessName();
+        const std::string name = Utils::getProcessName();
         try {
             Config::activeConf = Config::getConfig(name);
         } catch (const std::exception& e) {
@@ -93,5 +69,15 @@ namespace {
         std::cerr << "  Flow Scale: " << conf.flowScale << '\n';
         std::cerr << "  Performance Mode: " << (conf.performance ? "Enabled" : "Disabled") << '\n';
         std::cerr << "  HDR Mode: " << (conf.hdr ? "Enabled" : "Disabled") << '\n';
+
+        // load shaders
+        try {
+            Extract::extractShaders();
+        } catch (const std::exception& e) {
+            std::cerr << "lsfg-vk: An error occurred while trying to extract the shaders, exiting:\n";
+            std::cerr << "- " << e.what() << '\n';
+            exit(0);
+        }
+        std::cerr << "lsfg-vk: Shaders extracted successfully.\n";
     }
 }

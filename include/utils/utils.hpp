@@ -85,4 +85,18 @@ namespace Utils {
     ///
     void resetLimitN(const std::string& id) noexcept;
 
+    ///
+    /// Get the process name of the current executable.
+    ///
+    /// @return The name of the process.
+    ///
+    std::string getProcessName();
+
+    ///
+    /// Get the configuration file path.
+    ///
+    /// @return The path to the configuration file.
+    ///
+    std::string getConfigFile();
+
 }
