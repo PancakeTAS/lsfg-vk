@@ -72,9 +72,6 @@ modules:
       - cmake ${CMAKE_ARGS}
       - cmake --build .
       - cmake --install .
-    post-install:
-      - python3 -m compileall -d /usr/lib/extensions/vulkan/lsfgvk /usr/lib/extensions/vulkan/lsfgvk || true
-      - python3 -O -m compileall -d /usr/lib/extensions/vulkan/lsfgvk /usr/lib/extensions/vulkan/lsfgvk || true
 
   # Spirv-Headers
   - name: spirv-headers
