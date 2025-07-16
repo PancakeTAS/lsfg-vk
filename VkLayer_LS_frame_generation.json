@@ -11,9 +11,6 @@
       "vkGetInstanceProcAddr": "layer_vkGetInstanceProcAddr",
       "vkGetDeviceProcAddr": "layer_vkGetDeviceProcAddr"
     },
-    "enable_environment": {
-      "ENABLE_LSFG": "1"
-    },
     "disable_environment": {
       "DISABLE_LSFG": "1"
     }

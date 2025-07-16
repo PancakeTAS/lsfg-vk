@@ -28,6 +28,9 @@ namespace Config {
         std::shared_ptr<std::atomic_bool> valid;
     };
 
+    /// Active configuration. Must be set in main.cpp.
+    extern Configuration activeConf;
+
     ///
     /// Load the config file and create a file watcher.
     ///

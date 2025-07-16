@@ -33,6 +33,8 @@ namespace {
     std::optional<std::unordered_map<std::string, Configuration>> gameConfs;
 }
 
+Configuration Config::activeConf{};
+
 bool Config::loadAndWatchConfig(const std::string& file) {
     if (!std::filesystem::exists(file))
         return false;
