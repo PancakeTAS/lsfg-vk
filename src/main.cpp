@@ -76,7 +76,7 @@ namespace {
         try {
             Config::activeConf = Config::getConfig(name);
         } catch (const std::exception& e) {
-            std::cerr << "lsfg-vk: The configuration for " << name << " is invalid, exiting.\n";
+            std::cerr << "lsfg-vk: The configuration for " << name << " is invalid, exiting:\n";
             std::cerr << e.what() << '\n';
             exit(0);
         }

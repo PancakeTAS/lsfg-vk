@@ -98,14 +98,14 @@ bool Config::loadAndWatchConfig(const std::string& file) {
         try {
             const int fd = inotify_init();
             if (fd < 0)
-                throw std::runtime_error("Failed to initialize inotify\n"
+                throw std::runtime_error("Failed to initialize inotify:\n"
                     "- " + std::string(strerror(errno)));
 
             const int wd = inotify_add_watch(fd, file.c_str(), IN_MODIFY | IN_CLOSE_WRITE);
             if (wd < 0) {
                 close(fd);
 
-                throw std::runtime_error("Failed to add inotify watch for " + file + "\n"
+                throw std::runtime_error("Failed to add inotify watch for " + file + ":\n"
                     "- " + std::string(strerror(errno)));
             }
 
@@ -119,7 +119,7 @@ bool Config::loadAndWatchConfig(const std::string& file) {
                     inotify_rm_watch(fd, wd);
                     close(fd);
 
-                    throw std::runtime_error("Error reading inotify event\n"
+                    throw std::runtime_error("Error reading inotify event:\n"
                         "- " + std::string(strerror(errno)));
                 }
 
