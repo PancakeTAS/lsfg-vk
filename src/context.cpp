@@ -26,27 +26,31 @@ LsContext::LsContext(const Hooks::DeviceInfo& info, VkSwapchainKHR swapchain,
         : swapchain(swapchain), swapchainImages(swapchainImages),
           extent(extent) {
     // get updated configuration
-    const auto& conf = Config::activeConf;
+    auto& conf = Config::activeConf;
     if (!conf.valid->load(std::memory_order_relaxed)) {
-        std::cerr << "lsfg-vk: Configuration is no longer valid, rereading...\n";
-
-        const bool wasPerformance = conf.performance;
+        std::cerr << "lsfg-vk: Rereading configuration, as it is no longer valid.\n";
 
         // reread configuration
+        const std::string file = Utils::getConfigFile();
+        const std::string name = Utils::getProcessName();
         try {
-            const std::string file = Utils::getConfigFile();
             Config::updateConfig(file);
-            const std::string name = Utils::getProcessName();
-            Config::activeConf = Config::getConfig(name);
+            conf = Config::getConfig(name);
         } catch (const std::exception& e) {
             std::cerr << "lsfg-vk: Failed to update configuration, continuing using old:\n";
             std::cerr << "- " << e.what() << '\n';
         }
 
-        if (wasPerformance && !Config::activeConf.performance)
-            LSFG_3_1P::finalize();
-        if (!wasPerformance && Config::activeConf.performance)
-            LSFG_3_1::finalize();
+        LSFG_3_1P::finalize();
+        LSFG_3_1::finalize();
+
+        // print config
+        std::cerr << "lsfg-vk: Reloaded configuration for " << name << ":\n";
+        if (!conf.dll.empty()) std::cerr << "  Using DLL from: " << conf.dll << '\n';
+        std::cerr << "  Multiplier: " << conf.multiplier << '\n';
+        std::cerr << "  Flow Scale: " << conf.flowScale << '\n';
+        std::cerr << "  Performance Mode: " << (conf.performance ? "Enabled" : "Disabled") << '\n';
+        std::cerr << "  HDR Mode: " << (conf.hdr ? "Enabled" : "Disabled") << '\n';
     }
     // we could take the format from the swapchain,
     // but honestly this is safer.

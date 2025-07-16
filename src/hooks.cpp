@@ -1,18 +1,20 @@
 #include "hooks.hpp"
 #include "common/exception.hpp"
+#include "config/config.hpp"
 #include "utils/utils.hpp"
 #include "context.hpp"
 #include "layer.hpp"
 
-#include <iostream>
 #include <vulkan/vulkan_core.h>
 
 #include <unordered_map>
 #include <stdexcept>
 #include <algorithm>
 #include <exception>
+#include <iostream>
 #include <cstdint>
 #include <cstdlib>
+#include <atomic>
 #include <string>
 #include <vector>
 
@@ -248,6 +250,12 @@ namespace {
             std::vector<VkSemaphore> semaphores(pPresentInfo->waitSemaphoreCount);
             std::copy_n(pPresentInfo->pWaitSemaphores, semaphores.size(), semaphores.data());
 
+            // ensure config is valid
+            auto& conf = Config::activeConf;
+            if (!conf.valid->load(std::memory_order_relaxed))
+                return VK_ERROR_OUT_OF_DATE_KHR;
+
+            // present the swapchain
             res = swapchain.present(deviceInfo, pPresentInfo->pNext,
                 queue, semaphores, *pPresentInfo->pImageIndices);
 
