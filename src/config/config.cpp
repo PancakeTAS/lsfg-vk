@@ -3,10 +3,12 @@
 
 #include <linux/limits.h>
 #include <sys/inotify.h>
+#include <sys/poll.h>
 #include <toml11/find.hpp>
 #include <toml11/parser.hpp>
 #include <toml.hpp>
 #include <unistd.h>
+#include <poll.h>
 
 #include <unordered_map>
 #include <string_view>
@@ -35,6 +37,79 @@ namespace {
 
 Configuration Config::activeConf{};
 
+namespace {
+    [[noreturn]] void thread(
+            const std::string& file,
+            const std::shared_ptr<std::atomic_bool>& valid) {
+        const int fd = inotify_init();
+        if (fd < 0)
+            throw std::runtime_error("Failed to initialize inotify:\n"
+                "- " + std::string(strerror(errno)));
+
+        const int wd = inotify_add_watch(fd, file.c_str(),
+            IN_MODIFY | IN_CLOSE_WRITE | IN_MOVE_SELF);
+        if (wd < 0) {
+            close(fd);
+
+            throw std::runtime_error("Failed to add inotify watch for " + file + ":\n"
+                "- " + std::string(strerror(errno)));
+        }
+
+        // watch for changes
+        std::optional<std::chrono::steady_clock::time_point> discard_until;
+
+        std::array<char, (sizeof(inotify_event) + NAME_MAX + 1) * 20> buffer{};
+        while (true) {
+            // poll fd
+            struct pollfd pfd{};
+            pfd.fd = fd;
+            pfd.events = POLLIN;
+            const int pollRes = poll(&pfd, 1, 100);
+            if (pollRes < 0 && errno != EINTR) {
+                inotify_rm_watch(fd, wd);
+                close(fd);
+
+                throw std::runtime_error("Error polling inotify events:\n"
+                    "- " + std::string(strerror(errno)));
+            }
+
+            // read fd if there are events
+            const ssize_t len = pollRes == 0 ? 0 : read(fd, buffer.data(), buffer.size());
+            if (len <= 0 && errno != EINTR && pollRes > 0) {
+                inotify_rm_watch(fd, wd);
+                close(fd);
+
+                throw std::runtime_error("Error reading inotify events:\n"
+                    "- " + std::string(strerror(errno)));
+            }
+
+            size_t i{};
+            while (std::cmp_less(i, len)) {
+                auto* event = reinterpret_cast<inotify_event*>(&buffer.at(i));
+                i += sizeof(inotify_event) + event->len;
+
+                // stall a bit, then mark as invalid
+                if (!discard_until.has_value())
+                    std::cerr << "lsfg-vk: Configuration file changed, invalidating config...\n";
+                discard_until.emplace(std::chrono::steady_clock::now()
+                    + std::chrono::milliseconds(500));
+            }
+
+            auto now = std::chrono::steady_clock::now();
+            if (discard_until.has_value() && now > *discard_until) {
+                discard_until.reset();
+
+                // mark config as invalid
+                valid->store(false, std::memory_order_release);
+
+                // and wait until it has been marked as valid again
+                while (!valid->load(std::memory_order_acquire))
+                    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+            }
+        }
+    }
+}
+
 bool Config::loadAndWatchConfig(const std::string& file) {
     globalConf.valid = std::make_shared<std::atomic_bool>(true);
 
@@ -45,58 +120,7 @@ bool Config::loadAndWatchConfig(const std::string& file) {
     // prepare config watcher
     std::thread([file = file, valid = globalConf.valid]() {
         try {
-            const int fd = inotify_init();
-            if (fd < 0)
-                throw std::runtime_error("Failed to initialize inotify:\n"
-                    "- " + std::string(strerror(errno)));
-
-            const int wd = inotify_add_watch(fd, file.c_str(), IN_MODIFY | IN_CLOSE_WRITE);
-            if (wd < 0) {
-                close(fd);
-
-                throw std::runtime_error("Failed to add inotify watch for " + file + ":\n"
-                    "- " + std::string(strerror(errno)));
-            }
-
-            // watch for changes
-            std::optional<std::chrono::steady_clock::time_point> discard_until;
-
-            std::array<char, (sizeof(inotify_event) + NAME_MAX + 1) * 20> buffer{};
-            while (true) {
-                const ssize_t len = read(fd, buffer.data(), buffer.size());
-                if (len <= 0 && errno != EINTR) {
-                    inotify_rm_watch(fd, wd);
-                    close(fd);
-
-                    throw std::runtime_error("Error reading inotify event:\n"
-                        "- " + std::string(strerror(errno)));
-                }
-
-                size_t i{};
-                while (std::cmp_less(i, len)) {
-                    auto* event = reinterpret_cast<inotify_event*>(&buffer.at(i));
-                    i += sizeof(inotify_event) + event->len;
-                    if (event->len <= 0)
-                        continue;
-
-                    // stall a bit, then mark as invalid
-                    std::cerr << "lsfg-vk: Configuration file changed, invalidating config...\n";
-                    discard_until.emplace(std::chrono::steady_clock::now()
-                        + std::chrono::milliseconds(500));
-                }
-
-                auto now = std::chrono::steady_clock::now();
-                if (discard_until.has_value() && now > *discard_until) {
-                    discard_until.reset();
-
-                    // mark config as invalid
-                    valid->store(false, std::memory_order_release);
-
-                    // and wait until it has been marked as valid again
-                    while (!valid->load(std::memory_order_acquire))
-                        std::this_thread::sleep_for(std::chrono::milliseconds(50));
-                }
-            }
+            thread(file, valid);
         } catch (const std::exception& e) {
             std::cerr << "lsfg-vk: Error in config watcher thread:\n";
             std::cerr << "- " << e.what() << '\n';
