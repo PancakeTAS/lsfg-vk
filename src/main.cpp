@@ -67,7 +67,7 @@ namespace {
         try {
             Config::loadAndWatchConfig(file);
         } catch (const std::exception& e) {
-            std::cerr << "lsfg-vk: An error occured while trying to parse the configuration, exiting:" << '\n';
+            std::cerr << "lsfg-vk: An error occured while trying to parse the configuration, exiting:\n";
             std::cerr << "- " << e.what() << '\n';
             exit(0);
         }
@@ -77,7 +77,7 @@ namespace {
         try {
             conf = Config::getConfig(name);
         } catch (const std::exception& e) {
-            std::cerr << "lsfg-vk: The configuration for " << name << " is invalid, exiting." << '\n';
+            std::cerr << "lsfg-vk: The configuration for " << name << " is invalid, exiting.\n";
             std::cerr << e.what() << '\n';
             exit(0);
         }
