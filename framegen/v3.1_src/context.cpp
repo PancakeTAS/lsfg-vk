@@ -1,4 +1,4 @@
-#include "context.hpp"
+#include "v3_1/context.hpp"
 #include "common/utils.hpp"
 #include "common/exception.hpp"
 
@@ -10,8 +10,7 @@
 #include <optional>
 #include <cstdint>
 
-using namespace LSFG;
-using namespace LSFG_3_1P;
+using namespace LSFG_3_1;
 
 Context::Context(Vulkan& vk,
         int in0, int in1, const std::vector<int>& outN,
@@ -49,7 +48,8 @@ Context::Context(Vulkan& vk,
             this->alpha.at(6 - i).getOutImages(),
             this->beta.getOutImages().at(6 - i),
             (i == 4) ? std::nullopt : std::make_optional(this->gamma.at(i - 1).getOutImage()),
-            (i == 4) ? std::nullopt : std::make_optional(this->delta.at(i - 5).getOutImage1()));
+            (i == 4) ? std::nullopt : std::make_optional(this->delta.at(i - 5).getOutImage1()),
+            (i == 4) ? std::nullopt : std::make_optional(this->delta.at(i - 5).getOutImage2()));
     }
     this->generate = Shaders::Generate(vk,
         this->inImg_0, this->inImg_1,
@@ -105,7 +105,7 @@ void Context::present(Vulkan& vk,
         for (size_t i = 0; i < 7; i++) {
             this->gamma.at(i).Dispatch(buf2, this->frameIdx, pass);
             if (i >= 4)
-                this->delta.at(i - 4).Dispatch(buf2, this->frameIdx, pass, i == 6);
+                this->delta.at(i - 4).Dispatch(buf2, this->frameIdx, pass);
         }
         this->generate.Dispatch(buf2, this->frameIdx, pass);
 

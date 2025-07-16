@@ -1,4 +1,4 @@
-#include "shaders/alpha.hpp"
+#include "v3_1p/shaders/alpha.hpp"
 #include "common/utils.hpp"
 #include "core/commandbuffer.hpp"
 #include "core/image.hpp"
@@ -9,33 +9,33 @@
 #include <cstddef>
 #include <cstdint>
 
-using namespace LSFG_3_1::Shaders;
+using namespace LSFG_3_1P::Shaders;
 
 Alpha::Alpha(Vulkan& vk, Core::Image inImg) : inImg(std::move(inImg)) {
     // create resources
     this->shaderModules = {{
-        vk.shaders.getShader(vk.device, "alpha[0]",
+        vk.shaders.getShader(vk.device, "p_alpha[0]",
+            { { 1, VK_DESCRIPTOR_TYPE_SAMPLER },
+              { 1, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE },
+              { 1, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE } }),
+        vk.shaders.getShader(vk.device, "p_alpha[1]",
+            { { 1, VK_DESCRIPTOR_TYPE_SAMPLER },
+              { 1, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE },
+              { 1, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE } }),
+        vk.shaders.getShader(vk.device, "p_alpha[2]",
             { { 1, VK_DESCRIPTOR_TYPE_SAMPLER },
               { 1, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE },
               { 2, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE } }),
-        vk.shaders.getShader(vk.device, "alpha[1]",
+        vk.shaders.getShader(vk.device, "p_alpha[3]",
             { { 1, VK_DESCRIPTOR_TYPE_SAMPLER },
               { 2, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE },
-              { 2, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE } }),
-        vk.shaders.getShader(vk.device, "alpha[2]",
-            { { 1, VK_DESCRIPTOR_TYPE_SAMPLER },
-              { 2, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE },
-              { 4, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE } }),
-        vk.shaders.getShader(vk.device, "alpha[3]",
-            { { 1, VK_DESCRIPTOR_TYPE_SAMPLER },
-              { 4, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE },
-              { 4, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE } })
+              { 2, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE } })
     }};
     this->pipelines = {{
-        vk.shaders.getPipeline(vk.device, "alpha[0]"),
-        vk.shaders.getPipeline(vk.device, "alpha[1]"),
-        vk.shaders.getPipeline(vk.device, "alpha[2]"),
-        vk.shaders.getPipeline(vk.device, "alpha[3]")
+        vk.shaders.getPipeline(vk.device, "p_alpha[0]"),
+        vk.shaders.getPipeline(vk.device, "p_alpha[1]"),
+        vk.shaders.getPipeline(vk.device, "p_alpha[2]"),
+        vk.shaders.getPipeline(vk.device, "p_alpha[3]")
     }};
     this->sampler = vk.resources.getSampler(vk.device);
     for (size_t i = 0; i < 3; i++)
@@ -49,16 +49,14 @@ Alpha::Alpha(Vulkan& vk, Core::Image inImg) : inImg(std::move(inImg)) {
         .width = (extent.width + 1) >> 1,
         .height = (extent.height + 1) >> 1
     };
-    for (size_t i = 0; i < 2; i++) {
-        this->tempImgs1.at(i) = Core::Image(vk.device, halfExtent);
-        this->tempImgs2.at(i) = Core::Image(vk.device, halfExtent);
-    }
+    this->tempImg1 = Core::Image(vk.device, halfExtent);
+    this->tempImg2 = Core::Image(vk.device, halfExtent);
 
     const VkExtent2D quarterExtent = {
         .width = (halfExtent.width + 1) >> 1,
         .height = (halfExtent.height + 1) >> 1
     };
-    for (size_t i = 0; i < 4; i++) {
+    for (size_t i = 0; i < 2; i++) {
         this->tempImgs3.at(i) = Core::Image(vk.device, quarterExtent);
         for (size_t j = 0; j < 3; j++)
             this->outImgs.at(j).at(i) = Core::Image(vk.device, quarterExtent);
@@ -68,16 +66,16 @@ Alpha::Alpha(Vulkan& vk, Core::Image inImg) : inImg(std::move(inImg)) {
     this->descriptorSets.at(0).update(vk.device)
         .add(VK_DESCRIPTOR_TYPE_SAMPLER, this->sampler)
         .add(VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, this->inImg)
-        .add(VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, this->tempImgs1)
+        .add(VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, this->tempImg1)
         .build();
     this->descriptorSets.at(1).update(vk.device)
         .add(VK_DESCRIPTOR_TYPE_SAMPLER, this->sampler)
-        .add(VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, this->tempImgs1)
-        .add(VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, this->tempImgs2)
+        .add(VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, this->tempImg1)
+        .add(VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, this->tempImg2)
         .build();
     this->descriptorSets.at(2).update(vk.device)
         .add(VK_DESCRIPTOR_TYPE_SAMPLER, this->sampler)
-        .add(VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, this->tempImgs2)
+        .add(VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, this->tempImg2)
         .add(VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, this->tempImgs3)
         .build();
     for (size_t i = 0; i < 3; i++)
@@ -90,13 +88,13 @@ Alpha::Alpha(Vulkan& vk, Core::Image inImg) : inImg(std::move(inImg)) {
 
 void Alpha::Dispatch(const Core::CommandBuffer& buf, uint64_t frameCount) {
     // first pass
-    const auto halfExtent = this->tempImgs1.at(0).getExtent();
+    const auto halfExtent = this->tempImg1.getExtent();
     uint32_t threadsX = (halfExtent.width + 7) >> 3;
     uint32_t threadsY = (halfExtent.height + 7) >> 3;
 
     Utils::BarrierBuilder(buf)
         .addW2R(this->inImg)
-        .addR2W(this->tempImgs1)
+        .addR2W(this->tempImg1)
         .build();
 
     this->pipelines.at(0).bind(buf);
@@ -105,8 +103,8 @@ void Alpha::Dispatch(const Core::CommandBuffer& buf, uint64_t frameCount) {
 
     // second pass
     Utils::BarrierBuilder(buf)
-        .addW2R(this->tempImgs1)
-        .addR2W(this->tempImgs2)
+        .addW2R(this->tempImg1)
+        .addR2W(this->tempImg2)
         .build();
 
     this->pipelines.at(1).bind(buf);
@@ -119,7 +117,7 @@ void Alpha::Dispatch(const Core::CommandBuffer& buf, uint64_t frameCount) {
     threadsY = (quarterExtent.height + 7) >> 3;
 
     Utils::BarrierBuilder(buf)
-        .addW2R(this->tempImgs2)
+        .addW2R(this->tempImg2)
         .addR2W(this->tempImgs3)
         .build();
 

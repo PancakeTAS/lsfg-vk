@@ -1,5 +1,5 @@
-#include "lsfg_3_1.hpp"
-#include "context.hpp"
+#include "lsfg_3_1p.hpp"
+#include "v3_1p/context.hpp"
 #include "core/commandpool.hpp"
 #include "core/descriptorpool.hpp"
 #include "core/instance.hpp"
@@ -19,7 +19,7 @@
 #include <vector>
 
 using namespace LSFG;
-using namespace LSFG_3_1;
+using namespace LSFG_3_1P;
 
 namespace {
     std::optional<Core::Instance> instance;
@@ -27,7 +27,7 @@ namespace {
     std::unordered_map<int32_t, Context> contexts;
 }
 
-void LSFG_3_1::initialize(uint64_t deviceUUID,
+void LSFG_3_1P::initialize(uint64_t deviceUUID,
         bool isHdr, float flowScale, uint64_t generationCount,
         const std::function<std::vector<uint8_t>(const std::string&)>& loader) {
     if (instance.has_value() || device.has_value())
@@ -51,7 +51,7 @@ void LSFG_3_1::initialize(uint64_t deviceUUID,
     std::srand(static_cast<uint32_t>(std::time(nullptr)));
 }
 
-int32_t LSFG_3_1::createContext(
+int32_t LSFG_3_1P::createContext(
         int in0, int in1, const std::vector<int>& outN,
         VkExtent2D extent, VkFormat format) {
     if (!instance.has_value() || !device.has_value())
@@ -62,7 +62,7 @@ int32_t LSFG_3_1::createContext(
     return id;
 }
 
-void LSFG_3_1::presentContext(int32_t id, int inSem, const std::vector<int>& outSem) {
+void LSFG_3_1P::presentContext(int32_t id, int inSem, const std::vector<int>& outSem) {
     if (!instance.has_value() || !device.has_value())
         throw LSFG::vulkan_error(VK_ERROR_INITIALIZATION_FAILED, "LSFG not initialized");
 
@@ -73,7 +73,7 @@ void LSFG_3_1::presentContext(int32_t id, int inSem, const std::vector<int>& out
     it->second.present(*device, inSem, outSem);
 }
 
-void LSFG_3_1::deleteContext(int32_t id) {
+void LSFG_3_1P::deleteContext(int32_t id) {
     if (!instance.has_value() || !device.has_value())
         throw LSFG::vulkan_error(VK_ERROR_INITIALIZATION_FAILED, "LSFG not initialized");
 
@@ -85,7 +85,7 @@ void LSFG_3_1::deleteContext(int32_t id) {
     contexts.erase(it);
 }
 
-void LSFG_3_1::finalize() {
+void LSFG_3_1P::finalize() {
     if (!instance.has_value() || !device.has_value())
         return;
 
