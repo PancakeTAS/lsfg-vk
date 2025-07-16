@@ -21,6 +21,8 @@ cleanup:
   - /include
   - /lib/*.a
   - /lib/*.la
+  - /lib/libSDL*
+  - /lib/libvulkan*
   - /lib/cmake
   - /lib/pkgconfig
   - /share/aclocal
