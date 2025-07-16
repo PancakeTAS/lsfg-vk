@@ -46,8 +46,8 @@ namespace {
             return{configFile};
         const char* homePath = std::getenv("HOME");
         if (homePath && *homePath != '\0')
-            return std::string(homePath) + "/.config/lsfg-vk.conf";
-        return "/etc/lsfg-vk.conf";
+            return std::string(homePath) + "/.config/lsfg-vk.toml";
+        return "/etc/lsfg-vk.toml";
     }
 
     __attribute__((constructor)) void lsfgvk_init() {
@@ -57,6 +57,7 @@ namespace {
                 exit(0);
             }
 
+            // TODO: health check, maybe?
             std::cerr << "lsfg-vk: This library is not meant to be preloaded, unless you are running a benchmark.\n";
             exit(1);
         }
@@ -66,8 +67,8 @@ namespace {
         try {
             Config::loadAndWatchConfig(file);
         } catch (const std::exception& e) {
-            std::cerr << "lsfg-vk: Unable to read configuration file, exiting." << '\n';
-            std::cerr << e.what() << '\n';
+            std::cerr << "lsfg-vk: An error occured while trying to parse the configuration, exiting:" << '\n';
+            std::cerr << "- " << e.what() << '\n';
             exit(0);
         }
 
@@ -87,10 +88,10 @@ namespace {
 
         // print config
         std::cerr << "lsfg-vk: Loaded configuration for " << name << ":\n";
-        std::cerr << "lsfg-vk: Using DLL from: " << conf.dll << '\n';
-        std::cerr << "lsfg-vk: Multiplier: " << conf.multiplier << '\n';
-        std::cerr << "lsfg-vk: Flow Scale: " << conf.flowScale << '\n';
-        std::cerr << "lsfg-vk: Performance Mode: " << (conf.performance ? "Enabled" : "Disabled") << '\n';
-        std::cerr << "lsfg-vk: HDR: " << (conf.hdr ? "Enabled" : "Disabled") << '\n';
+        if (!conf.dll.empty()) std::cerr << "  Using DLL from: " << conf.dll << '\n';
+        std::cerr << "  Multiplier: " << conf.multiplier << '\n';
+        std::cerr << "  Flow Scale: " << conf.flowScale << '\n';
+        std::cerr << "  Performance Mode: " << (conf.performance ? "Enabled" : "Disabled") << '\n';
+        std::cerr << "  HDR Mode: " << (conf.hdr ? "Enabled" : "Disabled") << '\n';
     }
 }

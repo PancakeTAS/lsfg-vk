@@ -8,7 +8,7 @@
 
 namespace Config {
 
-    /// lsfg-vk configuration.
+    /// lsfg-vk configuration
     struct Configuration {
         /// Whether lsfg-vk should be loaded in the first place.
         bool enable{false};
