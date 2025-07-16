@@ -5,11 +5,14 @@
 
 #include <vulkan/vulkan_core.h>
 
-#include <cstdint>
-#include <cstring>
+#include <unordered_map>
 #include <algorithm>
 #include <optional>
+#include <iostream>
+#include <cstdint>
+#include <cstring>
 #include <utility>
+#include <string>
 #include <vector>
 
 using namespace Utils;
@@ -182,4 +185,24 @@ void Utils::copyImage(VkCommandBuffer buf,
             0, nullptr, 0, nullptr,
             1, &presentBarrier);
     }
+}
+
+namespace {
+    auto& logCounts() {
+        static std::unordered_map<std::string, size_t> map;
+        return map;
+    }
+}
+
+void Utils::logLimitN(const std::string& id, size_t n, const std::string& message) {
+    auto& count = logCounts()[id];
+    if (count <= n)
+        std::cerr << "lsfg-vk: " << message << '\n';
+    if (count == n)
+        std::cerr << "(above message has been repeated " << n << " times, suppressing further)\n";
+    count++;
+}
+
+void Utils::resetLimitN(const std::string& id) noexcept {
+    logCounts().erase(id);
 }

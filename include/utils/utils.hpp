@@ -4,8 +4,9 @@
 
 #include <cstdint>
 #include <cstddef>
-#include <vector>
 #include <utility>
+#include <string>
+#include <vector>
 
 namespace Utils {
 
@@ -67,5 +68,21 @@ namespace Utils {
             uint32_t width, uint32_t height,
             VkPipelineStageFlags pre, VkPipelineStageFlags post,
             bool makeSrcPresentable, bool makeDstPresentable);
+
+    ///
+    /// Log a message at most n times.
+    ///
+    /// @param id The identifier for the log message.
+    /// @param n The maximum number of times to log the message.
+    /// @param message The message to log.
+    ///
+    void logLimitN(const std::string& id, size_t n, const std::string& message);
+
+    ///
+    /// Reset the log limit for a given identifier.
+    ///
+    /// @param id The identifier for the log message.
+    ///
+    void resetLimitN(const std::string& id) noexcept;
 
 }
