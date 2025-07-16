@@ -1,5 +1,8 @@
 name: Build lsfg-vk on Arch Linux
-on: [push]
+on:
+  push:
+    branches: ["develop"]
+
 
 jobs:
   build-arch:

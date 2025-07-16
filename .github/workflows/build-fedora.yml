@@ -1,5 +1,8 @@
 name: Build lsfg-vk on Fedora
-on: [push]
+on:
+  push:
+    branches: ["develop"]
+
 
 jobs:
   build-fedora:

@@ -1,5 +1,7 @@
 name: Build lsfg-vk on Debian
-on: [push]
+on:
+  push:
+    branches: ["develop"]
 
 jobs:
   build-debian:
