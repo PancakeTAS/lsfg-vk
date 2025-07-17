@@ -88,3 +88,9 @@ install(FILES "${CMAKE_BINARY_DIR}/liblsfg-vk.so"
     DESTINATION lib)
 install(FILES "${CMAKE_SOURCE_DIR}/VkLayer_LS_frame_generation.json"
     DESTINATION share/vulkan/implicit_layer.d)
+
+set(conf_file "$ENV{HOME}/.config/lsfg-vk/conf.toml")
+if(NOT EXISTS "${conf_file}")
+    install(FILES "${CMAKE_SOURCE_DIR}/conf.toml"
+        DESTINATION ~/.config/lsfg-vk)
+endif()
