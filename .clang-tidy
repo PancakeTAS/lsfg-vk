@@ -25,3 +25,13 @@ Checks:
 - "-cppcoreguidelines-pro-type-reinterpret-cast" # allows reinterpret_cast
 - "-cppcoreguidelines-avoid-non-const-global-variables"
 - "-cppcoreguidelines-pro-type-union-access"
+# disable slow and pointless checks
+- "-modernize-use-std-numbers"
+- "-modernize-type-traits"
+- "-cppcoreguidelines-owning-memory"
+- "-cppcoreguidelines-macro-to-enum"
+- "-readability-container-contains"
+- "-bugprone-reserved-identifier"
+- "-bugprone-stringview-nullptr"
+- "-bugprone-standalone-empty"
+- "-misc-unused-using-decls"
