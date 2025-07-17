@@ -1,4 +1,5 @@
 #include "extract/extract.hpp"
+#include "config/config.hpp"
 
 #include <pe-parse/parse.h>
 
@@ -93,9 +94,9 @@ namespace {
 
     std::string getDllPath() {
         // overriden path
-        const char* dllPath = getenv("LSFG_DLL_PATH");
-        if (dllPath && *dllPath != '\0')
-            return{dllPath};
+        std::string dllPath = Config::activeConf.dll;
+        if (!dllPath.empty())
+            return dllPath;
         // home based paths
         const char* home = getenv("HOME");
         const std::string homeStr = home ? home : "";
