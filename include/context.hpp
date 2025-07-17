@@ -12,6 +12,7 @@
 #include <cstdint>
 #include <memory>
 #include <vector>
+#include <chrono>
 
 ///
 /// This class is the frame generation context. There should be one instance per swapchain.
@@ -56,6 +57,16 @@ private:
     VkSwapchainKHR swapchain;
     std::vector<VkImage> swapchainImages;
     VkExtent2D extent;
+    std::chrono::high_resolution_clock::time_point previousFrameTimestamp;
+    std::chrono::high_resolution_clock::time_point previousFrameGenTimestamp;
+    
+    // Frame time averaging
+    static constexpr size_t frameTimeHistorySize = 3;
+    std::array<std::chrono::nanoseconds, frameTimeHistorySize> frameTimeHistory = {};
+    size_t frameTimeHistoryIndex = 0;
+    bool frameTimeHistoryFilled = false;
+
+    bool framePacing = false;
 
     std::shared_ptr<int32_t> lsfgCtxId; // lsfg context id
     Mini::Image frame_0, frame_1; // frames shared with lsfg. write to frame_0 when fc % 2 == 0
