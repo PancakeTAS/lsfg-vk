@@ -4,8 +4,9 @@ runtime: org.freedesktop.Platform
 runtime-version: '24.08'
 sdk: org.freedesktop.Sdk
 build-extension: true
+
 sdk-extensions:
-  - org.freedesktop.Sdk.Extension.llvm18
+  - org.freedesktop.Sdk.Extension.llvm20
 
 build-options:
   prefix: /usr/lib/extensions/vulkan/lsfgvk
@@ -14,7 +15,6 @@ build-options:
   env:
     C_INCLUDE_PATH: /usr/lib/extensions/vulkan/lsfgvk/include
     CPLUS_INCLUDE_PATH: /usr/lib/extensions/vulkan/lsfgvk/include
-  strip: true
 
 cleanup:
   - /bin
@@ -34,107 +34,11 @@ cleanup:
   - /share/vulkan/registry
 
 modules:
-  # SDL2 dependency (same as app, for example)
-  - name: SDL2
-    buildsystem: cmake
-    builddir: true
-    build-options:
-      append-path: /usr/lib/sdk/llvm18/bin
-      env:
-        CC: clang
-        CXX: clang++
-    config-opts:
-      - -DCMAKE_INSTALL_PREFIX=/usr/lib/extensions/vulkan/lsfgvk
-      - -DSDL_STATIC=OFF
-      - -DSDL_SHARED=ON
-      - -DSDL_TEST=OFF
-    sources:
-      - type: archive
-        url: https://github.com/libsdl-org/SDL/archive/refs/tags/release-2.30.3.tar.gz
-        sha256: ba67e012a3b0cfba2987f486ebbff13a517905e32bae627f07a327edb10dfd85
-
-  # Vulkan-Headers, installed to extension include
-  - name: vulkan-headers
-    buildsystem: cmake
-    builddir: false
-    build-options:
-      append-path: /usr/lib/sdk/llvm18/bin
-      env:
-        CC: clang
-        CXX: clang++
-    config-opts:
-      - -DCMAKE_BUILD_TYPE=Release
-      - -DCMAKE_INSTALL_PREFIX=/usr/lib/extensions/vulkan/lsfgvk
-      - -DCMAKE_SKIP_INSTALL_RPATH=ON
-    sources:
-      - type: git
-        url: https://github.com/KhronosGroup/Vulkan-Headers.git
-        tag: vulkan-sdk-1.4.313.0
-    build-commands:
-      - cmake ${CMAKE_ARGS}
-      - cmake --build .
-      - cmake --install .
-
-  # Spirv-Headers
-  - name: spirv-headers
-    buildsystem: cmake
-    builddir: false
-    build-options:
-      append-path: /usr/lib/sdk/llvm18/bin
-      env:
-        CC: clang
-        CXX: clang++
-    config-opts:
-      - -DCMAKE_BUILD_TYPE=Release
-      - -DCMAKE_INSTALL_PREFIX=/usr/lib/extensions/vulkan/lsfgvk
-      - -DCMAKE_SKIP_INSTALL_RPATH=ON
-    sources:
-      - type: git
-        url: https://github.com/KhronosGroup/Spirv-Headers.git
-        tag: vulkan-sdk-1.4.313.0
-    build-commands:
-      - cmake ${CMAKE_ARGS}
-      - cmake --build .
-      - cmake --install .
-
-  # Vulkan-Loader (IMPORTANT: Set CFLAGS/CXXFLAGS to use vulkan-headers in extension)
-  - name: vulkan-loader
-    buildsystem: cmake
-    builddir: false
-    build-options:
-      append-path: /usr/lib/sdk/llvm18/bin
-      env:
-        CC: clang
-        CXX: clang++
-        CFLAGS: "-I/usr/lib/extensions/vulkan/lsfgvk/include"
-        CXXFLAGS: "-I/usr/lib/extensions/vulkan/lsfgvk/include"
-    config-opts:
-      - -DCMAKE_BUILD_TYPE=Release
-      - -DCMAKE_INSTALL_PREFIX=/usr/lib/extensions/vulkan/lsfgvk
-      - -DCMAKE_SKIP_INSTALL_RPATH=ON
-    sources:
-      - type: git
-        url: https://github.com/KhronosGroup/Vulkan-Loader.git
-        tag: vulkan-sdk-1.4.313.0
-    build-commands:
-      - cmake ${CMAKE_ARGS}
-      - cmake --build .
-      - cmake --install .
- 
-  # lsfg-vk (your Vulkan layer itself)
   - name: lsfg-vk
-    buildsystem: cmake
+    buildsystem: simple
     build-options:
-      append-path: /usr/lib/sdk/llvm18/bin
-      prepend-ld-library-path: /usr/lib/sdk/llvm18/lib
-      env:
-        CC: clang
-        CXX: clang++
-    config-opts:
-      - -DCMAKE_BUILD_TYPE=Release
-      - -DCMAKE_INSTALL_PREFIX=${FLATPAK_DEST}
-      - -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=ON
-      - -DCMAKE_SHARED_LINKER_FLAGS=-Wl,-z,lazy
+      append-path: /usr/lib/sdk/llvm20/bin
+      prepend-ld-library-path: /usr/lib/sdk/llvm20/lib
     sources:
       - type: git
         url: https://github.com/PancakeTAS/lsfg-vk.git
@@ -145,3 +49,36 @@ modules:
       - cmake -B build -G Ninja -DCMAKE_INSTALL_PREFIX=${FLATPAK_DEST} -DCMAKE_BUILD_TYPE=Release -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=ON -DCMAKE_SHARED_LINKER_FLAGS=-Wl,-z,lazy
       - ninja -C build
       - ninja -C build install
+
+    modules:
+      - name: SDL2
+        buildsystem: cmake-ninja
+        builddir: true
+        sources:
+          - type: git
+            url: https://github.com/libsdl-org/SDL.git
+            tag: release-2.32.8
+    
+      - name: vulkan-headers
+        buildsystem: cmake-ninja
+        builddir: true
+        sources:
+          - type: git
+            url: https://github.com/KhronosGroup/Vulkan-Headers.git
+            tag: vulkan-sdk-1.3.290
+    
+      - name: spirv-headers
+        buildsystem: cmake-ninja
+        builddir: true
+        sources:
+          - type: git
+            url: https://github.com/KhronosGroup/Spirv-Headers.git
+            tag: vulkan-sdk-1.3.290
+    
+      - name: vulkan-loader
+        buildsystem: cmake-ninja
+        builddir: true
+        sources:
+          - type: git
+            url: https://github.com/KhronosGroup/Vulkan-Loader.git
+            tag: vulkan-sdk-1.3.290
