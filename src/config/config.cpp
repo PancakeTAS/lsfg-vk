@@ -21,6 +21,7 @@
 #include <cstddef>
 #include <utility>
 #include <cstring>
+#include <vector>
 #include <chrono>
 #include <thread>
 #include <cerrno>
@@ -137,6 +138,61 @@ bool Config::loadAndWatchConfig(const std::string& file) {
     return true;
 }
 
+namespace {
+    /// Turn a string into a VkPresentModeKHR enum value.
+    VkPresentModeKHR into_present(const std::string& mode, VkPresentModeKHR defaultMode) {
+        if (mode.empty())
+            return defaultMode;
+        if (mode == "fifo" || mode == "vsync")
+            return VkPresentModeKHR::VK_PRESENT_MODE_FIFO_KHR;
+        if (mode == "mailbox")
+            return VkPresentModeKHR::VK_PRESENT_MODE_MAILBOX_KHR;
+        if (mode == "immediate")
+            return VkPresentModeKHR::VK_PRESENT_MODE_IMMEDIATE_KHR;
+        return VkPresentModeKHR::VK_PRESENT_MODE_FIFO_KHR;
+    }
+
+    /// Parse environment variables from a string.
+    std::vector<std::pair<std::string, std::string>> parse_env(const std::string& envs) {
+        std::vector<std::pair<std::string, std::string>> vars{};
+        const std::string env_str = envs + ' ';
+
+        std::string current{};
+        bool escape{false};
+        for (const char c : env_str) {
+            // toggle escape mode
+            if (c == '\'') {
+                escape = !escape;
+                continue;
+            }
+
+            // parse variable
+            if (c == ' ' && !escape) {
+                if (current.empty())
+                    continue;
+
+                auto eq_pos = current.find('=');
+                if (eq_pos == std::string::npos)
+                    throw std::runtime_error("Invalid environment variable: " + current);
+
+                std::string key = current.substr(0, eq_pos);
+                std::string value = current.substr(eq_pos + 1);
+                if (key.empty() || value.empty())
+                    throw std::runtime_error("Invalid environment variable: " + current);
+
+                vars.emplace_back(std::move(key), std::move(value));
+
+                current.clear();
+                continue;
+            }
+
+            current += c;
+        }
+
+        return vars;
+    }
+}
+
 bool Config::updateConfig(const std::string& file) {
     globalConf.valid->store(true, std::memory_order_relaxed);
     if (!std::filesystem::exists(file))
@@ -156,6 +212,7 @@ bool Config::updateConfig(const std::string& file) {
     const Configuration global{
         .enable = toml::find_or(globalTable, "enable", false),
         .dll =    toml::find_or(globalTable, "dll", std::string()),
+        .env =    parse_env(toml::find_or(globalTable, "env", std::string())),
         .multiplier =  toml::find_or(globalTable, "multiplier", size_t(2)),
         .flowScale =   toml::find_or(globalTable, "flow_scale", 1.0F),
         .performance = toml::find_or(globalTable, "performance_mode", false),
@@ -182,6 +239,7 @@ bool Config::updateConfig(const std::string& file) {
         Configuration game{
             .enable = toml::find_or(gameTable, "enable", global.enable),
             .dll = toml::find_or(gameTable, "dll", global.dll),
+            .env = parse_env(toml::find_or(gameTable, "env", std::string())),
             .multiplier = toml::find_or(gameTable, "multiplier", global.multiplier),
             .flowScale = toml::find_or(gameTable, "flow_scale", global.flowScale),
             .performance = toml::find_or(gameTable, "performance_mode", global.performance),

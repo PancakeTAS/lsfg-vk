@@ -14,6 +14,8 @@ namespace Config {
         bool enable{false};
         /// Path to Lossless.dll.
         std::string dll;
+        /// Additional environment variables to set.
+        std::vector<std::pair<std::string, std::string>> env;
 
         /// The frame generation muliplier
         size_t multiplier{2};

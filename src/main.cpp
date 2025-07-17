@@ -40,6 +40,8 @@ namespace {
         // print config
         std::cerr << "lsfg-vk: Loaded configuration for " << name << ":\n";
         if (!conf.dll.empty()) std::cerr << "  Using DLL from: " << conf.dll << '\n';
+        for (const auto& [key, value] : conf.env)
+            std::cerr << "  Environment: " << key << "=" << value << '\n';
         std::cerr << "  Multiplier: " << conf.multiplier << '\n';
         std::cerr << "  Flow Scale: " << conf.flowScale << '\n';
         std::cerr << "  Performance Mode: " << (conf.performance ? "Enabled" : "Disabled") << '\n';
