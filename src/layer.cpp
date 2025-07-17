@@ -101,15 +101,13 @@ namespace {
             if (!success)
                 throw LSFG::vulkan_error(VK_ERROR_INITIALIZATION_FAILED,
                     "Failed to get instance function pointer for vkCreateInstance");
-            success &= initInstanceFunc(*pInstance,
-                "vkCreateDevice", &next_vkCreateDevice);
-            if (!success)
-                throw LSFG::vulkan_error(VK_ERROR_INITIALIZATION_FAILED,
-                    "Failed to get instance function pointer for vkCreateDevice");
 
             // NOLINTEND | skip initialization if the layer is disabled
-            if (!Config::activeConf.enable)
-                return next_vkCreateInstance(pCreateInfo, pAllocator, pInstance);
+            if (!Config::activeConf.enable) {
+                auto res = next_vkCreateInstance(pCreateInfo, pAllocator, pInstance);
+                initInstanceFunc(*pInstance, "vkCreateDevice", &next_vkCreateDevice);
+                return res;
+            }
 
             // create instance
             try {
@@ -126,6 +124,8 @@ namespace {
             success = true;
             success &= initInstanceFunc(*pInstance,
                 "vkDestroyInstance", &next_vkDestroyInstance);
+            success &= initInstanceFunc(*pInstance,
+                "vkCreateDevice", &next_vkCreateDevice); // workaround mesa bug
             success &= initInstanceFunc(*pInstance,
                 "vkGetPhysicalDeviceQueueFamilyProperties", &next_vkGetPhysicalDeviceQueueFamilyProperties);
             success &= initInstanceFunc(*pInstance,
