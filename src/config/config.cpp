@@ -13,6 +13,7 @@
 #include <unordered_map>
 #include <string_view>
 #include <filesystem>
+#include <algorithm>
 #include <exception>
 #include <stdexcept>
 #include <iostream>
@@ -207,7 +208,9 @@ Configuration Config::getConfig(std::string_view name) {
         return globalConf;
 
     const auto& games = *gameConfs;
-    auto it = games.find(std::string(name));
+    auto it = std::ranges::find_if(games, [&name](const auto& pair) {
+        return name.ends_with(pair.first);
+    });
     if (it != games.end())
         return it->second;
 

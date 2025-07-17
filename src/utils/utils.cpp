@@ -217,7 +217,7 @@ std::string Utils::getProcessName() {
     if (exe_len <= 0)
         return "Unknown Process";
     exe.at(static_cast<size_t>(exe_len)) = '\0';
-    return{basename(exe.data())};
+    return{exe.data()};
 }
 
 /// Get the config file
