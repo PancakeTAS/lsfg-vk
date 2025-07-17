@@ -46,6 +46,15 @@ namespace {
         std::cerr << "  Flow Scale: " << conf.flowScale << '\n';
         std::cerr << "  Performance Mode: " << (conf.performance ? "Enabled" : "Disabled") << '\n';
         std::cerr << "  HDR Mode: " << (conf.hdr ? "Enabled" : "Disabled") << '\n';
+        if (conf.e_present != 2) std::cerr << "  ! Present Mode: " << conf.e_present << '\n';
+        if (conf.e_fps_limit > 0) std::cerr << "  ! FPS Limit: " << conf.e_fps_limit << '\n';
+
+        // update environment variables
+        unsetenv("MESA_VK_WSI_PRESENT_MODE"); // NOLINT
+        for (const auto& [key, value] : conf.env)
+            setenv(key.c_str(), value.c_str(), 1); // NOLINT
+        if (conf.e_fps_limit > 0)
+            setenv("DXVK_FRAME_RATE", std::to_string(conf.e_fps_limit).c_str(), 1); // NOLINT
 
         // load shaders
         try {

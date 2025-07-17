@@ -1,6 +1,7 @@
 #include "config/config.hpp"
 #include "common/exception.hpp"
 
+#include <vulkan/vulkan_core.h>
 #include <linux/limits.h>
 #include <sys/inotify.h>
 #include <sys/poll.h>
@@ -209,7 +210,7 @@ bool Config::updateConfig(const std::string& file) {
 
     // parse global configuration
     const toml::value globalTable = toml::find_or_default<toml::table>(toml, "global");
-    const Configuration global{
+    Configuration global{
         .enable = toml::find_or(globalTable, "enable", false),
         .dll =    toml::find_or(globalTable, "dll", std::string()),
         .env =    parse_env(toml::find_or(globalTable, "env", std::string())),
@@ -217,6 +218,10 @@ bool Config::updateConfig(const std::string& file) {
         .flowScale =   toml::find_or(globalTable, "flow_scale", 1.0F),
         .performance = toml::find_or(globalTable, "performance_mode", false),
         .hdr = toml::find_or(globalTable, "hdr_mode", false),
+        .e_present =   into_present(
+            toml::find_or(globalTable, "experimental_present_mode", ""),
+            VkPresentModeKHR::VK_PRESENT_MODE_FIFO_KHR),
+        .e_fps_limit = toml::find_or(globalTable, "experimental_fps_limit", 0U),
         .valid = globalConf.valid // use the same validity flag
     };
 
@@ -249,6 +254,10 @@ bool Config::updateConfig(const std::string& file) {
             .flowScale = toml::find_or(gameTable, "flow_scale", global.flowScale),
             .performance = toml::find_or(gameTable, "performance_mode", global.performance),
             .hdr = toml::find_or(gameTable, "hdr_mode", global.hdr),
+            .e_present =   into_present(
+                toml::find_or(gameTable, "experimental_present_mode", ""),
+                global.e_present),
+            .e_fps_limit = toml::find_or(gameTable, "experimental_fps_limit", global.e_fps_limit),
             .valid = global.valid // only need a single validity flag
         };
 

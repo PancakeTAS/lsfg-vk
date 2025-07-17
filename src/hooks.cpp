@@ -107,6 +107,7 @@ namespace {
 
     std::unordered_map<VkSwapchainKHR, LsContext> swapchains;
     std::unordered_map<VkSwapchainKHR, VkDevice> swapchainToDeviceTable;
+    std::unordered_map<VkSwapchainKHR, VkPresentModeKHR> swapchainToPresent;
 
     ///
     /// Adjust swapchain creation parameters and create a swapchain context.
@@ -148,8 +149,8 @@ namespace {
         createInfo.imageUsage |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
         createInfo.imageUsage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
 
-        // enforce vsync
-        createInfo.presentMode = VK_PRESENT_MODE_FIFO_KHR;
+        // enforce present mode
+        createInfo.presentMode = Config::activeConf.e_present;
 
         // retire potential old swapchain
         if (pCreateInfo->oldSwapchain) {
@@ -163,6 +164,8 @@ namespace {
             return res; // can't be caused by lsfg-vk (yet)
 
         try {
+            swapchainToPresent.emplace(*pSwapchain, createInfo.presentMode);
+
             // get all swapchain images
             uint32_t imageCount{};
             res = Layer::ovkGetSwapchainImagesKHR(device, *pSwapchain, &imageCount, nullptr);
@@ -228,7 +231,16 @@ namespace {
         }
         auto& swapchain = it3->second;
 
-        // enforce vsync | NOLINTBEGIN
+        // find present mode
+        auto it4 = swapchainToPresent.find(*pPresentInfo->pSwapchains);
+        if (it4 == swapchainToPresent.end()) {
+            Utils::logLimitN("swapMap", 5,
+                "Swapchain present mode not found in map");
+            return Layer::ovkQueuePresentKHR(queue, pPresentInfo);
+        }
+        auto& present = it4->second;
+
+        // enforce present mode | NOLINTBEGIN
         #pragma clang diagnostic push
         #pragma clang diagnostic ignored "-Wunsafe-buffer-usage"
         const VkSwapchainPresentModeInfoEXT* presentModeInfo =
@@ -237,7 +249,7 @@ namespace {
             if (presentModeInfo->sType == VK_STRUCTURE_TYPE_SWAPCHAIN_PRESENT_MODE_INFO_EXT) {
                 for (size_t i = 0; i < presentModeInfo->swapchainCount; i++)
                     const_cast<VkPresentModeKHR*>(presentModeInfo->pPresentModes)[i] =
-                        VK_PRESENT_MODE_FIFO_KHR;
+                        present;
             }
             presentModeInfo =
                 reinterpret_cast<const VkSwapchainPresentModeInfoEXT*>(presentModeInfo->pNext);
@@ -250,6 +262,10 @@ namespace {
             // ensure config is valid
             auto& conf = Config::activeConf;
             if (!conf.valid->load(std::memory_order_relaxed))
+                return VK_ERROR_OUT_OF_DATE_KHR;
+
+            // ensure present mode is still valid
+            if (present != conf.e_present)
                 return VK_ERROR_OUT_OF_DATE_KHR;
 
             // skip if disabled
@@ -280,6 +296,7 @@ namespace {
             const VkAllocationCallbacks* pAllocator) noexcept {
         swapchains.erase(swapchain);
         swapchainToDeviceTable.erase(swapchain);
+        swapchainToPresent.erase(swapchain);
         Layer::ovkDestroySwapchainKHR(device, swapchain, pAllocator);
     }
 }

@@ -1,10 +1,13 @@
 #pragma once
 
-#include <atomic>
+#include <vulkan/vulkan_core.h>
+
+#include <string_view>
 #include <cstddef>
+#include <vector>
+#include <atomic>
 #include <memory>
 #include <string>
-#include <string_view>
 
 namespace Config {
 
@@ -25,6 +28,11 @@ namespace Config {
         bool performance{false};
         /// Whether HDR is enabled
         bool hdr{false};
+
+        /// Experimental flag for overriding the synchronization method.
+        VkPresentModeKHR e_present;
+        /// Experimental flag for limiting the framerate of DXVK games.
+        uint32_t e_fps_limit;
 
         /// Atomic property to check if the configuration is valid or outdated.
         std::shared_ptr<std::atomic_bool> valid;
