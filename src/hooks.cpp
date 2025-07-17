@@ -247,15 +247,19 @@ namespace {
         // NOLINTEND | present the next frame
         VkResult res{}; // might return VK_SUBOPTIMAL_KHR
         try {
-            std::vector<VkSemaphore> semaphores(pPresentInfo->waitSemaphoreCount);
-            std::copy_n(pPresentInfo->pWaitSemaphores, semaphores.size(), semaphores.data());
-
             // ensure config is valid
             auto& conf = Config::activeConf;
             if (!conf.valid->load(std::memory_order_relaxed))
                 return VK_ERROR_OUT_OF_DATE_KHR;
 
+            // skip if disabled
+            if (!conf.enable)
+                return Layer::ovkQueuePresentKHR(queue, pPresentInfo);
+
             // present the swapchain
+            std::vector<VkSemaphore> semaphores(pPresentInfo->waitSemaphoreCount);
+            std::copy_n(pPresentInfo->pWaitSemaphores, semaphores.size(), semaphores.data());
+
             res = swapchain.present(deviceInfo, pPresentInfo->pNext,
                 queue, semaphores, *pPresentInfo->pImageIndices);
 
