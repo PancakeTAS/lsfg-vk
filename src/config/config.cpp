@@ -92,7 +92,7 @@ namespace {
                 if (event->len <= 0 || event->mask & IN_IGNORED)
                     continue;
 
-                std::string name(reinterpret_cast<char*>(event->name));
+                const std::string name(reinterpret_cast<char*>(event->name));
                 if (name != filename)
                     continue;
 

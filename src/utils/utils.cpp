@@ -1,5 +1,4 @@
 #include "utils/utils.hpp"
-#include "utils/log.hpp"
 #include "common/exception.hpp"
 #include "layer.hpp"
 
@@ -82,12 +81,8 @@ std::vector<const char*> Utils::addExtensions(const char* const* extensions, siz
             [e](const char* extName) {
                 return std::string(extName) == std::string(e);
             });
-        if (it == ext.end()) {
-            Log::debug("hooks-init", "Adding extension: {}", e);
+        if (it == ext.end())
             ext.push_back(e);
-        } else {
-            Log::debug("hooks-init", "Extension {} already present", e);
-        }
     }
 
     return ext;
@@ -214,6 +209,9 @@ void Utils::resetLimitN(const std::string& id) noexcept {
 
 /// Get the process name
 std::string Utils::getProcessName() {
+    const char* benchmark_flag = std::getenv("LSFG_BENCHMARK");
+    if (benchmark_flag)
+        return "benchmark";
     std::array<char, 4096> exe{};
     const ssize_t exe_len = readlink("/proc/self/exe", exe.data(), exe.size() - 1);
     if (exe_len <= 0)
