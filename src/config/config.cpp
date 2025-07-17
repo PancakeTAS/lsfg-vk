@@ -220,9 +220,14 @@ bool Config::updateConfig(const std::string& file) {
         .valid = globalConf.valid // use the same validity flag
     };
 
+    if (global.multiplier == 1) { // jank alarm
+        global.enable = false;
+        global.multiplier = 2;
+    }
+
     // validate global configuration
-    if (global.multiplier < 2)
-        throw std::runtime_error("Multiplier cannot be less than 2");
+    if (global.multiplier < 1)
+        throw std::runtime_error("Multiplier cannot be less than 1");
     if (global.flowScale < 0.25F || global.flowScale > 1.0F)
         throw std::runtime_error("Flow scale must be between 0.25 and 1.0");
 
@@ -247,9 +252,14 @@ bool Config::updateConfig(const std::string& file) {
             .valid = global.valid // only need a single validity flag
         };
 
+        if (game.multiplier == 1) {
+            game.enable = false;
+            game.multiplier = 2;
+        }
+
         // validate the configuration
-        if (game.multiplier < 2)
-            throw std::runtime_error("Multiplier cannot be less than 2");
+        if (game.multiplier < 1)
+            throw std::runtime_error("Multiplier cannot be less than 1");
         if (game.flowScale < 0.25F || game.flowScale > 1.0F)
             throw std::runtime_error("Flow scale must be between 0.25 and 1.0");
         games[exe] = std::move(game);
