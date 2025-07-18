@@ -193,6 +193,11 @@ void Config::updateConfig(const std::string& file) {
     globalConf.valid->store(true, std::memory_order_relaxed);
     if (!std::filesystem::exists(file)) {
         std::cerr << "lsfg-vk: Placing default configuration file at " << file << '\n';
+        const auto parent = std::filesystem::path(file).parent_path();
+        if (!std::filesystem::exists(parent))
+            if (!std::filesystem::create_directories(parent))
+                throw std::runtime_error("Unable to create configuration directory at " + parent.string());
+
         std::ofstream out(file);
         if (!out.is_open())
             throw std::runtime_error("Unable to create configuration file at " + file);
@@ -238,6 +243,7 @@ void Config::updateConfig(const std::string& file) {
         const std::string exe = toml::find<std::string>(gameTable, "exe");
         Configuration game{
             .enable = true,
+            .dll = global.dll,
             .env = parse_env(toml::find_or(gameTable, "env", std::string())),
             .multiplier = toml::find_or(gameTable, "multiplier", 2U),
             .flowScale = toml::find_or(gameTable, "flow_scale", 1.0F),
