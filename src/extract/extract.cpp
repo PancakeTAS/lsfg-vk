@@ -125,6 +125,11 @@ void Extract::extractShaders() {
         throw std::runtime_error("Unable to read Lossless.dll, is it installed?");
     peparse::IterRsrc(dll, on_resource, nullptr);
     peparse::DestructParsedPE(dll);
+
+    // ensure all shaders are present
+    for (const auto& [name, idx] : nameIdxTable)
+        if (shaders().find(idx) == shaders().end())
+            throw std::runtime_error("Shader not found: " + name + ".\nIs Lossless Scaling up to date?");
 }
 
 std::vector<uint8_t> Extract::getShader(const std::string& name) {
