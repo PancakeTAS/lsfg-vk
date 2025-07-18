@@ -7,3 +7,6 @@
 [submodule "thirdparty/toml11"]
 	path = thirdparty/toml11
 	url = https://github.com/ToruNiina/toml11
+[submodule "thirdparty/raylib"]
+	path = thirdparty/raylib
+	url = https://github.com/raysan5/raylib

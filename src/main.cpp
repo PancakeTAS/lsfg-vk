@@ -1,6 +1,7 @@
 #include "config/config.hpp"
 #include "extract/extract.hpp"
 #include "utils/benchmark.hpp"
+#include "utils/gui.hpp"
 #include "utils/utils.hpp"
 
 #include <exception>
@@ -20,7 +21,7 @@ namespace {
         } catch (const std::exception& e) {
             std::cerr << "lsfg-vk: An error occured while trying to parse the configuration, exiting:\n";
             std::cerr << "- " << e.what() << '\n';
-            exit(0);
+            Utils::showErrorGui(e.what());
         }
 
         const std::string name = Utils::getProcessName();
@@ -29,7 +30,7 @@ namespace {
         } catch (const std::exception& e) {
             std::cerr << "lsfg-vk: The configuration for " << name << " is invalid, exiting:\n";
             std::cerr << e.what() << '\n';
-            exit(0);
+            Utils::showErrorGui(e.what());
         }
 
         // exit silently if not enabled
@@ -62,7 +63,7 @@ namespace {
         } catch (const std::exception& e) {
             std::cerr << "lsfg-vk: An error occurred while trying to extract the shaders, exiting:\n";
             std::cerr << "- " << e.what() << '\n';
-            exit(0);
+            Utils::showErrorGui(e.what());
         }
         std::cerr << "lsfg-vk: Shaders extracted successfully.\n";
 
@@ -94,6 +95,7 @@ namespace {
         } catch (const std::exception& e) {
             std::cerr << "lsfg-vk: An error occurred while trying to parse the resolution, exiting:\n";
             std::cerr << "- " << e.what() << '\n';
+            exit(EXIT_FAILURE);
         }
 
         std::thread benchmark([width, height]() {
@@ -102,6 +104,7 @@ namespace {
             } catch (const std::exception& e) {
                 std::cerr << "lsfg-vk: An error occurred during the benchmark:\n";
                 std::cerr << "- " << e.what() << '\n';
+                exit(EXIT_FAILURE);
             }
         });
         benchmark.detach();
