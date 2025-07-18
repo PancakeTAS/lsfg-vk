@@ -4,7 +4,10 @@
 #include "utils/gui.hpp"
 #include "utils/utils.hpp"
 
+#include <unistd.h>
+
 #include <exception>
+#include <fstream>
 #include <stdexcept>
 #include <iostream>
 #include <cstdint>
@@ -56,6 +59,22 @@ namespace {
             setenv(key.c_str(), value.c_str(), 1); // NOLINT
         if (conf.e_fps_limit > 0)
             setenv("DXVK_FRAME_RATE", std::to_string(conf.e_fps_limit).c_str(), 1); // NOLINT
+
+        // write latest file
+        try {
+            std::ofstream latest("/tmp/lsfg-vk_last", std::ios::trunc);
+            if (!latest.is_open())
+                throw std::runtime_error("Failed to open /tmp/lsfg-vk_last for writing");
+            latest << "exe: " << name.first << '\n';
+            latest << "comm: " << name.second << '\n';
+            latest << "pid: " << getpid() << '\n';
+            if (!latest.good())
+                throw std::runtime_error("Failed to write to /tmp/lsfg-vk_last");
+        } catch (const std::exception& e) {
+            std::cerr << "lsfg-vk: An error occurred while trying to write the latest file, exiting:\n";
+            std::cerr << "- " << e.what() << '\n';
+            Utils::showErrorGui(e.what());
+        }
 
         // load shaders
         try {
