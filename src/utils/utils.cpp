@@ -209,6 +209,10 @@ void Utils::resetLimitN(const std::string& id) noexcept {
 }
 
 std::pair<std::string, std::string> Utils::getProcessName() {
+    const char* process_name = std::getenv("LSFG_PROCESS");
+    if (process_name && *process_name != '\0')
+        return { process_name, process_name };
+
     const char* benchmark_flag = std::getenv("LSFG_BENCHMARK");
     if (benchmark_flag)
         return { "benchmark", "benchmark" };
