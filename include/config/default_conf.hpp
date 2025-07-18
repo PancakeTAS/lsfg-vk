@@ -1,3 +1,8 @@
+#pragma once
+
+#include <string>
+
+const std::string DEFAULT_CONFIG = R"(
 [global]
 # enable/disable lsfg on every game
 # enable = true
@@ -47,3 +52,4 @@ enable = true
 
 multiplier = 4
 performance_mode = true
+)";

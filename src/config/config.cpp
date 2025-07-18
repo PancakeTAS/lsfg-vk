@@ -1,6 +1,8 @@
 #include "config/config.hpp"
 #include "common/exception.hpp"
 
+#include "config/default_conf.hpp"
+
 #include <vulkan/vulkan_core.h>
 #include <linux/limits.h>
 #include <sys/inotify.h>
@@ -19,6 +21,7 @@
 #include <stdexcept>
 #include <iostream>
 #include <optional>
+#include <fstream>
 #include <cstddef>
 #include <utility>
 #include <cstring>
@@ -119,12 +122,9 @@ namespace {
     }
 }
 
-bool Config::loadAndWatchConfig(const std::string& file) {
+void Config::loadAndWatchConfig(const std::string& file) {
     globalConf.valid = std::make_shared<std::atomic_bool>(true);
-
-    auto res = updateConfig(file);
-    if (!res)
-        return false;
+    updateConfig(file);
 
     // prepare config watcher
     std::thread([file = file, valid = globalConf.valid]() {
@@ -135,8 +135,6 @@ bool Config::loadAndWatchConfig(const std::string& file) {
             std::cerr << "- " << e.what() << '\n';
         }
     }).detach();
-
-    return true;
 }
 
 namespace {
@@ -194,10 +192,16 @@ namespace {
     }
 }
 
-bool Config::updateConfig(const std::string& file) {
+void Config::updateConfig(const std::string& file) {
     globalConf.valid->store(true, std::memory_order_relaxed);
-    if (!std::filesystem::exists(file))
-        return false;
+    if (!std::filesystem::exists(file)) {
+        std::cerr << "lsfg-vk: Placing default configuration file at " << file << '\n';
+        std::ofstream out(file);
+        if (!out.is_open())
+            throw std::runtime_error("Unable to create configuration file at " + file);
+        out << DEFAULT_CONFIG;
+        out.close();
+    }
 
     // parse config file
     std::optional<toml::value> parsed;
@@ -277,7 +281,6 @@ bool Config::updateConfig(const std::string& file) {
     // store configurations
     globalConf = global;
     gameConfs = std::move(games);
-    return true;
 }
 
 Configuration Config::getConfig(std::string_view name) {
