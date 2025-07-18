@@ -3,11 +3,13 @@ on:
   push:
     branches: ["develop"]
 
-
 jobs:
   build-ubuntu:
     runs-on: ubuntu-latest
     steps:
+    - name: Prepare permissions for apt cache
+      run: |
+        sudo chmod a+rwx -R /var/cache/apt/archives
     - name: Prepare cache for apt packages
       uses: actions/cache@v4
       with:
@@ -22,7 +24,8 @@ jobs:
           clang clang-tools llvm \
           git tar \
           cmake ninja-build \
-          spirv-headers libvulkan-dev
+          spirv-headers libvulkan-dev \
+          xorg-dev xutils-dev
     - name: Checkout SPIR-V
       uses: actions/checkout@v4
       with:

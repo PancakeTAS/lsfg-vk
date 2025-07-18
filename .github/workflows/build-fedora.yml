@@ -3,7 +3,6 @@ on:
   push:
     branches: ["develop"]
 
-
 jobs:
   build-fedora:
     runs-on: ubuntu-latest
@@ -23,7 +22,8 @@ jobs:
           git \
           clang llvm \
           cmake ninja-build \
-          spirv-headers-devel vulkan-headers vulkan-loader-devel
+          spirv-headers-devel vulkan-headers vulkan-loader-devel \
+          libX11-devel libXrandr-devel libXinerama-devel libXcursor-devel libXi-devel mesa-libGL-devel
     - name: Checkout repository
       uses: actions/checkout@v4
       with:

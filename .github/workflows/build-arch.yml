@@ -3,7 +3,6 @@ on:
   push:
     branches: ["develop"]
 
-
 jobs:
   build-arch:
     runs-on: ubuntu-latest
@@ -21,7 +20,8 @@ jobs:
           base-devel git \
           clang llvm \
           cmake ninja \
-          spirv-headers vulkan-headers vulkan-icd-loader
+          spirv-headers vulkan-headers vulkan-icd-loader \
+          xorg
     - name: Checkout repository
       uses: actions/checkout@v4
       with:

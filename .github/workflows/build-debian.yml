@@ -23,7 +23,8 @@ jobs:
           clang clang-tools llvm \
           git tar \
           cmake ninja-build \
-          spirv-headers libvulkan-dev
+          spirv-headers libvulkan-dev \
+          xorg-dev xutils-dev
     - name: Checkout repository
       uses: actions/checkout@v4
       with:
