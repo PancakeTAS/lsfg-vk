@@ -49,6 +49,8 @@ namespace {
 }
 
 void Utils::showErrorGui(const std::string& message) {
+    SetTraceLogLevel(LOG_WARNING);
+
     const int height = DrawTextBox(message, 10, 60, 780, false);
     InitWindow(800, height + 80, "lsfg-vk - Error");
 

@@ -15,6 +15,7 @@
 #include <cstdint>
 #include <cstring>
 #include <utility>
+#include <fstream>
 #include <string>
 #include <vector>
 #include <array>
@@ -208,16 +209,28 @@ void Utils::resetLimitN(const std::string& id) noexcept {
 }
 
 /// Get the process name
-std::string Utils::getProcessName() {
+std::pair<std::string, std::string> Utils::getProcessName() {
     const char* benchmark_flag = std::getenv("LSFG_BENCHMARK");
     if (benchmark_flag)
-        return "benchmark";
+        return { "benchmark", "benchmark" };
     std::array<char, 4096> exe{};
+
     const ssize_t exe_len = readlink("/proc/self/exe", exe.data(), exe.size() - 1);
     if (exe_len <= 0)
-        return "Unknown Process";
+        return { "Unknown Process", "unknown" };
     exe.at(static_cast<size_t>(exe_len)) = '\0';
-    return{exe.data()};
+
+    std::ifstream comm_file("/proc/self/comm");
+    if (!comm_file.is_open())
+        return { std::string(exe.data()), "unknown" };
+    std::array<char, 257> comm{};
+    comm_file.read(comm.data(), 256);
+    comm.at(static_cast<size_t>(comm_file.gcount())) = '\0';
+    std::string comm_str(comm.data());
+    if (comm_str.back() == '\n')
+        comm_str.pop_back();
+
+    return{ std::string(exe.data()), comm_str };
 }
 
 /// Get the config file

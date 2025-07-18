@@ -32,7 +32,7 @@ LsContext::LsContext(const Hooks::DeviceInfo& info, VkSwapchainKHR swapchain,
 
         // reread configuration
         const std::string file = Utils::getConfigFile();
-        const std::string name = Utils::getProcessName();
+        const auto name = Utils::getProcessName();
         try {
             Config::updateConfig(file);
             conf = Config::getConfig(name);
@@ -45,7 +45,7 @@ LsContext::LsContext(const Hooks::DeviceInfo& info, VkSwapchainKHR swapchain,
         LSFG_3_1::finalize();
 
         // print config
-        std::cerr << "lsfg-vk: Reloaded configuration for " << name << ":\n";
+        std::cerr << "lsfg-vk: Reloaded configuration for " << name.second << ":\n";
         if (!conf.dll.empty()) std::cerr << "  Using DLL from: " << conf.dll << '\n';
         std::cerr << "  Multiplier: " << conf.multiplier << '\n';
         std::cerr << "  Flow Scale: " << conf.flowScale << '\n';

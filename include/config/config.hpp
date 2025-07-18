@@ -2,7 +2,6 @@
 
 #include <vulkan/vulkan_core.h>
 
-#include <string_view>
 #include <cstddef>
 #include <vector>
 #include <atomic>
@@ -68,6 +67,6 @@ namespace Config {
     ///
     /// @throws std::runtime_error if the configuration is invalid.
     ///
-    Configuration getConfig(std::string_view name);
+    Configuration getConfig(const std::pair<std::string, std::string>& name);
 
 }

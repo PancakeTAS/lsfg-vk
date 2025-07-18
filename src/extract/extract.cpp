@@ -129,7 +129,7 @@ void Extract::extractShaders() {
     // ensure all shaders are present
     for (const auto& [name, idx] : nameIdxTable)
         if (shaders().find(idx) == shaders().end())
-            throw std::runtime_error("Shader not found: " + name + ".\nIs Lossless Scaling up to date?");
+            throw std::runtime_error("Shader not found: " + name + ".\n- Is Lossless Scaling up to date?");
 }
 
 std::vector<uint8_t> Extract::getShader(const std::string& name) {

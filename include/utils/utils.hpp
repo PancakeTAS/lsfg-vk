@@ -90,7 +90,7 @@ namespace Utils {
     ///
     /// @return The name of the process.
     ///
-    std::string getProcessName();
+    std::pair<std::string, std::string> getProcessName();
 
     ///
     /// Get the configuration file path.

@@ -24,22 +24,22 @@ namespace {
             Utils::showErrorGui(e.what());
         }
 
-        const std::string name = Utils::getProcessName();
+        const auto name = Utils::getProcessName();
         try {
             Config::activeConf = Config::getConfig(name);
         } catch (const std::exception& e) {
-            std::cerr << "lsfg-vk: The configuration for " << name << " is invalid, exiting:\n";
+            std::cerr << "lsfg-vk: The configuration for " << name.second << " is invalid, exiting:\n";
             std::cerr << e.what() << '\n';
             Utils::showErrorGui(e.what());
         }
 
         // exit silently if not enabled
         auto& conf = Config::activeConf;
-        if (!conf.enable && name != "benchmark")
+        if (!conf.enable && name.second != "benchmark")
             return;
 
         // print config
-        std::cerr << "lsfg-vk: Loaded configuration for " << name << ":\n";
+        std::cerr << "lsfg-vk: Loaded configuration for " << name.second << ":\n";
         if (!conf.dll.empty()) std::cerr << "  Using DLL from: " << conf.dll << '\n';
         for (const auto& [key, value] : conf.env)
             std::cerr << "  Environment: " << key << "=" << value << '\n';
