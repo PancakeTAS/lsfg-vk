@@ -4,52 +4,35 @@
 
 const std::string DEFAULT_CONFIG = R"(
 [global]
-# enable/disable lsfg on every game
-# enable = true
+# override the location of Lossless Scaling
+# dll = "/games/Lossless Scaling"
 
-# specify where Lossless.dll is stored
-# dll = "/games/Lossless Scaling/Lossless.dll"
-
-# change the fps multiplier
-# multiplier = 2
-
-# change the flow scale (lower = faster)
-# flow_scale = 1.0
-
-# toggle performance mode (2x-8x performance increase)
-# performance_mode = false
-
-# enable hdr mode (doesn't support scrgb)
-# hdr_mode = false
-
-# example entry for a game
-# [[game]]
+# [[game]] # example entry
 # exe = "Game.exe"
+# env = "SteamDeck=0"
 #
-# enable = true
-# dll = "/games/Lossless Scaling/Lossless.dll"
-# multiplier = 2
-# flow_scale = 1.0
-# performance_mode = false
+# multiplier = 3
+# flow_scale = 0.7
+# performance_mode = true
 # hdr_mode = false
+#
+# experimental_present_mode = fifo
+# experimental_fps_limit = 48
 
-[[game]] # configure benchmark
+[[game]] # default vkcube entry
+exe = "vkcube"
+
+multiplier = 4
+performance_mode = true
+
+[[game]] # default benchmark entry
 exe = "benchmark"
-enable = true
 
 multiplier = 4
 performance_mode = false
 
-[[game]] # override GenshinImpact.exe
-exe = "GenshinImpact.exe"
-enable = true
+[[game]] # override Genshin Impact
+exe = "Genshin"
 
 multiplier = 3
-
-[[game]] # override vkcube
-exe = "vkcube"
-enable = true
-
-multiplier = 4
-performance_mode = true
 )";

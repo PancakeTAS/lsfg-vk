@@ -273,7 +273,7 @@ namespace {
             }
 
             // skip if disabled
-            if (!conf.enable)
+            if (conf.multiplier <= 1)
                 return Layer::ovkQueuePresentKHR(queue, pPresentInfo);
 
             // present the swapchain

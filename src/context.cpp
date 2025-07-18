@@ -52,6 +52,8 @@ LsContext::LsContext(const Hooks::DeviceInfo& info, VkSwapchainKHR swapchain,
         std::cerr << "  Performance Mode: " << (conf.performance ? "Enabled" : "Disabled") << '\n';
         std::cerr << "  HDR Mode: " << (conf.hdr ? "Enabled" : "Disabled") << '\n';
         if (conf.e_present != 2) std::cerr << "  ! Present Mode: " << conf.e_present << '\n';
+
+        if (conf.multiplier <= 1) return;
     }
     // we could take the format from the swapchain,
     // but honestly this is safer.
