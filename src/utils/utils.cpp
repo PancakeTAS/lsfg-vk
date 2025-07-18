@@ -240,6 +240,9 @@ std::string Utils::getConfigFile() {
     const char* configFile = std::getenv("LSFG_CONFIG");
     if (configFile && *configFile != '\0')
         return{configFile};
+    const char* xdgPath = std::getenv("XDG_CONFIG_HOME");
+    if (xdgPath && *xdgPath != '\0')
+        return std::string(xdgPath) + "/lsfg-vk/conf.toml";
     const char* homePath = std::getenv("HOME");
     if (homePath && *homePath != '\0')
         return std::string(homePath) + "/.config/lsfg-vk/conf.toml";
