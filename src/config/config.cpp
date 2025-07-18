@@ -138,9 +138,7 @@ void Config::loadAndWatchConfig(const std::string& file) {
 
 namespace {
     /// Turn a string into a VkPresentModeKHR enum value.
-    VkPresentModeKHR into_present(const std::string& mode, VkPresentModeKHR defaultMode) {
-        if (mode.empty())
-            return defaultMode;
+    VkPresentModeKHR into_present(const std::string& mode) {
         if (mode == "fifo" || mode == "vsync")
             return VkPresentModeKHR::VK_PRESENT_MODE_FIFO_KHR;
         if (mode == "mailbox")
@@ -237,14 +235,12 @@ void Config::updateConfig(const std::string& file) {
         Configuration game{
             .enable = true,
             .env = parse_env(toml::find_or(gameTable, "env", std::string())),
-            .multiplier = toml::find_or(gameTable, "multiplier", global.multiplier),
-            .flowScale = toml::find_or(gameTable, "flow_scale", global.flowScale),
-            .performance = toml::find_or(gameTable, "performance_mode", global.performance),
-            .hdr = toml::find_or(gameTable, "hdr_mode", global.hdr),
-            .e_present =   into_present(
-                toml::find_or(gameTable, "experimental_present_mode", ""),
-                global.e_present),
-            .e_fps_limit = toml::find_or(gameTable, "experimental_fps_limit", global.e_fps_limit),
+            .multiplier = toml::find_or(gameTable, "multiplier", 2U),
+            .flowScale = toml::find_or(gameTable, "flow_scale", 1.0F),
+            .performance = toml::find_or(gameTable, "performance_mode", false),
+            .hdr = toml::find_or(gameTable, "hdr_mode", false),
+            .e_present =   into_present(toml::find_or(gameTable, "experimental_present_mode", "")),
+            .e_fps_limit = toml::find_or(gameTable, "experimental_fps_limit", 0U),
             .valid = global.valid // only need a single validity flag
         };
 
