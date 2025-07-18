@@ -14,7 +14,6 @@
 #include <poll.h>
 
 #include <unordered_map>
-#include <string_view>
 #include <filesystem>
 #include <algorithm>
 #include <exception>
@@ -214,29 +213,14 @@ void Config::updateConfig(const std::string& file) {
 
     // parse global configuration
     const toml::value globalTable = toml::find_or_default<toml::table>(toml, "global");
-    Configuration global{
-        .enable = toml::find_or(globalTable, "enable", false),
-        .dll =    toml::find_or(globalTable, "dll", std::string()),
-        .env =    parse_env(toml::find_or(globalTable, "env", std::string())),
-        .multiplier =  toml::find_or(globalTable, "multiplier", size_t(2)),
-        .flowScale =   toml::find_or(globalTable, "flow_scale", 1.0F),
-        .performance = toml::find_or(globalTable, "performance_mode", false),
-        .hdr = toml::find_or(globalTable, "hdr_mode", false),
-        .e_present =   into_present(
-            toml::find_or(globalTable, "experimental_present_mode", ""),
-            VkPresentModeKHR::VK_PRESENT_MODE_FIFO_KHR),
-        .e_fps_limit = toml::find_or(globalTable, "experimental_fps_limit", 0U),
+    const Configuration global{
+        .dll =   toml::find_or(globalTable, "dll", std::string()),
         .valid = globalConf.valid // use the same validity flag
     };
 
-    if (global.multiplier == 1) { // jank alarm
-        global.enable = false;
-        global.multiplier = 2;
-    }
-
     // validate global configuration
-    if (global.multiplier < 1)
-        throw std::runtime_error("Multiplier cannot be less than 1");
+    if (global.multiplier < 2)
+        throw std::runtime_error("Global Multiplier cannot be less than 2");
     if (global.flowScale < 0.25F || global.flowScale > 1.0F)
         throw std::runtime_error("Flow scale must be between 0.25 and 1.0");
 
@@ -251,8 +235,7 @@ void Config::updateConfig(const std::string& file) {
 
         const std::string exe = toml::find<std::string>(gameTable, "exe");
         Configuration game{
-            .enable = toml::find_or(gameTable, "enable", global.enable),
-            .dll = toml::find_or(gameTable, "dll", global.dll),
+            .enable = true,
             .env = parse_env(toml::find_or(gameTable, "env", std::string())),
             .multiplier = toml::find_or(gameTable, "multiplier", global.multiplier),
             .flowScale = toml::find_or(gameTable, "flow_scale", global.flowScale),
@@ -264,11 +247,6 @@ void Config::updateConfig(const std::string& file) {
             .e_fps_limit = toml::find_or(gameTable, "experimental_fps_limit", global.e_fps_limit),
             .valid = global.valid // only need a single validity flag
         };
-
-        if (game.multiplier == 1) {
-            game.enable = false;
-            game.multiplier = 2;
-        }
 
         // validate the configuration
         if (game.multiplier < 1)
@@ -283,13 +261,13 @@ void Config::updateConfig(const std::string& file) {
     gameConfs = std::move(games);
 }
 
-Configuration Config::getConfig(std::string_view name) {
-    if (name.empty() || !gameConfs.has_value())
+Configuration Config::getConfig(const std::pair<std::string, std::string>& name) {
+    if (!gameConfs.has_value())
         return globalConf;
 
     const auto& games = *gameConfs;
     auto it = std::ranges::find_if(games, [&name](const auto& pair) {
-        return name.ends_with(pair.first);
+        return name.first.ends_with(pair.first) || (name.second == pair.first);
     });
     if (it != games.end())
         return it->second;
