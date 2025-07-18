@@ -2,7 +2,7 @@
 
 #include <string>
 
-const std::string DEFAULT_CONFIG = R"(
+const std::string DEFAULT_CONFIG = R"(version = 1
 [global]
 # override the location of Lossless Scaling
 # dll = "/games/Lossless Scaling"

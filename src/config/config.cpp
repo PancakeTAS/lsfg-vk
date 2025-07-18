@@ -204,6 +204,10 @@ void Config::updateConfig(const std::string& file) {
     std::optional<toml::value> parsed;
     try {
         parsed.emplace(toml::parse(file));
+        if (!parsed->contains("version"))
+            throw std::runtime_error("Configuration file is missing 'version' field");
+        if (parsed->at("version").as_integer() != 1)
+            throw std::runtime_error("Configuration file version is not supported, expected 1");
     } catch (const std::exception& e) {
         throw LSFG::rethrowable_error("Unable to parse configuration file", e);
     }
