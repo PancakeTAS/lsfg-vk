@@ -261,12 +261,16 @@ namespace {
         try {
             // ensure config is valid
             auto& conf = Config::activeConf;
-            if (!conf.valid->load(std::memory_order_relaxed))
+            if (!conf.valid->load(std::memory_order_relaxed)) {
+                Layer::ovkQueuePresentKHR(queue, pPresentInfo);
                 return VK_ERROR_OUT_OF_DATE_KHR;
+            }
 
             // ensure present mode is still valid
-            if (present != conf.e_present)
+            if (present != conf.e_present) {
+                Layer::ovkQueuePresentKHR(queue, pPresentInfo);
                 return VK_ERROR_OUT_OF_DATE_KHR;
+            }
 
             // skip if disabled
             if (!conf.enable)

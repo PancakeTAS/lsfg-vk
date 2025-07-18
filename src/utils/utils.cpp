@@ -208,7 +208,6 @@ void Utils::resetLimitN(const std::string& id) noexcept {
     logCounts().erase(id);
 }
 
-/// Get the process name
 std::pair<std::string, std::string> Utils::getProcessName() {
     const char* benchmark_flag = std::getenv("LSFG_BENCHMARK");
     if (benchmark_flag)
@@ -233,7 +232,6 @@ std::pair<std::string, std::string> Utils::getProcessName() {
     return{ std::string(exe.data()), comm_str };
 }
 
-/// Get the config file
 std::string Utils::getConfigFile() {
     const char* configFile = std::getenv("LSFG_CONFIG");
     if (configFile && *configFile != '\0')
