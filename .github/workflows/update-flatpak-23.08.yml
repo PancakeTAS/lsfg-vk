@@ -1,7 +1,7 @@
 name: Update lsfg-vk Flatpak (23.08)
 on:
   push:
-    branches: ["develop", "flatpak"]
+    branches: ["develop"]
 
 jobs:
   update-flatpak:
