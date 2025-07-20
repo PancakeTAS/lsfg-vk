@@ -1,4 +1,5 @@
 id: org.freedesktop.Platform.VulkanLayer.lsfgvk
+branch: '24.08'
 runtime: org.freedesktop.Platform
 runtime-version: '24.08'
 sdk: org.freedesktop.Sdk
