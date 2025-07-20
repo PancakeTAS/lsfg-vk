@@ -1,4 +1,4 @@
-name: Update lsfg-vk Flatpak
+name: Update lsfg-vk Flatpak (24.08)
 on:
   push:
     branches: ["develop"]
