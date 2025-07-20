@@ -31,7 +31,8 @@ SHA_FILE="$INSTALL_PATH/share/lsfg-vk.sha"
 LOCAL_HASH=$(test -f "$SHA_FILE" && cat "$SHA_FILE")
 if [ "$USE_NIX" ]; then
     command -v nix >/dev/null 2>&1 || { echo "Error: nix command not found."; exit 1; }
-    REMOTE_HASH=$(curl -fsSL "${NIX_FLAKE_REPO/github.com/api.github.com/repos}/releases/latest" | grep '"tag_name"' | cut -d '"' -f 4)
+    API_URL=$(printf '%s' "$NIX_FLAKE_REPO" | sed 's|github.com|api.github.com/repos|')
+    REMOTE_HASH=$(curl -fsSL "$API_URL/releases/latest" | grep '"tag_name"' | cut -d '"' -f 4)
 else
     REMOTE_HASH=$(curl -fsSL "$BASE_URL/$SHA_NAME")
 fi
@@ -39,8 +40,8 @@ fi
 
 if [ "$REMOTE_HASH" != "$LOCAL_HASH" ]; then
     # prompt user for confirmation
-    echo -n "Are you sure you want to install lsfg-vk ($REMOTE_HASH) for ${DISTRO_PRETTY}? (y/n) "
-    read -r answer < /dev/tty
+    printf 'Are you sure you want to install lsfg-vk (%s) for %s? (y/n) ' "$REMOTE_HASH" "$DISTRO_PRETTY"
+    read answer < /dev/tty
 
     if [ "$answer" != "y" ]; then
         echo "Installation aborted."
@@ -64,6 +65,12 @@ if [ "$REMOTE_HASH" != "$LOCAL_HASH" ]; then
     fi
     rm -vrf "$TEMP_DIR"
 
+    # install flatpak runtime if flatpaks are present
+    if command -v flatpak > /dev/null 2>&1; then
+        flatpak install --or-update --system -y org.freedesktop.Platform.VulkanLayer.lsfg_vk/x86_64/23.08
+        flatpak install --or-update --system -y org.freedesktop.Platform.VulkanLayer.lsfg_vk/x86_64/24.08
+    fi
+
     echo "$REMOTE_HASH" > "$SHA_FILE"
 
     echo "lsfg-vk for ${DISTRO_PRETTY} has been installed."
@@ -71,7 +78,7 @@ else
     echo "lsfg-vk is up to date."
 
     # offer to uninstall
-    echo -n "Do you want to uninstall lsfg-vk? (y/n) "
+    printf 'Do you want to uninstall lsfg-vk? (y/n) '
     read -r uninstall_answer < /dev/tty
     if [ "$uninstall_answer" = "y" ]; then
         rm -v $INSTALL_PATH/lib/liblsfg-vk.so
