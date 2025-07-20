@@ -5,12 +5,18 @@ runtime-version: '24.08'
 sdk: org.freedesktop.Sdk
 build-extension: true
 
+sdk-extensions:
+  - org.freedesktop.Sdk.Extension.llvm20
+
 build-options:
   prefix: /usr/lib/extensions/vulkan/lsfgvk
 
 modules:
   - name: lsfg-vk
     buildsystem: cmake-ninja
+    build-options:
+      append-path: /usr/lib/sdk/llvm20/bin
+      prepend-ld-library-path: /usr/lib/sdk/llvm20/lib
     config-opts:
       - -DCMAKE_BUILD_TYPE=Release
     sources:
