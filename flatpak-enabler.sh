@@ -21,19 +21,40 @@ flatpak_enabler () {
     for flat in "${_flatpaks[@]}"; do
         if flatpak list | grep -q "$flat"; then
             APP_DIR="$HOME/.var/app/$flat"
-            flatpak override \
-              --user \
-              --filesystem="$HOME/.local:ro" \
-              --filesystem="$HOME/.config/lsfg-vk:ro" \
-              --filesystem="$DLL_ABSOLUTE_PATH:ro" \
-              "$flat"
-            # set up symlinks for lsfg-vk files
+            # overrides for AUR/CachyOS packages
+            if command -v pacman &> /dev/null && pacman -Qi lsfg-vk 2>/dev/null 1>&2; then
+                flatpak override \
+                  --user \
+                  --filesystem="/usr/lib/liblsfg-vk.so:ro" \
+                  --filesystem="/etc/vulkan/implicit_layer.d/VkLayer_LS_frame_generation.json:ro" \
+                  --filesystem="xdg-config/lsfg-vk:ro" \
+                  --filesystem="$DLL_ABSOLUTE_PATH:ro" \
+                  "$flat"
+            # overrides for install script
+            elif [ -f "$HOME/.local/lib/liblsfg-vk.so" ] && [ -f "$HOME/.local/share/vulkan/implicit_layer.d/VkLayer_LS_frame_generation.json" ]; then
+                flatpak override \
+                  --user \
+                  --filesystem="$HOME/.local/lib/liblsfg-vk.so:ro" \
+                  --filesystem="xdg-data/vulkan/implicit_layer.d/VkLayer_LS_frame_generation.json:ro" \
+                  --filesystem="xdg-config/lsfg-vk:ro" \
+                  --filesystem="$DLL_ABSOLUTE_PATH:ro" \
+                  "$flat"
+            fi
+            # set up directories for symlinks
             mkdir -p "$APP_DIR/lib"
             mkdir -p "$APP_DIR/config/vulkan/implicit_layer.d/"
             mkdir -p "$APP_DIR/.config/lsfg-vk/"
-            ln -s "$HOME/.local/lib/liblsfg-vk.so" "$APP_DIR/lib/liblsfg-vk.so"
-            ln -s "$HOME/.local/share/vulkan/implicit_layer.d/VkLayer_LS_frame_generation.json" "$APP_DIR/config/vulkan/implicit_layer.d/VkLayer_LS_frame_generation.json"
-            ln -s "$HOME/.config/lsfg-vk/conf.toml" "$APP_DIR/.config/lsfg-vk/conf.toml"
+            # symlinks for AUR/CachyOS packages
+            if command -v pacman &> /dev/null && pacman -Qi lsfg-vk 2>/dev/null 1>&2; then
+                ln -sf "/usr/lib/liblsfg-vk.so" "$APP_DIR/lib/liblsfg-vk.so"
+                ln -sf "/etc/vulkan/implicit_layer.d/VkLayer_LS_frame_generation.json" "$APP_DIR/config/vulkan/implicit_layer.d/VkLayer_LS_frame_generation.json"
+                ln -sf "$HOME/.config/lsfg-vk/conf.toml" "$APP_DIR/.config/lsfg-vk/conf.toml"
+            # symlinks for installation script -- elif so it only creates the symlinks if files exist at the expected locations
+            elif [ -f "$HOME/.local/lib/liblsfg-vk.so" ] && [ -f "$HOME/.local/share/vulkan/implicit_layer.d/VkLayer_LS_frame_generation.json" ]; then
+                ln -sf "$HOME/.local/lib/liblsfg-vk.so" "$APP_DIR/lib/liblsfg-vk.so"
+                ln -sf "$HOME/.local/share/vulkan/implicit_layer.d/VkLayer_LS_frame_generation.json" "$APP_DIR/config/vulkan/implicit_layer.d/VkLayer_LS_frame_generation.json"
+                ln -sf "$HOME/.config/lsfg-vk/conf.toml" "$APP_DIR/.config/lsfg-vk/conf.toml"
+            fi
             echo "Usage enabled successfully for $flat."
         fi
     done
