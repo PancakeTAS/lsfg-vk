@@ -23,9 +23,9 @@ flatpak_enabler () {
             APP_DIR="$HOME/.var/app/$flat"
             flatpak override \
               --user \
-              --filesystem="$HOME/.local" \
-              --filesystem="$HOME/.config/lsfg-vk" \
-              --filesystem="$DLL_ABSOLUTE_PATH" \
+              --filesystem="$HOME/.local:ro" \
+              --filesystem="$HOME/.config/lsfg-vk:ro" \
+              --filesystem="$DLL_ABSOLUTE_PATH:ro" \
               "$flat"
             # set up symlinks for lsfg-vk files
             mkdir -p "$APP_DIR/lib"
