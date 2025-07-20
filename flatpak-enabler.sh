@@ -22,7 +22,7 @@ flatpak_enabler () {
         if flatpak list | grep -q "$flat"; then
             APP_DIR="$HOME/.var/app/$flat"
             # overrides for AUR/CachyOS packages
-            if command -v pacman &> /dev/null && pacman -Qi lsfg-vk 2>/dev/null 1>&2; then
+            if pacman -Qi lsfg-vk 2>/dev/null 1>&2; then
                 flatpak override \
                   --user \
                   --filesystem="/usr/lib/liblsfg-vk.so:ro" \
@@ -45,7 +45,7 @@ flatpak_enabler () {
             mkdir -p "$APP_DIR/config/vulkan/implicit_layer.d/"
             mkdir -p "$APP_DIR/.config/lsfg-vk/"
             # symlinks for AUR/CachyOS packages
-            if command -v pacman &> /dev/null && pacman -Qi lsfg-vk 2>/dev/null 1>&2; then
+            if pacman -Qi lsfg-vk 2>/dev/null 1>&2; then
                 ln -sf "/usr/lib/liblsfg-vk.so" "$APP_DIR/lib/liblsfg-vk.so"
                 ln -sf "/etc/vulkan/implicit_layer.d/VkLayer_LS_frame_generation.json" "$APP_DIR/config/vulkan/implicit_layer.d/VkLayer_LS_frame_generation.json"
                 ln -sf "$HOME/.config/lsfg-vk/conf.toml" "$APP_DIR/.config/lsfg-vk/conf.toml"
