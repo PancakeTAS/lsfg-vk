@@ -17,7 +17,7 @@ flatpak_enabler () {
     # register dll location in config file
     sed -i -E "s|^# dll = \".*\"|dll = \"$ESCAPED_DLL_PATH\"|" ${HOME}/.config/lsfg-vk/conf.toml
     # apply flatpak overrides -- Lutris has permission for /home, so won't need any, but still needs the symlinks
-    _flatpaks=(com.heroicgameslauncher.hgl com.valvesoftware.Steam net.lutris.Lutris)
+    _flatpaks=(com.heroicgameslauncher.hgl com.valvesoftware.Steam net.lutris.Lutris org.prismlauncher.PrismLauncher com.atlauncher.ATLauncher org.polymc.PolyMC com.mojang.Minecraft)
     for flat in "${_flatpaks[@]}"; do
         if flatpak list | grep -q "$flat"; then
             APP_DIR="$HOME/.var/app/$flat"
