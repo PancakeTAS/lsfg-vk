@@ -1,8 +1,7 @@
 name: Update lsfg-vk Flatpak
-
 on:
   push:
-    branches: ["develop", "flatpak"] # FIXME
+    branches: ["develop", "flatpak"]
 
 jobs:
   update-flatpak:
@@ -10,6 +9,8 @@ jobs:
     container:
       image: ghcr.io/flathub-infra/flatpak-github-actions:freedesktop-24.08
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
       - name: Build Flatpak extension
         uses: flatpak/flatpak-github-actions/flatpak-builder@v6
         with:
