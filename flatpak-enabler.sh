@@ -48,17 +48,17 @@ flatpak_enabler () {
             # set up directories for symlinks
             mkdir -p "$APP_DIR/lib"
             mkdir -p "$APP_DIR/config/vulkan/implicit_layer.d/"
-            mkdir -p "$APP_DIR/.config/lsfg-vk/"
+            mkdir -p "$APP_DIR/config/lsfg-vk/"
             # symlinks for AUR/CachyOS packages
             if pacman -Qi lsfg-vk 2>/dev/null 1>&2; then
                 ln -sf "/usr/lib/liblsfg-vk.so" "$APP_DIR/lib/liblsfg-vk.so"
                 ln -sf "/etc/vulkan/implicit_layer.d/VkLayer_LS_frame_generation.json" "$APP_DIR/config/vulkan/implicit_layer.d/VkLayer_LS_frame_generation.json"
-                ln -sf "$HOME/.config/lsfg-vk/conf.toml" "$APP_DIR/.config/lsfg-vk/conf.toml"
+                ln -sf "$HOME/.config/lsfg-vk/conf.toml" "$APP_DIR/config/lsfg-vk/conf.toml"
             # symlinks for installation script -- elif so it only creates the symlinks if files exist at the expected locations
             elif [ -f "$HOME/.local/lib/liblsfg-vk.so" ] && [ -f "$HOME/.local/share/vulkan/implicit_layer.d/VkLayer_LS_frame_generation.json" ]; then
                 ln -sf "$HOME/.local/lib/liblsfg-vk.so" "$APP_DIR/lib/liblsfg-vk.so"
                 ln -sf "$HOME/.local/share/vulkan/implicit_layer.d/VkLayer_LS_frame_generation.json" "$APP_DIR/config/vulkan/implicit_layer.d/VkLayer_LS_frame_generation.json"
-                ln -sf "$HOME/.config/lsfg-vk/conf.toml" "$APP_DIR/.config/lsfg-vk/conf.toml"
+                ln -sf "$HOME/.config/lsfg-vk/conf.toml" "$APP_DIR/config/lsfg-vk/conf.toml"
             fi
             echo "Usage enabled successfully for $flat."
         fi
