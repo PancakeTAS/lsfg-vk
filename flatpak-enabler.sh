@@ -27,8 +27,9 @@ flatpak_enabler () {
                   --user \
                   --filesystem="/usr/lib/liblsfg-vk.so:ro" \
                   --filesystem="/etc/vulkan/implicit_layer.d/VkLayer_LS_frame_generation.json:ro" \
-                  --filesystem="xdg-config/lsfg-vk:ro" \
+                  --filesystem="$HOME/.config/lsfg-vk:ro" \
                   "$flat"
+                # only set override with dll path if not Steam
                 if [ "$flat" != "com.valvesoftware.Steam" ]; then
                     flatpak override --user --filesystem="$DLL_ABSOLUTE_PATH:ro"
                 fi
@@ -37,10 +38,12 @@ flatpak_enabler () {
                 flatpak override \
                   --user \
                   --filesystem="$HOME/.local/lib/liblsfg-vk.so:ro" \
-                  --filesystem="xdg-data/vulkan/implicit_layer.d/VkLayer_LS_frame_generation.json:ro" \
-                  --filesystem="xdg-config/lsfg-vk:ro" \
-                  --filesystem="$DLL_ABSOLUTE_PATH:ro" \
+                  --filesystem="$HOME/.local/share/vulkan/implicit_layer.d/VkLayer_LS_frame_generation.json:ro" \
+                  --filesystem="$HOME/.config/lsfg-vk:ro" \
                   "$flat"
+                if [ "$flat" != "com.valvesoftware.Steam" ]; then
+                    flatpak override --user --filesystem="$DLL_ABSOLUTE_PATH:ro"
+                fi
             fi
             # set up directories for symlinks
             mkdir -p "$APP_DIR/lib"
