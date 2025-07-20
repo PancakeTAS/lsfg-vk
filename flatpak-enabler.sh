@@ -28,8 +28,10 @@ flatpak_enabler () {
                   --filesystem="/usr/lib/liblsfg-vk.so:ro" \
                   --filesystem="/etc/vulkan/implicit_layer.d/VkLayer_LS_frame_generation.json:ro" \
                   --filesystem="xdg-config/lsfg-vk:ro" \
-                  --filesystem="$DLL_ABSOLUTE_PATH:ro" \
                   "$flat"
+                if [ "$flat" != "com.valvesoftware.Steam" ]; then
+                    flatpak override --user --filesystem="$DLL_ABSOLUTE_PATH:ro"
+                fi
             # overrides for install script
             elif [ -f "$HOME/.local/lib/liblsfg-vk.so" ] && [ -f "$HOME/.local/share/vulkan/implicit_layer.d/VkLayer_LS_frame_generation.json" ]; then
                 flatpak override \
