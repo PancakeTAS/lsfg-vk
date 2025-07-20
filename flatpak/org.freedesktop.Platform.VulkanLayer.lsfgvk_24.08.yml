@@ -6,8 +6,6 @@ build-extension: true
 
 build-options:
   prefix: /usr/lib/extensions/vulkan/lsfgvk
-  prepend-path: /usr/lib/extensions/vulkan/lsfgvk/bin
-  prepend-pkg-config-path: /usr/lib/extensions/vulkan/lsfgvk/share/pkgconfig
 
 modules:
   - name: lsfg-vk

@@ -1,7 +1,7 @@
 name: Update lsfg-vk Flatpak
 on:
   push:
-    branches: ["develop", "flatpak"]
+    branches: ["develop"]
 
 jobs:
   update-flatpak:
@@ -16,5 +16,5 @@ jobs:
         uses: flatpak/flatpak-github-actions/flatpak-builder@v6
         with:
           bundle: "org.freedesktop.Platform.VulkanLayer.lsfg_vk"
-          manifest-path: "flatpak/org.freedesktop.Platform.VulkanLayer.lsfgvk.yml"
+          manifest-path: "flatpak/org.freedesktop.Platform.VulkanLayer.lsfgvk_24.08.yml"
           verbose: true
