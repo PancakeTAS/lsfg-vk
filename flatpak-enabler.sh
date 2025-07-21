@@ -3,7 +3,7 @@
 flatpak_enabler () {
 
     # initialize variables with locations
-    DLL_FIND=$(find $HOME -name Lossless.dll | head -n 1)
+    DLL_FIND=$(find / -name Lossless.dll 2>/dev/null | head -n 1)
     DLL_ABSOLUTE_PATH=$(dirname "$(realpath "$DLL_FIND")")
     ESCAPED_DLL_PATH=$(printf '%s\n' "$DLL_ABSOLUTE_PATH" | sed 's/[&/\]/\\&/g')
     CONF_LOC="${HOME}/.config/lsfg-vk/conf.toml"
