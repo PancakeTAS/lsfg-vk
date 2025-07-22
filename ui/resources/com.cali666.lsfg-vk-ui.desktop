@@ -1,0 +1,13 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=LSFG-VK UI
+Comment=Lossless Scaling Frame Generation Configuration Tool
+Exec=lsfg-vk-ui %U
+Icon=com.cali666.lsfg-vk-ui
+Terminal=false
+Categories=Game;Settings;
+Keywords=lossless;scaling;frame;generation;gaming;graphics;configuration;
+StartupNotify=true
+StartupWMClass=com.cali666.lsfg-vk-ui
+MimeType=application/x-lsfg-profile;

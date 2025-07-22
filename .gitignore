@@ -1,6 +1,9 @@
 # cmake files
 /build
 
+# cargo files
+/ui/target
+
 # ide/lsp files
 /.zed
 /.vscode
