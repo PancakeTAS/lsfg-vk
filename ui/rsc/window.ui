@@ -12,252 +12,144 @@
         <property name="max-sidebar-width">300</property>
         <!-- Split View: Left Sidebar -->
         <property name="sidebar">
-            <object class="AdwNavigationPage">
+        <object class="AdwNavigationPage">
+        <child>
+        <object class="AdwToolbarView">
+            <!-- Left Sidebar: Header -->
+            <child type="top">
+            <object class="AdwHeaderBar">
+            <property name="title-widget">
+            <object class="AdwWindowTitle">
+                <property name="title">Profiles</property>
+            </object>
+            </property>
+            </object>
+            </child>
+
+            <!-- Left Sidebar: Content -->
+            <!-- TODO: content -->
+
+            <!-- Left Sidebar: Footer -->
+            <child type="bottom">
+            <object class="GtkBox">
+            <property name="orientation">vertical</property>
+            <property name="margin-start">12</property>
+            <property name="margin-end">12</property>
+            <property name="margin-top">12</property>
+            <property name="margin-bottom">12</property>
             <child>
-            <object class="AdwToolbarView">
-                <!-- Left Sidebar: Header -->
-                <child type="top">
-                <object class="AdwHeaderBar">
-                <property name="title-widget">
-                <object class="AdwWindowTitle">
-                        <property name="title">Profiles</property>
-                </object>
-                </property>
-                </object>
-                </child>
-
-                <!-- Left Sidebar: Content -->
-                <!-- TODO: content -->
-
-                <!-- Left Sidebar: Footer -->
-                <child type="bottom">
-                <object class="GtkBox">
-                <property name="orientation">vertical</property>
-                <property name="margin-start">12</property>
-                <property name="margin-end">12</property>
-                <property name="margin-top">12</property>
-                <property name="margin-bottom">12</property>
-                <child>
-                <object class="GtkButton">
-                    <property name="label">Create New Profile</property>
-                    <property name="css-classes">suggested-action</property>
-                </object>
-                </child>
-                </object>
-                </child>
+            <object class="GtkButton">
+                <property name="label">Create New Profile</property>
+                <property name="css-classes">suggested-action</property>
+            </object>
+            </child>
+            </object>
+            </child>
             </object>
             </child>
             </object>
         </property>
         <!-- Split View: Main Content -->
         <property name="content">
-            <object class="AdwNavigationPage">
-            <child>
-            <object class="AdwToolbarView">
-                <!-- Main Content: Header -->
-                <child type="top">
-                <object class="AdwHeaderBar">
-                <property name="title-widget">
-                <object class="AdwWindowTitle">
-                        <property name="title">lsfg-vk Configuration Menu</property>
-                </object>
-                </property>
-                </object>
-                </child>
+        <object class="AdwNavigationPage">
+        <child>
+        <object class="AdwToolbarView">
+            <!-- Main Content: Header -->
+            <child type="top">
+            <object class="AdwHeaderBar">
+            <property name="title-widget">
+            <object class="AdwWindowTitle">
+                <property name="title">lsfg-vk Configuration Menu</property>
+            </object>
+            </property>
+            </object>
+            </child>
 
-                <!-- Main Content: Content -->
-                <property name="content">
-                <object class="GtkScrolledWindow">
-                <property name="hscrollbar-policy">never</property>
-                <child>
-                <object class="GtkBox" id="main_box">
-                <property name="orientation">vertical</property>
-                <property name="margin-start">48</property>
-                <property name="margin-end">48</property>
-                <property name="margin-top">32</property>
-                <property name="margin-bottom">32</property>
-                <property name="spacing">32</property>
-                <!-- Content: Frame Generation -->
-                <child>
-                    <object class="AdwPreferencesGroup">
-                    <property name="title">Frame Generation</property>
-                    <!-- Frame Generation: Multiplier -->
-                    <child>
-                    <object class="AdwPreferencesRow">
-                        <child>
-                        <object class="GtkBox">
-                        <property name="orientation">horizontal</property>
-                        <property name="spacing">16</property>
-                        <property name="valign">center</property>
-                        <property name="margin-start">12</property>
-                        <property name="margin-end">12</property>
-                        <property name="margin-top">8</property>
-                        <property name="margin-bottom">8</property>
-                        <child>
-                        <object class="GtkLabel">
-                            <property name="label">Multiplier</property>
-                            <property name="halign">start</property>
-                            <property name="hexpand">true</property>
-                        </object>
-                        </child>
-                        <child>
-                        <object class="GtkDropDown"> <!-- FIXME: make number field -->
-                            <property name="selected">0</property>
-                            <property name="model">
-                            <object class="GtkStringList">
-                            <items>
-                                <item>2x</item>
-                                <item>3x</item>
-                                <item>4x</item>
-                            </items>
-                            </object>
-                            </property>
-                        </object>
-                        </child>
-                        </object>
-                        </child>
+            <!-- Main Content: Content -->
+            <property name="content">
+            <object class="GtkScrolledWindow">
+            <property name="hscrollbar-policy">never</property>
+            <child>
+            <object class="GtkBox" id="main_box">
+            <property name="orientation">vertical</property>
+            <property name="margin-start">48</property>
+            <property name="margin-end">48</property>
+            <property name="margin-top">32</property>
+            <property name="margin-bottom">32</property>
+            <property name="spacing">32</property>
+            <child>
+            <!-- Content: Frame Generation -->
+            <object class="AdwPreferencesGroup">
+                <property name="title">Frame Generation</property>
+                <!-- Frame Generation: Multiplier -->
+                <child> <!-- FIXME: number -->
+                <object class="LSPrefDropdown">
+                    <property name="opt-name">Multiplier</property>
+                    <property name="default-selection">0</property>
+                    <property name="options">
+                    <object class="GtkStringList">
+                    <items>
+                            <item>2x</item>
+                            <item>3x</item>
+                            <item>4x</item>
+                    </items>
                     </object>
-                    </child>
-                    <!-- Frame Generation: Flow Scale -->
-                    <child>
-                    <object class="AdwPreferencesRow">
-                        <child>
-                        <object class="GtkBox">
-                        <property name="orientation">horizontal</property>
-                        <property name="spacing">16</property>
-                        <property name="valign">center</property>
-                        <property name="margin-start">12</property>
-                        <property name="margin-end">12</property>
-                        <property name="margin-top">8</property>
-                        <property name="margin-bottom">8</property>
-                        <child>
-                        <object class="GtkLabel">
-                            <property name="label">Flow Scale</property>
-                            <property name="halign">start</property>
-                            <property name="hexpand">true</property>
-                        </object>
-                        </child>
-                        <child>
-                        <object class="GtkEntry"> <!-- FIXME: make slider -->
-                            <property name="text">0.7</property>
-                            <property name="input-purpose">number</property>
-                        </object>
-                        </child>
-                        </object>
-                        </child>
-                    </object>
-                    </child>
-                    <!-- Frame Generation: Performance Mode -->
-                    <child>
-                    <object class="AdwPreferencesRow">
-                        <child>
-                        <object class="GtkBox">
-                        <property name="orientation">horizontal</property>
-                        <property name="spacing">16</property>
-                        <property name="valign">center</property>
-                        <property name="margin-start">12</property>
-                        <property name="margin-end">12</property>
-                        <property name="margin-top">8</property>
-                        <property name="margin-bottom">8</property>
-                        <child>
-                        <object class="GtkLabel">
-                            <property name="label">Performance Mode</property>
-                            <property name="halign">start</property>
-                            <property name="hexpand">true</property>
-                        </object>
-                        </child>
-                        <child>
-                        <object class="GtkSwitch">
-                            <property name="active">true</property>
-                            <property name="css-classes">compact</property>
-                        </object>
-                        </child>
-                        </object>
-                        </child>
-                    </object>
-                    </child>
-                    </object>
+                    </property>
+                </object>
                 </child>
+                <!-- Frame Generation: Flow Scale -->
+                <child> <!-- FIXME: slider -->
+                <object class="LSPrefEntry">
+                    <property name="opt-name">Flow Scale</property>
+                    <property name="tooltip-text">Enter a number between 0.25 and 1.00</property>
+                    <property name="default-text">0.7</property>
+                </object>
+                </child>
+                <!-- Frame Generation: Performance Mode -->
                 <child>
-                    <!-- Content: Misc -->
-                    <object class="AdwPreferencesGroup">
+                <object class="LSPrefSwitch">
+                    <property name="opt-name">Performance Mode</property>
+                    <property name="default-state">false</property>
+                </object>
+                </child>
+                </object>
+            </child>
+            <child>
+                <!-- Content: Misc -->
+                <object class="AdwPreferencesGroup">
                     <property name="title">Frame Generation</property>
                     <!-- Misc: HDR Mode -->
                     <child>
-                    <object class="AdwPreferencesRow">
-                        <child>
-                        <object class="GtkBox">
-                        <property name="orientation">horizontal</property>
-                        <property name="spacing">16</property>
-                        <property name="valign">center</property>
-                        <property name="margin-start">12</property>
-                        <property name="margin-end">12</property>
-                        <property name="margin-top">8</property>
-                        <property name="margin-bottom">8</property>
-                        <child>
-                        <object class="GtkLabel">
-                            <property name="label">HDR Mode</property>
-                            <property name="halign">start</property>
-                            <property name="hexpand">true</property>
-                        </object>
-                        </child>
-                        <child>
-                        <object class="GtkSwitch">
-                            <property name="active">false</property>
-                            <property name="css-classes">compact</property>
-                        </object>
-                        </child>
-                        </object>
-                        </child>
+                    <object class="LSPrefSwitch">
+                        <property name="opt-name">HDR Mode</property>
+                        <property name="default-state">false</property>
                     </object>
                     </child>
                     <!-- Misc: Experimental Present Mode -->
                     <child>
-                    <object class="AdwPreferencesRow">
-                        <child>
-                        <object class="GtkBox">
-                        <property name="orientation">horizontal</property>
-                        <property name="spacing">16</property>
-                        <property name="valign">center</property>
-                        <property name="margin-start">12</property>
-                        <property name="margin-end">12</property>
-                        <property name="margin-top">8</property>
-                        <property name="margin-bottom">8</property>
-                        <child>
-                        <object class="GtkLabel">
-                            <property name="label">Experimental Present Mode</property>
-                            <property name="halign">start</property>
-                            <property name="hexpand">true</property>
+                    <object class="LSPrefDropdown">
+                        <property name="opt-name">Experimental Present Mode</property>
+                        <property name="default-selection">0</property>
+                        <property name="options">
+                        <object class="GtkStringList">
+                        <items>
+                            <item>vsync/fifo</item>
+                            <item>mailbox</item>
+                            <item>immediate</item>
+                        </items>
                         </object>
-                        </child>
-                        <child>
-                        <object class="GtkDropDown"> <!-- FIXME: make number field -->
-                            <property name="selected">0</property>
-                            <property name="model">
-                            <object class="GtkStringList">
-                            <items>
-                                <item>vsync/fifo</item>
-                                <item>mailbox</item>
-                                <item>immediate</item>
-                            </items>
-                            </object>
-                            </property>
-                        </object>
-                        </child>
-                        </object>
-                        </child>
+                        </property>
                     </object>
                     </child>
-                    </object>
-                </child>
-
                 </object>
-                </child>
-                </object>
-                </property>
+            </child>
             </object>
             </child>
             </object>
+            </property>
+        </object>
+        </child>
+        </object>
         </property>
         </object>
     </property>

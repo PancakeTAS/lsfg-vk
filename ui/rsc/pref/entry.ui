@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+<template class="LSPrefEntry" parent="AdwPreferencesRow">
+<child>
+<object class="GtkBox">
+    <property name="orientation">horizontal</property>
+    <property name="spacing">16</property>
+    <property name="valign">center</property>
+    <property name="margin-start">12</property>
+    <property name="margin-end">12</property>
+    <property name="margin-top">8</property>
+    <property name="margin-bottom">8</property>
+    <child>
+    <object class="GtkLabel" id="label">
+        <property name="label"
+            bind-source="LSPrefEntry" bind-property="opt-name" bind-flags="sync-create"/>
+        <property name="halign">start</property>
+        <property name="hexpand">true</property>
+    </object>
+    </child>
+    <child>
+    <object class="GtkEntry">
+        <property name="text"
+            bind-source="LSPrefEntry" bind-property="default-text" bind-flags="sync-create"/>
+        <property name="placeholder-text"
+            bind-source="LSPrefEntry" bind-property="tooltip-text" bind-flags="sync-create"/>
+        <property name="input-purpose">number</property>
+        <property name="css-classes">compact</property>
+    </object>
+    </child>
+</object>
+</child>
+</template>
+</interface>

@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+<template class="LSPrefDropdown" parent="AdwPreferencesRow">
+<child>
+<object class="GtkBox">
+    <property name="orientation">horizontal</property>
+    <property name="spacing">16</property>
+    <property name="valign">center</property>
+    <property name="margin-start">12</property>
+    <property name="margin-end">12</property>
+    <property name="margin-top">8</property>
+    <property name="margin-bottom">8</property>
+    <child>
+    <object class="GtkLabel" id="label">
+        <property name="label"
+            bind-source="LSPrefDropdown" bind-property="opt-name" bind-flags="sync-create"/>
+        <property name="halign">start</property>
+        <property name="hexpand">true</property>
+    </object>
+    </child>
+    <child>
+    <object class="GtkDropDown">
+        <property name="selected"
+            bind-source="LSPrefDropdown" bind-property="default-selection" bind-flags="sync-create"/>
+        <property name="model"
+            bind-source="LSPrefDropdown" bind-property="options" bind-flags="sync-create"/>
+    </object>
+    </child>
+</object>
+</child>
+</template>
+</interface>
