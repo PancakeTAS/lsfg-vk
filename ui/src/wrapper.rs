@@ -3,6 +3,7 @@ use gtk;
 use adw;
 use gtk::glib::types::StaticTypeExt;
 
+pub mod entry;
 pub mod pane;
 pub mod pref;
 

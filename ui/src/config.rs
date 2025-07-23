@@ -58,7 +58,6 @@ pub fn load_config() -> Result<(), anyhow::Error> {
             while rx.try_recv().is_ok() {}
 
             // write the configuration
-            eprintln!("Saving configuration...");
             if let Ok(config) = config.try_read() {
                 if let Err(e) = save_config(&config) {
                     eprintln!("Failed to save configuration: {}", e);

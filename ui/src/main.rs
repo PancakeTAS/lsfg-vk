@@ -42,6 +42,17 @@ fn build_ui(app: &adw::Application) {
     let window = wrapper::Window::new(app);
     window.set_application(Some(app));
 
+    // load profiles from configuration
+    let sidebar = window.imp().sidebar.imp();
+
+    let config = config::get_config()
+        .expect("Failed to get configuration");
+    for game in config.game.iter() {
+        let entry = wrapper::entry::Entry::new();
+        entry.set_exe(game.exe.clone());
+        sidebar.profiles.append(&entry);
+    }
+
     // register main pane signals
     let main = window.imp().main.imp();
 

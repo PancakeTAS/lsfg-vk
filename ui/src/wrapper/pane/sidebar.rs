@@ -5,7 +5,10 @@ use adw::subclass::prelude::*;
 #[derive(gtk::CompositeTemplate, Default)]
 #[template(resource = "/gay/pancake/lsfg-vk/pane/sidebar.ui")]
 pub struct PaneSidebar {
-
+    #[template_child]
+    pub profiles: TemplateChild<gtk::ListBox>,
+    #[template_child]
+    pub create: TemplateChild<gtk::Button>
 }
 
 #[glib::object_subclass]
