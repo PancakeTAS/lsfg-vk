@@ -9,6 +9,9 @@ impl Default for Multiplier {
 impl From<i64> for Multiplier {
     fn from(value: i64) -> Self { Multiplier(value) }
 }
+impl Into<f64> for Multiplier {
+    fn into(self) -> f64 { self.0 as f64 }
+}
 
 // flow scale
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -18,6 +21,9 @@ impl Default for FlowScale {
 }
 impl From<f64> for FlowScale {
     fn from(value: f64) -> Self { FlowScale(value) }
+}
+impl Into<f64> for FlowScale {
+    fn into(self) -> f64 { self.0 }
 }
 
 // present mode
@@ -41,7 +47,7 @@ pub struct TomlGlobal {
 }
 
 /// Game-specific configuration
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Default, Clone, Deserialize, Serialize)]
 pub struct TomlGame {
     pub exe: String,
 
