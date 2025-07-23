@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+<template class="LSPaneMain" parent="AdwNavigationPage">
+<child>
+<object class="AdwToolbarView">
+    <!-- Header -->
+    <child type="top">
+    <object class="AdwHeaderBar">
+    <property name="title-widget">
+    <object class="AdwWindowTitle">
+        <property name="title">lsfg-vk Configuration Menu</property>
+    </object>
+    </property>
+    </object>
+    </child>
+    <!-- Content -->
+    <property name="content">
+    <object class="GtkScrolledWindow">
+    <property name="hscrollbar-policy">never</property>
+    <child>
+    <object class="GtkBox" id="main_box">
+    <property name="orientation">vertical</property>
+    <property name="margin-start">48</property>
+    <property name="margin-end">48</property>
+    <property name="margin-top">32</property>
+    <property name="margin-bottom">32</property>
+    <property name="spacing">32</property>
+    <child>
+    <!-- Frame Generation -->
+    <object class="AdwPreferencesGroup">
+        <property name="title">Frame Generation</property>
+        <!-- Frame Generation: Multiplier -->
+        <child>
+        <object class="LSPrefNumber" id="pref_multiplier">
+            <property name="opt-name">Multiplier</property>
+        </object>
+        </child>
+        <!-- Frame Generation: Flow Scale -->
+        <child>
+        <object class="LSPrefSlider" id="pref_flow_scale">
+            <property name="opt-name">Flow Scale</property>
+        </object>
+        </child>
+        <!-- Frame Generation: Performance Mode -->
+        <child>
+        <object class="LSPrefSwitch" id="pref_performance_mode">
+            <property name="opt-name">Performance Mode</property>
+            <property name="default-state">false</property>
+        </object>
+        </child>
+        </object>
+    </child>
+    <child>
+    <!-- Misc -->
+    <object class="AdwPreferencesGroup">
+        <property name="title">Misc</property>
+        <!-- Misc: HDR Mode -->
+        <child>
+        <object class="LSPrefSwitch" id="pref_hdr_mode">
+            <property name="opt-name">HDR Mode</property>
+            <property name="default-state">false</property>
+        </object>
+        </child>
+        <!-- Misc: Experimental Present Mode -->
+        <child>
+        <object class="LSPrefDropdown" id="pref_experimental_present_mode">
+            <property name="opt-name">Experimental Present Mode</property>
+            <property name="default-selection">0</property>
+            <property name="options">
+            <object class="GtkStringList">
+            <items>
+                <item>VSync/FIFO</item>
+                <item>Mailbox</item>
+                <item>Immediate</item>
+            </items>
+            </object>
+            </property>
+        </object>
+        </child>
+    </object>
+    </child>
+    </object>
+    </child>
+    </object>
+    </property>
+</object>
+</child>
+</template>
+</interface>
