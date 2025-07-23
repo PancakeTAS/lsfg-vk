@@ -3,7 +3,9 @@
   <gresource prefix="/gay/pancake/lsfg-vk/">
     <file compressed="true" preprocess="xml-stripblanks">window.ui</file>
     <file compressed="true" preprocess="xml-stripblanks">pref/dropdown.ui</file>
+    <file compressed="true" preprocess="xml-stripblanks">pref/number.ui</file>
     <file compressed="true" preprocess="xml-stripblanks">pref/entry.ui</file>
+    <file compressed="true" preprocess="xml-stripblanks">pref/slider.ui</file>
     <file compressed="true" preprocess="xml-stripblanks">pref/switch.ui</file>
   </gresource>
 </gresources>
