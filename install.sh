@@ -65,7 +65,7 @@ if [ "$REMOTE_HASH" != "$LOCAL_HASH" ]; then
     fi
     rm -vrf "$TEMP_DIR"
 
-    # install flatpak runtime if flatpaks are present -- uncomment when runtime is online at flathub
+    # install flatpak runtime if flatpaks are present -- uncomment when runtime is online
     #if command -v flatpak > /dev/null 2>&1; then
         #flatpak install --or-update --system -y org.freedesktop.Platform.VulkanLayer.lsfg_vk/x86_64/23.08
         #flatpak install --or-update --system -y org.freedesktop.Platform.VulkanLayer.lsfg_vk/x86_64/24.08
