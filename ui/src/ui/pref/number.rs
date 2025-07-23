@@ -6,21 +6,20 @@ use adw::subclass::prelude::*;
 use adw::prelude::*;
 
 #[derive(gtk::CompositeTemplate, glib::Properties, Default)]
-#[properties(wrapper_type = super::PrefDropdown)]
-#[template(resource = "/gay/pancake/lsfg-vk/pref/dropdown.ui")]
-pub struct PrefDropdown {
+#[properties(wrapper_type = super::PrefNumber)]
+#[template(resource = "/gay/pancake/lsfg-vk/pref/number.ui")]
+pub struct PrefNumber {
     #[property(get, set)]
     opt_name: RefCell<String>,
-    #[property(get, set)]
-    default_selection: RefCell<u32>,
-    #[property(get, set)]
-    options: RefCell<gtk::StringList>,
+
+    #[template_child]
+    pub number: TemplateChild<gtk::SpinButton>,
 }
 
 #[glib::object_subclass]
-impl ObjectSubclass for PrefDropdown {
-    const NAME: &'static str = "LSPrefDropdown";
-    type Type = super::PrefDropdown;
+impl ObjectSubclass for PrefNumber {
+    const NAME: &'static str = "LSPrefNumber";
+    type Type = super::PrefNumber;
     type ParentType = adw::PreferencesRow;
 
     fn class_init(klass: &mut Self::Class) {
@@ -33,12 +32,12 @@ impl ObjectSubclass for PrefDropdown {
 }
 
 #[glib::derived_properties]
-impl ObjectImpl for PrefDropdown {
+impl ObjectImpl for PrefNumber {
     fn constructed(&self) {
         self.parent_constructed();
     }
 }
 
-impl WidgetImpl for PrefDropdown {}
-impl ListBoxRowImpl for PrefDropdown {}
-impl PreferencesRowImpl for PrefDropdown {}
+impl WidgetImpl for PrefNumber {}
+impl ListBoxRowImpl for PrefNumber {}
+impl PreferencesRowImpl for PrefNumber {}

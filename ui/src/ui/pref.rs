@@ -4,6 +4,8 @@ use adw;
 
 pub mod dropdown;
 pub mod entry;
+pub mod number;
+pub mod slider;
 pub mod switch;
 
 glib::wrapper! {
@@ -16,6 +18,22 @@ glib::wrapper! {
 
 glib::wrapper! {
     pub struct PrefSwitch(ObjectSubclass<switch::PrefSwitch>)
+        @extends
+            adw::PreferencesRow, gtk::ListBoxRow, gtk::Widget,
+        @implements
+            gtk::Accessible, gtk::Actionable, gtk::Buildable, gtk::ConstraintTarget;
+}
+
+glib::wrapper! {
+    pub struct PrefNumber(ObjectSubclass<number::PrefNumber>)
+        @extends
+            adw::PreferencesRow, gtk::ListBoxRow, gtk::Widget,
+        @implements
+            gtk::Accessible, gtk::Actionable, gtk::Buildable, gtk::ConstraintTarget;
+}
+
+glib::wrapper! {
+    pub struct PrefSlider(ObjectSubclass<slider::PrefSlider>)
         @extends
             adw::PreferencesRow, gtk::ListBoxRow, gtk::Widget,
         @implements
@@ -37,6 +55,18 @@ impl PrefDropdown {
 }
 
 impl PrefSwitch {
+    pub fn new() -> Self {
+        glib::Object::new()
+    }
+}
+
+impl PrefNumber {
+    pub fn new() -> Self {
+        glib::Object::new()
+    }
+}
+
+impl PrefSlider {
     pub fn new() -> Self {
         glib::Object::new()
     }

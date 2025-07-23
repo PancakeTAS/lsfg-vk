@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <interface>
-
 <template class="LSApplicationWindow" parent="AdwApplicationWindow">
     <property name="title">lsfg-vk Configuration Window</property>
     <property name="default-width">800</property>
@@ -45,9 +44,9 @@
             </child>
             </object>
             </child>
-            </object>
-            </child>
-            </object>
+        </object>
+        </child>
+        </object>
         </property>
         <!-- Split View: Main Content -->
         <property name="content">
@@ -82,32 +81,20 @@
             <object class="AdwPreferencesGroup">
                 <property name="title">Frame Generation</property>
                 <!-- Frame Generation: Multiplier -->
-                <child> <!-- FIXME: number -->
-                <object class="LSPrefDropdown">
+                <child>
+                <object class="LSPrefNumber" id="pref_multiplier">
                     <property name="opt-name">Multiplier</property>
-                    <property name="default-selection">0</property>
-                    <property name="options">
-                    <object class="GtkStringList">
-                    <items>
-                            <item>2x</item>
-                            <item>3x</item>
-                            <item>4x</item>
-                    </items>
-                    </object>
-                    </property>
                 </object>
                 </child>
                 <!-- Frame Generation: Flow Scale -->
-                <child> <!-- FIXME: slider -->
-                <object class="LSPrefEntry">
+                <child>
+                <object class="LSPrefSlider" id="pref_flow_scale">
                     <property name="opt-name">Flow Scale</property>
-                    <property name="tooltip-text">Enter a number between 0.25 and 1.00</property>
-                    <property name="default-text">0.7</property>
                 </object>
                 </child>
                 <!-- Frame Generation: Performance Mode -->
                 <child>
-                <object class="LSPrefSwitch">
+                <object class="LSPrefSwitch" id="pref_performance_mode">
                     <property name="opt-name">Performance Mode</property>
                     <property name="default-state">false</property>
                 </object>
@@ -120,14 +107,14 @@
                     <property name="title">Frame Generation</property>
                     <!-- Misc: HDR Mode -->
                     <child>
-                    <object class="LSPrefSwitch">
+                    <object class="LSPrefSwitch" id="pref_hdr_mode">
                         <property name="opt-name">HDR Mode</property>
                         <property name="default-state">false</property>
                     </object>
                     </child>
                     <!-- Misc: Experimental Present Mode -->
                     <child>
-                    <object class="LSPrefDropdown">
+                    <object class="LSPrefDropdown" id="pref_experimental_present_mode">
                         <property name="opt-name">Experimental Present Mode</property>
                         <property name="default-selection">0</property>
                         <property name="options">

@@ -6,21 +6,20 @@ use adw::subclass::prelude::*;
 use adw::prelude::*;
 
 #[derive(gtk::CompositeTemplate, glib::Properties, Default)]
-#[properties(wrapper_type = super::PrefEntry)]
-#[template(resource = "/gay/pancake/lsfg-vk/pref/entry.ui")]
-pub struct PrefEntry {
+#[properties(wrapper_type = super::PrefSlider)]
+#[template(resource = "/gay/pancake/lsfg-vk/pref/slider.ui")]
+pub struct PrefSlider {
     #[property(get, set)]
     opt_name: RefCell<String>,
-    #[property(get, set)]
-    default_text: RefCell<String>,
-    #[property(get, set)]
-    tooltip_text: RefCell<String>
+
+    #[template_child]
+    pub slider: TemplateChild<gtk::Scale>,
 }
 
 #[glib::object_subclass]
-impl ObjectSubclass for PrefEntry {
-    const NAME: &'static str = "LSPrefEntry";
-    type Type = super::PrefEntry;
+impl ObjectSubclass for PrefSlider {
+    const NAME: &'static str = "LSPrefSlider";
+    type Type = super::PrefSlider;
     type ParentType = adw::PreferencesRow;
 
     fn class_init(klass: &mut Self::Class) {
@@ -33,12 +32,12 @@ impl ObjectSubclass for PrefEntry {
 }
 
 #[glib::derived_properties]
-impl ObjectImpl for PrefEntry {
+impl ObjectImpl for PrefSlider {
     fn constructed(&self) {
         self.parent_constructed();
     }
 }
 
-impl WidgetImpl for PrefEntry {}
-impl ListBoxRowImpl for PrefEntry {}
-impl PreferencesRowImpl for PrefEntry {}
+impl WidgetImpl for PrefSlider {}
+impl ListBoxRowImpl for PrefSlider {}
+impl PreferencesRowImpl for PrefSlider {}
