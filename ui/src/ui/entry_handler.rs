@@ -39,16 +39,14 @@ pub fn add_entry(entry_: entry::Entry, profiles_: gtk::ListBox) {
             profiles.remove(&entry);
 
             // select next entry
-            let idx = entry.index() as usize;
-            if idx == 0 {
-                let state = STATE.get().unwrap().clone();
-                if let Ok(mut state) = state.write() {
-                    state.selected_game = None;
-                }
-                return;
+            let state = STATE.get().unwrap().clone();
+            if let Ok(mut state) = state.write() {
+                state.selected_game = None;
             }
 
-            profiles.row_at_index(0).unwrap().activate();
+            if let Some(entry) = profiles.row_at_index(0) {
+                entry.activate();
+            }
         });
     });
 
