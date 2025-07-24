@@ -10,9 +10,9 @@ jobs:
     - name: Install build dependencies
       uses: awalsh128/cache-apt-pkgs-action@latest
       with:
-        packages: build-essential
-          clang clang-tools llvm
-          git cmake ninja-build
+        packages: git
+          clang llvm
+          cmake ninja-build
           libvulkan-dev
         version: 1.0
         execute_install_scripts: true
@@ -30,7 +30,7 @@ jobs:
         ninja -C build
     - name: Install with CMake
       run: |
-        cmake --install build
+        cmake --install build --strip
     - name: Upload lsfg-vk artifact
       uses: actions/upload-artifact@v4
       with:
