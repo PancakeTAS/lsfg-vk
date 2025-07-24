@@ -1,8 +1,5 @@
 cmake_minimum_required(VERSION 3.28)
 
-set(CMAKE_CXX_COMPILER clang++) # gcc release build crashes
-set(CMAKE_C_COMPILER clang)     # feel free to fix :3
-
 set(CMAKE_SKIP_RPATH ON)
 
 # subprojects
