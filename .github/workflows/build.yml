@@ -1,37 +1,28 @@
-name: Build lsfg-vk on Fedora
+name: (Test) Build lsfg-vk
 on:
   push:
-    branches: ["develop"]
+    branches: ["test/deploying"]
 
 jobs:
-  build-fedora:
+  build:
     runs-on: ubuntu-latest
-    container:
-      image: fedora:latest
     steps:
-    - name: Prepare cache for dnf packages
-      uses: actions/cache@v4
-      with:
-        path: /var/cache/libdnf5
-        key: fedora-dnf-cache
     - name: Install build dependencies
-      run: |
-        echo "keepcache=1" >> /etc/dnf/dnf.conf
-        dnf update -y
-        dnf install -y \
-          git \
-          clang llvm \
-          cmake ninja-build \
-          vulkan-headers vulkan-loader-devel \
-          libX11-devel libXrandr-devel libXinerama-devel libXcursor-devel libXi-devel mesa-libGL-devel \
-          wayland-devel libxkbcommon-devel
+      uses: awalsh128/cache-apt-pkgs-action@latest
+      with:
+        packages: build-essential
+          clang clang-tools llvm
+          git cmake ninja-build
+          libvulkan-dev
+        version: 1.0
+        execute_install_scripts: true
     - name: Checkout repository
       uses: actions/checkout@v4
       with:
         submodules: 'recursive'
     - name: Configure with CMake and Ninja
       run: |
-        CC=clang CXX=clang++ cmake -B build -G Ninja \
+        cmake -B build -G Ninja \
           -DCMAKE_BUILD_TYPE=Release \
           -DCMAKE_INSTALL_PREFIX=./build-release
     - name: Build with Ninja
@@ -43,7 +34,7 @@ jobs:
     - name: Upload lsfg-vk artifact
       uses: actions/upload-artifact@v4
       with:
-        name: lsfg-vk_fedora
+        name: lsfg-vk_TEST
         path: |
           build-release/share/vulkan/implicit_layer.d/VkLayer_LS_frame_generation.json
           build-release/lib/liblsfg-vk.so
