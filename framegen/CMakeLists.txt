@@ -36,11 +36,6 @@ target_include_directories(lsfg-vk-framegen
 target_link_libraries(lsfg-vk-framegen
     PUBLIC vulkan)
 
-if(CMAKE_BUILD_TYPE STREQUAL "Release")
-    set_target_properties(lsfg-vk-framegen PROPERTIES
-        INTERPROCEDURAL_OPTIMIZATION ON)
-endif()
-
 # diagnostics
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     set_target_properties(lsfg-vk-framegen PROPERTIES

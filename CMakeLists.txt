@@ -51,11 +51,6 @@ target_link_libraries(lsfg-vk PRIVATE
 get_target_property(TOML11_INCLUDE_DIRS toml11 INTERFACE_INCLUDE_DIRECTORIES)
 target_include_directories(lsfg-vk SYSTEM PRIVATE ${TOML11_INCLUDE_DIRS})
 
-if(CMAKE_BUILD_TYPE STREQUAL "Release")
-    set_target_properties(lsfg-vk PROPERTIES
-        INTERPROCEDURAL_OPTIMIZATION ON)
-endif()
-
 # diagnostics
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     set_target_properties(lsfg-vk PROPERTIES

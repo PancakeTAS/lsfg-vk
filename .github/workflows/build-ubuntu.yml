@@ -26,6 +26,9 @@ jobs:
     - name: Configure with CMake and Ninja
       run: |
         CC=clang CXX=clang++ cmake -B build -G Ninja \
+          -DCMAKE_C_COMPILER=clang \
+          -DCMAKE_CXX_COMPILER=clang++ \
+          -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=ON \
           -DCMAKE_BUILD_TYPE=Release \
           -DCMAKE_INSTALL_PREFIX=./build-release
     - name: Build with Ninja
