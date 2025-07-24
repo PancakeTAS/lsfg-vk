@@ -17,9 +17,9 @@ glib-build-tools = "0.21.0"
 
 [package.metadata.appimage]
 auto_link = true
-# auto_link_exclude_list = [
-#     "ld-linux*",
-#     "libc.so*",
-#     "libm.so*",
-#     "libresolv.so*"
-# ]
+auto_link_exclude_list = [
+    "ld-linux*",
+    "libc.so*",
+    "libm.so*",
+    "libresolv.so*"
+]
