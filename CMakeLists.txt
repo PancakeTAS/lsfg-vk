@@ -45,7 +45,8 @@ target_include_directories(lsfg-vk
     PRIVATE include)
 target_link_libraries(lsfg-vk PRIVATE
     pe-parse dxbc toml11 SPIRV-Headers
-    lsfg-vk-framegen vulkan)
+    lsfg-vk-framegen vulkan
+    -static-libstdc++ -static-libgcc)
 
 get_target_property(TOML11_INCLUDE_DIRS toml11 INTERFACE_INCLUDE_DIRECTORIES)
 target_include_directories(lsfg-vk SYSTEM PRIVATE ${TOML11_INCLUDE_DIRS})
