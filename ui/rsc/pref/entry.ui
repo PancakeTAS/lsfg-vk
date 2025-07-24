@@ -45,7 +45,7 @@
         <property name="placeholder-text"
             bind-source="LSPrefEntry" bind-property="tooltip-text" bind-flags="sync-create"/>
         <property name="css-classes">compact</property>
-        <property name="width-chars">60</property>
+        <property name="width-chars">30</property>
         <property name="max-width-chars">60</property>
     </object>
     </child>
