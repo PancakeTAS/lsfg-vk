@@ -681,6 +681,20 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "13dc2df351e3202783a1fe0d44375f7295ffb4049267b0f3018346dc122a1d94"
 
 [[package]]
+name = "lsfg-vk-ui"
+version = "0.0.1"
+dependencies = [
+ "anyhow",
+ "glib-build-tools",
+ "gtk4",
+ "libadwaita",
+ "proc-maps",
+ "procfs",
+ "serde",
+ "toml 0.9.2",
+]
+
+[[package]]
 name = "mach2"
 version = "0.4.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1089,20 +1103,6 @@ name = "toml_writer"
 version = "1.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fcc842091f2def52017664b53082ecbbeb5c7731092bad69d2c63050401dfd64"
-
-[[package]]
-name = "ui"
-version = "0.0.1"
-dependencies = [
- "anyhow",
- "glib-build-tools",
- "gtk4",
- "libadwaita",
- "proc-maps",
- "procfs",
- "serde",
- "toml 0.9.2",
-]
 
 [[package]]
 name = "unicode-ident"
