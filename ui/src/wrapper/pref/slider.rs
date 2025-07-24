@@ -11,6 +11,8 @@ use adw::prelude::*;
 pub struct PrefSlider {
     #[property(get, set)]
     opt_name: RefCell<String>,
+    #[property(get, set)]
+    opt_subtitle: RefCell<String>,
 
     #[template_child]
     pub slider: TemplateChild<gtk::Scale>,

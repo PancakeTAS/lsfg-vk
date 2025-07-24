@@ -12,6 +12,8 @@ pub struct PrefSwitch {
     #[property(get, set)]
     opt_name: RefCell<String>,
     #[property(get, set)]
+    opt_subtitle: RefCell<String>,
+    #[property(get, set)]
     default_state: RefCell<bool>,
 
     #[template_child]

@@ -34,12 +34,14 @@
         <child>
         <object class="LSPrefEntry" id="dll">
             <property name="opt-name">Path to Lossless.dll</property>
+            <property name="opt-subtitle">(Global Option) Override where lsfg-vk finds Lossless Scaling</property>
         </object>
         </child>
         <!--General Properties: Preset name -->
         <child>
         <object class="LSPrefEntry" id="preset_name">
             <property name="opt-name">Preset name</property>
+            <property name="opt-subtitle">Command name used for automatically activating in games.</property>
         </object>
         </child>
     </object>
@@ -52,18 +54,21 @@
         <child>
         <object class="LSPrefNumber" id="multiplier">
             <property name="opt-name">Multiplier</property>
+            <property name="opt-subtitle">Double, triple or quadruple your FPS.</property>
         </object>
         </child>
         <!-- Frame Generation: Flow Scale -->
         <child>
         <object class="LSPrefSlider" id="flow_scale">
             <property name="opt-name">Flow Scale</property>
+            <property name="opt-subtitle">Lowers the internal motion estimation resolution</property>
         </object>
         </child>
         <!-- Frame Generation: Performance Mode -->
         <child>
         <object class="LSPrefSwitch" id="performance_mode">
             <property name="opt-name">Performance Mode</property>
+            <property name="opt-subtitle">Massively improve performance at the cost of quality.</property>
             <property name="default-state">false</property>
         </object>
         </child>
@@ -77,18 +82,20 @@
         <child>
         <object class="LSPrefSwitch" id="hdr_mode">
             <property name="opt-name">HDR Mode</property>
+            <property name="opt-subtitle">Enable special HDR-only behavior.</property>
             <property name="default-state">false</property>
         </object>
         </child>
         <!-- Misc: Experimental Present Mode -->
         <child>
         <object class="LSPrefDropdown" id="experimental_present_mode">
-            <property name="opt-name">Experimental Present Mode</property>
+            <property name="opt-name">Present Mode</property>
+            <property name="opt-subtitle">(Experimental) Override the present mode to immediate or mailbox.</property>
             <property name="default-selection">0</property>
             <property name="options">
             <object class="GtkStringList">
             <items>
-                <item>VSync/FIFO</item>
+                <item>VSync/FIFO (Default, Recommended)</item>
                 <item>Mailbox</item>
                 <item>Immediate</item>
             </items>

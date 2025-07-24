@@ -11,11 +11,31 @@
     <property name="margin-top">8</property>
     <property name="margin-bottom">8</property>
     <child>
-    <object class="GtkLabel">
-        <property name="label"
-            bind-source="LSPrefEntry" bind-property="opt-name" bind-flags="sync-create"/>
-        <property name="halign">start</property>
+    <object class="GtkBox">
+        <property name="orientation">vertical</property>
+        <property name="spacing">4</property>
+        <property name="valign">center</property>
         <property name="hexpand">true</property>
+        <child>
+        <object class="GtkLabel">
+            <property name="label"
+                bind-source="LSPrefEntry" bind-property="opt-name" bind-flags="sync-create"/>
+            <property name="halign">start</property>
+            <property name="hexpand">true</property>
+        </object>
+        </child>
+        <child>
+        <object class="GtkLabel">
+            <property name="label"
+                bind-source="LSPrefEntry" bind-property="opt-subtitle" bind-flags="sync-create"/>
+            <property name="halign">start</property>
+            <property name="hexpand">true</property>
+            <style>
+                <class name="dim-label"/>
+                <class name="caption"/>
+            </style>
+        </object>
+        </child>
     </object>
     </child>
     <child>

@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <gresources>
   <gresource prefix="/gay/pancake/lsfg-vk/">
-    <file compressed="true" preprocess="xml-stripblanks">entry.ui</file>
-    <file compressed="true" preprocess="xml-stripblanks">window.ui</file>
+    <file compressed="true" preprocess="xml-stripblanks">entry/entry.ui</file>
     <file compressed="true" preprocess="xml-stripblanks">pane/main.ui</file>
     <file compressed="true" preprocess="xml-stripblanks">pane/sidebar.ui</file>
     <file compressed="true" preprocess="xml-stripblanks">pref/dropdown.ui</file>
@@ -10,5 +9,6 @@
     <file compressed="true" preprocess="xml-stripblanks">pref/entry.ui</file>
     <file compressed="true" preprocess="xml-stripblanks">pref/slider.ui</file>
     <file compressed="true" preprocess="xml-stripblanks">pref/switch.ui</file>
+    <file compressed="true" preprocess="xml-stripblanks">window.ui</file>
   </gresource>
 </gresources>

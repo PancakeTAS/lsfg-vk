@@ -6,7 +6,7 @@ use gtk::prelude::*;
 
 #[derive(gtk::CompositeTemplate, glib::Properties, Default)]
 #[properties(wrapper_type = super::Entry)]
-#[template(resource = "/gay/pancake/lsfg-vk/entry.ui")]
+#[template(resource = "/gay/pancake/lsfg-vk/entry/entry.ui")]
 pub struct Entry {
     #[property(get, set)]
     exe: RefCell<String>,

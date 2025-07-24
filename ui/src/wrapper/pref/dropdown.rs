@@ -12,6 +12,8 @@ pub struct PrefDropdown {
     #[property(get, set)]
     opt_name: RefCell<String>,
     #[property(get, set)]
+    opt_subtitle: RefCell<String>,
+    #[property(get, set)]
     default_selection: RefCell<u32>,
     #[property(get, set)]
     options: RefCell<gtk::StringList>,

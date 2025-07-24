@@ -17,7 +17,7 @@ struct State {
 static STATE: OnceLock<Arc<RwLock<State>>> = OnceLock::new();
 
 fn main() {
-    gio::resources_register_include!("ui.gresource")
+    gio::resources_register_include!("lsfg-vk.gresource")
         .expect("Failed to register resources");
     config::load_config()
         .expect("Failed to load configuration");
