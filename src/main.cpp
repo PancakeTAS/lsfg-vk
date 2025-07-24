@@ -1,7 +1,6 @@
 #include "config/config.hpp"
 #include "extract/extract.hpp"
 #include "utils/benchmark.hpp"
-#include "utils/gui.hpp"
 #include "utils/utils.hpp"
 
 #include <unistd.h>
@@ -68,7 +67,7 @@ namespace {
         } catch (const std::exception& e) {
             std::cerr << "lsfg-vk: An error occurred while trying to write the latest file, exiting:\n";
             std::cerr << "- " << e.what() << '\n';
-            Utils::showErrorGui(e.what());
+            exit(EXIT_FAILURE);
         }
 
         // load shaders
@@ -77,7 +76,7 @@ namespace {
         } catch (const std::exception& e) {
             std::cerr << "lsfg-vk: An error occurred while trying to extract the shaders, exiting:\n";
             std::cerr << "- " << e.what() << '\n';
-            Utils::showErrorGui(e.what());
+            exit(EXIT_FAILURE);
         }
         std::cerr << "lsfg-vk: Shaders extracted successfully.\n";
 
