@@ -34,7 +34,7 @@
         <child>
         <object class="LSPrefEntry" id="dll">
             <property name="opt-name">Path to Lossless.dll</property>
-            <property name="opt-subtitle">(Global Option) Override where lsfg-vk finds Lossless Scaling</property>
+            <property name="opt-subtitle">(Global Option) Change the location of Lossless.dll</property>
             <property name="tooltip-text">~/.local/share/Steam/steamapps/common/Lossless Scaling/Lossless.dll</property>
             <property name="icon-name">folder-symbolic</property>
         </object>
