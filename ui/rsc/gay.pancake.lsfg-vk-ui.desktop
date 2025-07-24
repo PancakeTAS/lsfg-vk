@@ -1,0 +1,13 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=lsfg-vk Configuration Window
+Comment=Easy to use configuration editor for lsfg-vk.
+Exec=lsfg-vk-ui %U
+Icon=gay.pancake.lsfg-vk-ui
+Terminal=false
+Categories=GTK;Settings;
+Keywords=gaming;graphics;configuration;
+StartupNotify=true
+StartupWMClass=gay.pancake.lsfg-vk-ui
+MimeType=application/x-lsfg-profile;

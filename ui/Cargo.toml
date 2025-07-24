@@ -14,9 +14,3 @@ proc-maps = "0.4.0"
 
 [build-dependencies]
 glib-build-tools = "0.21.0"
-
-[package.metadata.appimage]
-auto_link = true
-auto_link_exclude_list = [
-    "ld-linux*",
-]

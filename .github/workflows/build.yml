@@ -19,40 +19,41 @@ jobs:
     - name: Install build dependencies
       uses: awalsh128/cache-apt-pkgs-action@latest
       with:
-        packages: git wget
+        packages: git wget xvfb
           clang clang-tools llvm rustup
           cmake ninja-build pkg-config
           libvulkan-dev
           libgtk-4-dev libadwaita-1-dev
         version: 1.0
         execute_install_scripts: true
-    - name: Install rust dependencies
+    - name: Install rust dependency
       run: |
         rustup default stable
-        cargo install cargo-appimage
-        wget -O ui/appimagetool https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage
-        chmod +x ui/appimagetool
     # build the project
     - name: Configure with CMake and Ninja
       run: |
         cmake -B build -G Ninja \
           -DCMAKE_BUILD_TYPE=Release \
-          -DCMAKE_INSTALL_PREFIX=./build-release
+          -DCMAKE_INSTALL_PREFIX=./build-release \
+          -DCMAKE_C_COMPILER=clang \
+          -DCMAKE_CXX_COMPILER=clang++ \
+          -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=On
     - name: Build with Ninja
       run: |
         ninja -C build
     - name: Install with CMake
       run: |
         cmake --install build --strip
-    - name: Build lsfg-vk-ui with Cargo
+    - name: Build lsfg-vk-ui with appimage.sh
       run: |
         pushd ui
-        PATH=$PATH:$PWD cargo appimage
+        chmod +x appimage.sh
+        ./appimage.sh
         popd
     - name: Install lsfg-vk-ui
       run: |
         mkdir -p build-release/bin
-        mv ui/target/appimage/lsfg-vk-ui.AppImage build-release/bin/lsfg-vk-ui
+        mv ui/lsfg-vk-ui.AppImage build-release/bin/lsfg-vk-ui
     # upload all files
     - name: Upload lsfg-vk artifact
       uses: actions/upload-artifact@v4
