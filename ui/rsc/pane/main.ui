@@ -31,19 +31,19 @@
         <property name="title">Frame Generation</property>
         <!-- Frame Generation: Multiplier -->
         <child>
-        <object class="LSPrefNumber" id="pref_multiplier">
+        <object class="LSPrefNumber" id="multiplier">
             <property name="opt-name">Multiplier</property>
         </object>
         </child>
         <!-- Frame Generation: Flow Scale -->
         <child>
-        <object class="LSPrefSlider" id="pref_flow_scale">
+        <object class="LSPrefSlider" id="flow_scale">
             <property name="opt-name">Flow Scale</property>
         </object>
         </child>
         <!-- Frame Generation: Performance Mode -->
         <child>
-        <object class="LSPrefSwitch" id="pref_performance_mode">
+        <object class="LSPrefSwitch" id="performance_mode">
             <property name="opt-name">Performance Mode</property>
             <property name="default-state">false</property>
         </object>
@@ -56,14 +56,14 @@
         <property name="title">Misc</property>
         <!-- Misc: HDR Mode -->
         <child>
-        <object class="LSPrefSwitch" id="pref_hdr_mode">
+        <object class="LSPrefSwitch" id="hdr_mode">
             <property name="opt-name">HDR Mode</property>
             <property name="default-state">false</property>
         </object>
         </child>
         <!-- Misc: Experimental Present Mode -->
         <child>
-        <object class="LSPrefDropdown" id="pref_experimental_present_mode">
+        <object class="LSPrefDropdown" id="experimental_present_mode">
             <property name="opt-name">Experimental Present Mode</property>
             <property name="default-selection">0</property>
             <property name="options">

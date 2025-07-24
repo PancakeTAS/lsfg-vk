@@ -33,13 +33,18 @@ pub fn load_config() -> Result<(), anyhow::Error> {
     let path = find_config_file();
     let data = std::fs::read(path)
         .context("Failed to read conf.toml")?;
-    let config: TomlConfig = toml::from_slice(&data)
+    let mut config: TomlConfig = toml::from_slice(&data)
         .context("Failed to parse conf.toml")?;
-    CONFIG.set(Arc::new(RwLock::new(config)))
-        .ok().context("Failed to set configuration state")?;
+
+    // remove duplicate entries
+    config.game.sort_by_key(|e| e.exe.clone());
+    config.game.dedup_by_key(|e| e.exe.clone());
+    config.game.retain(|e| !e.exe.is_empty());
 
     // create the configuration writer thread
     let (tx, rx) = std::sync::mpsc::channel::<()>();
+    CONFIG.set(Arc::new(RwLock::new(config)))
+        .ok().context("Failed to set configuration state")?;
     CONFIG_WRITER.set(tx)
         .ok().context("Failed to set configuration writer")?;
 
@@ -61,8 +66,6 @@ pub fn load_config() -> Result<(), anyhow::Error> {
             if let Ok(config) = config.try_read() {
                 if let Err(e) = save_config(&config) {
                     eprintln!("Failed to save configuration: {}", e);
-                } else {
-                    eprintln!("Configuration saved successfully");
                 }
             } else {
                 eprintln!("Failed to read configuration state");

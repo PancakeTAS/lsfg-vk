@@ -7,15 +7,15 @@ use crate::wrapper::pref::*;
 #[template(resource = "/gay/pancake/lsfg-vk/pane/main.ui")]
 pub struct PaneMain {
     #[template_child]
-    pub pref_multiplier: TemplateChild<PrefNumber>,
+    pub multiplier: TemplateChild<PrefNumber>,
     #[template_child]
-    pub pref_flow_scale: TemplateChild<PrefSlider>,
+    pub flow_scale: TemplateChild<PrefSlider>,
     #[template_child]
-    pub pref_performance_mode: TemplateChild<PrefSwitch>,
+    pub performance_mode: TemplateChild<PrefSwitch>,
     #[template_child]
-    pub pref_hdr_mode: TemplateChild<PrefSwitch>,
+    pub hdr_mode: TemplateChild<PrefSwitch>,
     #[template_child]
-    pub pref_experimental_present_mode: TemplateChild<PrefDropdown>
+    pub experimental_present_mode: TemplateChild<PrefDropdown>
 }
 
 #[glib::object_subclass]

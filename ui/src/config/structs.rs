@@ -39,6 +39,25 @@ pub enum PresentMode {
 impl Default for PresentMode {
     fn default() -> Self { PresentMode::Vsync }
 }
+impl From<i64> for PresentMode {
+    fn from(value: i64) -> Self {
+        match value {
+            0 => PresentMode::Vsync,
+            1 => PresentMode::Mailbox,
+            2 => PresentMode::Immediate,
+            _ => PresentMode::Vsync,
+        }
+    }
+}
+impl Into<u32> for PresentMode {
+    fn into(self) -> u32 {
+        match self {
+            PresentMode::Vsync => 0,
+            PresentMode::Mailbox => 1,
+            PresentMode::Immediate => 2,
+        }
+    }
+}
 
 /// Global configuration for the application
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
