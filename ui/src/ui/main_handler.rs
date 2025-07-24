@@ -79,10 +79,14 @@ pub fn register_signals(sidebar_: pane::PaneSidebar, main: &pane::PaneMain) {
     let dll = main.dll.imp();
     dll.entry.connect_changed(|entry| {
         let _ = config::edit_config(|config| {
-            let text = entry.text().to_string();
+            let mut text = entry.text().to_string();
             if text.trim().is_empty() {
                 config.global.dll = None;
             } else {
+                if text.contains("~") {
+                    let home = std::env::var("HOME").unwrap_or_else(|_| String::from("/"));
+                    text = text.replace("~", &home);
+                }
                 config.global.dll = Some(text);
             }
         });
