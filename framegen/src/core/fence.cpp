@@ -1,8 +1,9 @@
+#include <volk.h>
+#include <vulkan/vulkan_core.h>
+
 #include "core/fence.hpp"
 #include "core/device.hpp"
 #include "common/exception.hpp"
-
-#include <vulkan/vulkan_core.h>
 
 #include <memory>
 #include <cstdint>

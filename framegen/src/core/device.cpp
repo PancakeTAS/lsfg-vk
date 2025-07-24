@@ -1,8 +1,9 @@
+#include <volk.h>
+#include <vulkan/vulkan_core.h>
+
 #include "core/device.hpp"
 #include "core/instance.hpp"
 #include "common/exception.hpp"
-
-#include <vulkan/vulkan_core.h>
 
 #include <cstdint>
 #include <memory>
@@ -96,6 +97,8 @@ Device::Device(const Instance& instance, uint64_t deviceUUID) {
     res = vkCreateDevice(*physicalDevice, &deviceCreateInfo, nullptr, &deviceHandle);
     if (res != VK_SUCCESS | deviceHandle == VK_NULL_HANDLE)
         throw LSFG::vulkan_error(res, "Failed to create logical device");
+
+    volkLoadDevice(deviceHandle);
 
     // get compute queue
     VkQueue queueHandle{};

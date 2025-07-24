@@ -34,7 +34,7 @@ target_include_directories(lsfg-vk-framegen
     PRIVATE v3.1_include
     PRIVATE v3.1p_include)
 target_link_libraries(lsfg-vk-framegen
-    PUBLIC vulkan)
+    PUBLIC volk)
 
 if(CMAKE_BUILD_TYPE STREQUAL "Release")
     set_target_properties(lsfg-vk-framegen PROPERTIES

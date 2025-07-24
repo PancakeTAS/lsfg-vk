@@ -19,6 +19,7 @@ set(GLFW_BUILD_X11 ON)
 add_subdirectory(thirdparty/dxbc EXCLUDE_FROM_ALL)
 add_subdirectory(thirdparty/pe-parse/pe-parser-library EXCLUDE_FROM_ALL)
 add_subdirectory(thirdparty/toml11 EXCLUDE_FROM_ALL)
+add_subdirectory(thirdparty/volk EXCLUDE_FROM_ALL)
 add_subdirectory(framegen)
 
 # main project
@@ -45,7 +46,7 @@ target_include_directories(lsfg-vk
     PRIVATE include)
 target_link_libraries(lsfg-vk PRIVATE
     pe-parse dxbc toml11 SPIRV-Headers
-    lsfg-vk-framegen vulkan
+    lsfg-vk-framegen
     -static-libstdc++ -static-libgcc)
 
 get_target_property(TOML11_INCLUDE_DIRS toml11 INTERFACE_INCLUDE_DIRECTORIES)

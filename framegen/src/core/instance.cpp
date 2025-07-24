@@ -1,10 +1,12 @@
+#include <volk.h>
+#include <vulkan/vulkan_core.h>
+
 #include "core/instance.hpp"
 #include "common/exception.hpp"
 
 #include <cstdint>
 #include <memory>
 #include <vector>
-#include <vulkan/vulkan_core.h>
 
 using namespace LSFG::Core;
 
@@ -13,6 +15,8 @@ const std::vector<const char*> requiredExtensions = {
 };
 
 Instance::Instance() {
+    volkInitialize();
+
     // create Vulkan instance
     const VkApplicationInfo appInfo{
         .sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
@@ -32,6 +36,8 @@ Instance::Instance() {
     auto res = vkCreateInstance(&createInfo, nullptr, &instanceHandle);
     if (res != VK_SUCCESS)
         throw LSFG::vulkan_error(res, "Failed to create Vulkan instance");
+
+    volkLoadInstance(instanceHandle);
 
     // store in shared ptr
     this->instance = std::shared_ptr<VkInstance>(
