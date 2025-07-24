@@ -1,5 +1,5 @@
 [package]
-name = "ui"
+name = "lsfg-vk-ui"
 version = "0.0.1"
 edition = "2021"
 
@@ -21,14 +21,5 @@ auto_link_exclude_list = [
     "ld-linux*",
     "libc.so*",
     "libm.so*",
-    "libresolv.so*",
-    "libstdc++.so*",
-    "libxcb.so*",
-    "libX11.so*",
-    "libwayland-client.so*",
-    "libfontconfig.so*",
-    "libfreetype.so*",
-    "libexpat.so*",
-    "libgcc_s.so*",
-    "libz.so*"
+    "libresolv.so*"
 ]

@@ -1,25 +1,38 @@
 name: (Test) Build lsfg-vk
+
 on:
   push:
     branches: ["test/deploying"]
+
+env:
+  CARGO_TERM_COLOR: always
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - name: Install build dependencies
-      uses: awalsh128/cache-apt-pkgs-action@latest
-      with:
-        packages: git
-          clang llvm
-          cmake ninja-build
-          libvulkan-dev
-        version: 1.0
-        execute_install_scripts: true
+    # prepare system
     - name: Checkout repository
       uses: actions/checkout@v4
       with:
         submodules: 'recursive'
+    - name: Install build dependencies
+      uses: awalsh128/cache-apt-pkgs-action@latest
+      with:
+        packages: git wget
+          clang clang-tools llvm rustup
+          cmake ninja-build pkg-config
+          libvulkan-dev
+          libgtk-4-dev libadwaita-1-dev
+        version: 1.0
+        execute_install_scripts: true
+    - name: Install rust dependencies
+      run: |
+        rustup default stable
+        cargo install cargo-appimage
+        wget -O ui/appimagetool https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage
+        chmod +x ui/appimagetool
+    # build the project
     - name: Configure with CMake and Ninja
       run: |
         cmake -B build -G Ninja \
@@ -31,6 +44,16 @@ jobs:
     - name: Install with CMake
       run: |
         cmake --install build --strip
+    - name: Build lsfg-vk-ui with Cargo
+      run: |
+        pushd ui
+        PATH=$PATH:$PWD cargo appimage
+        popd
+    - name: Install lsfg-vk-ui
+      run: |
+        mkdir -p build-release/bin
+        mv ui/target/appimage/lsfg-vk-ui.AppImage build-release/bin/lsfg-vk-ui
+    # upload all files
     - name: Upload lsfg-vk artifact
       uses: actions/upload-artifact@v4
       with:
@@ -38,3 +61,4 @@ jobs:
         path: |
           build-release/share/vulkan/implicit_layer.d/VkLayer_LS_frame_generation.json
           build-release/lib/liblsfg-vk.so
+          build-release/bin/lsfg-vk-ui
