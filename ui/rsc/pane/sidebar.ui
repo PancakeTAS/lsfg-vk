@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <interface>
 <template class="LSPaneSidebar" parent="AdwNavigationPage">
+<property name="title">Profiles</property>
 <child>
 <object class="AdwToolbarView">
     <!-- Header -->

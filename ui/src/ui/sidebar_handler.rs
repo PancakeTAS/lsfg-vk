@@ -31,8 +31,8 @@ pub fn register_signals(sidebar_: &pane::PaneSidebar, main: pane::PaneMain) {
         if let Ok(mut state) = state.write() {
             multiplier.number.set_value(conf.multiplier.into());
             flow_scale.slider.set_value(Into::<f64>::into(conf.flow_scale) * 100.0);
-            performance_mode.switch.set_state(conf.performance_mode);
-            hdr_mode.switch.set_state(conf.hdr_mode);
+            performance_mode.switch.set_active(conf.performance_mode);
+            hdr_mode.switch.set_active(conf.hdr_mode);
             experimental_present_mode.dropdown.set_selected(conf.experimental_present_mode.into());
 
             // update state

@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <interface>
 <template class="LSPaneMain" parent="AdwNavigationPage">
+<property name="title">lsfg-vk Configuration Menu</property>
 <child>
 <object class="AdwToolbarView">
     <!-- Header -->
