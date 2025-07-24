@@ -2,8 +2,8 @@
 <interface>
 <template class="LSApplicationWindow" parent="AdwApplicationWindow">
     <property name="title">lsfg-vk Configuration Window</property>
-    <property name="default-width">800</property>
-    <property name="default-height">600</property>
+    <property name="default-width">1000</property>
+    <property name="default-height">700</property>
     <property name="content">
     <!-- Split View -->
     <object class="AdwNavigationSplitView">

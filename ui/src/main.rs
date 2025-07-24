@@ -11,7 +11,6 @@ const APP_ID: &str = "gay.pancake.lsfg-vk.ConfigurationUi";
 
 #[derive(Debug)]
 struct State {
-    // ui state
     selected_game: Option<usize>
 }
 

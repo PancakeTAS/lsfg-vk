@@ -1,5 +1,5 @@
 use adw::{self, subclass::prelude::ObjectSubclassIsExt};
-use gtk::prelude::*;
+use gtk::prelude::{WidgetExt, EditableExt, GtkWindowExt};
 
 use crate::config;
 use crate::wrapper;
@@ -22,11 +22,20 @@ pub fn build(app: &adw::Application) {
         entry_handler::add_entry(entry, imp.sidebar.imp().profiles.clone());
     }
 
+    if let Some(dll_path) = config.global.dll {
+        imp.main.imp().dll.imp().entry.set_text(&dll_path);
+    }
+
     // register handlers on sidebar pane.
     sidebar_handler::register_signals(&imp.sidebar, imp.main.clone());
 
     // register handlers on main pane.
-    main_handler::register_signals(&imp.main);
+    main_handler::register_signals(imp.sidebar.clone(), &imp.main);
+
+    // activate the first profile if available
+    if let Some(entry) = imp.sidebar.imp().profiles.row_at_index(0) {
+        entry.activate();
+    }
 
     // present the window
     window.present();

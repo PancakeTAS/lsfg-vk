@@ -24,8 +24,9 @@
             bind-source="LSPrefEntry" bind-property="default-text" bind-flags="sync-create"/>
         <property name="placeholder-text"
             bind-source="LSPrefEntry" bind-property="tooltip-text" bind-flags="sync-create"/>
-        <property name="input-purpose">number</property>
         <property name="css-classes">compact</property>
+        <property name="width-chars">60</property>
+        <property name="max-width-chars">60</property>
     </object>
     </child>
 </object>

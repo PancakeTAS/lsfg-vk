@@ -26,8 +26,26 @@
     <property name="margin-top">32</property>
     <property name="margin-bottom">32</property>
     <property name="spacing">32</property>
+    <!-- General Properties -->
     <child>
+    <object class="AdwPreferencesGroup">
+        <property name="title">General Properties</property>
+        <!--General Properties: Path to Lossless.dll -->
+        <child>
+        <object class="LSPrefEntry" id="dll">
+            <property name="opt-name">Path to Lossless.dll</property>
+        </object>
+        </child>
+        <!--General Properties: Preset name -->
+        <child>
+        <object class="LSPrefEntry" id="preset_name">
+            <property name="opt-name">Preset name</property>
+        </object>
+        </child>
+    </object>
+    </child>
     <!-- Frame Generation -->
+    <child>
     <object class="AdwPreferencesGroup">
         <property name="title">Frame Generation</property>
         <!-- Frame Generation: Multiplier -->
@@ -49,10 +67,10 @@
             <property name="default-state">false</property>
         </object>
         </child>
-        </object>
+    </object>
     </child>
-    <child>
     <!-- Misc -->
+    <child>
     <object class="AdwPreferencesGroup">
         <property name="title">Misc</property>
         <!-- Misc: HDR Mode -->

@@ -1,5 +1,5 @@
 use adw::subclass::prelude::ObjectSubclassIsExt;
-use gtk::prelude::{ButtonExt, ListBoxRowExt, RangeExt, WidgetExt};
+use gtk::prelude::{ButtonExt, EditableExt, ListBoxRowExt, RangeExt, WidgetExt};
 
 use crate::{config, ui::entry_handler, wrapper::{pane, entry}, STATE};
 
@@ -21,6 +21,7 @@ pub fn register_signals(sidebar_: &pane::PaneSidebar, main: pane::PaneMain) {
 
         // update main pane
         let main = main.imp();
+        let exe = main.preset_name.imp();
         let multiplier = main.multiplier.imp();
         let flow_scale = main.flow_scale.imp();
         let performance_mode = main.performance_mode.imp();
@@ -29,6 +30,7 @@ pub fn register_signals(sidebar_: &pane::PaneSidebar, main: pane::PaneMain) {
 
         // (lock state early, so the ui update doesn't override the config)
         if let Ok(mut state) = state.write() {
+            exe.entry.set_text(&conf.exe);
             multiplier.number.set_value(conf.multiplier.into());
             flow_scale.slider.set_value(Into::<f64>::into(conf.flow_scale) * 100.0);
             performance_mode.switch.set_active(conf.performance_mode);
