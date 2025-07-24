@@ -6,6 +6,7 @@ use adw;
 mod ui;
 mod wrapper;
 mod config;
+mod utils;
 
 const APP_ID: &str = "gay.pancake.lsfg-vk.ConfigurationUi";
 

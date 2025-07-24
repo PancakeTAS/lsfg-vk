@@ -49,6 +49,12 @@
         <property name="max-width-chars">60</property>
     </object>
     </child>
+    <child>
+    <object class="GtkButton" id="btn">
+        <property name="icon-name"
+            bind-source="LSPrefEntry" bind-property="icon-name" bind-flags="sync-create"/>
+    </object>
+    </child>
 </object>
 </child>
 </template>

@@ -6,6 +6,7 @@ use gtk::glib::types::StaticTypeExt;
 pub mod entry;
 pub mod pane;
 pub mod pref;
+pub mod popup;
 
 pub mod imp {
     use gtk::subclass::prelude::*;

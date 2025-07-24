@@ -35,6 +35,8 @@
         <object class="LSPrefEntry" id="dll">
             <property name="opt-name">Path to Lossless.dll</property>
             <property name="opt-subtitle">(Global Option) Override where lsfg-vk finds Lossless Scaling</property>
+            <property name="tooltip-text">~/.local/share/Steam/steamapps/common/Lossless Scaling/Lossless.dll</property>
+            <property name="icon-name">folder-symbolic</property>
         </object>
         </child>
         <!--General Properties: Preset name -->
@@ -42,6 +44,7 @@
         <object class="LSPrefEntry" id="preset_name">
             <property name="opt-name">Preset name</property>
             <property name="opt-subtitle">Command name used for automatically activating in games.</property>
+            <property name="icon-name">search-symbolic</property>
         </object>
         </child>
     </object>
@@ -61,7 +64,7 @@
         <child>
         <object class="LSPrefSlider" id="flow_scale">
             <property name="opt-name">Flow Scale</property>
-            <property name="opt-subtitle">Lowers the internal motion estimation resolution</property>
+            <property name="opt-subtitle">Lower the internal motion estimation resolution</property>
         </object>
         </child>
         <!-- Frame Generation: Performance Mode -->

@@ -1,7 +1,7 @@
 use adw::subclass::prelude::ObjectSubclassIsExt;
-use gtk::{glib::object::CastNone, prelude::{EditableExt, RangeExt}};
+use gtk::{gio::{self, prelude::FileExt}, glib::object::CastNone, prelude::{ButtonExt, EditableExt, GtkWindowExt, ListBoxRowExt, RangeExt, WidgetExt}};
 
-use crate::{config, wrapper::{pane, entry}, STATE};
+use crate::{config, utils, wrapper::{entry, pane, popup}, STATE};
 
 // update the currently selected game configuration
 fn update_game<F: FnOnce(&mut config::TomlGame)>(update: F) {
@@ -26,6 +26,7 @@ pub fn register_signals(sidebar_: pane::PaneSidebar, main: &pane::PaneMain) {
     let hdr_mode = main.hdr_mode.imp();
     let experimental_present_mode = main.experimental_present_mode.imp();
 
+    // preset opts
     let sidebar = sidebar_.clone();
     exe.entry.connect_changed(move |entry| {
         let mut exe = entry.text().to_string();
@@ -74,6 +75,7 @@ pub fn register_signals(sidebar_: pane::PaneSidebar, main: &pane::PaneMain) {
         });
     });
 
+    // global opts
     let dll = main.dll.imp();
     dll.entry.connect_changed(|entry| {
         let _ = config::edit_config(|config| {
@@ -84,5 +86,78 @@ pub fn register_signals(sidebar_: pane::PaneSidebar, main: &pane::PaneMain) {
                 config.global.dll = Some(text);
             }
         });
+    });
+
+    // utility buttons
+    let entry = dll.entry.clone();
+    dll.btn.connect_clicked(move |btn| {
+        let dialog = gtk::FileDialog::new();
+        dialog.set_title("Select Lossless.dll");
+
+        let filter = gtk::FileFilter::new();
+        filter.set_name(Some("Lossless.dll"));
+        filter.add_pattern("Lossless.dll");
+
+        let filters = gio::ListStore::new::<gtk::FileFilter>();
+        filters.append(&filter);
+        dialog.set_filters(Some(&filters));
+        dialog.set_default_filter(Some(&filter));
+
+        let window = btn.root()
+            .and_downcast::<gtk::Window>()
+            .unwrap();
+        let entry = entry.clone();
+        dialog.open(Some(&window), gio::Cancellable::NONE, move |result| {
+            if result.is_err() || result.as_ref().unwrap().path().is_none() {
+                return;
+            }
+
+            let path = result.unwrap().path().unwrap();
+            let path_str = path.to_string_lossy().to_string();
+
+            entry.set_text(&path_str);
+            let _ = config::edit_config(|config| {
+                config.global.dll = Some(path_str);
+            });
+        });
+    });
+
+    let entry = exe.entry.clone();
+    exe.btn.connect_clicked(move |btn| {
+        let window = btn.root()
+            .and_downcast::<gtk::ApplicationWindow>()
+            .unwrap()
+            .application()
+            .unwrap();
+        let picker = popup::ProcessPicker::new();
+        picker.set_application(Some(&window));
+
+        let list = picker.imp().processes.clone();
+        let processes = utils::find_vulkan_processes().unwrap_or_default();
+        for process in &processes {
+            let entry = popup::ProcessEntry::new();
+            entry.set_exe(process.0.clone());
+            list.append(&entry);
+        }
+
+        let entry = entry.clone();
+        let picker_ = picker.clone();
+        picker.imp().processes.connect_row_activated(move |_, row| {
+            let comm_str = processes[row.index() as usize].1.clone();
+
+            entry.set_text(&comm_str);
+            update_game(|conf| {
+                conf.exe = comm_str;
+            });
+
+            picker_.close();
+        });
+
+        let picker_ = picker.clone();
+        picker.imp().close.connect_clicked(move |_| {
+            picker_.close();
+        });
+
+        picker.present();
     });
 }

@@ -17,9 +17,13 @@ pub struct PrefEntry {
     default_text: RefCell<String>,
     #[property(get, set)]
     tooltip_text: RefCell<String>,
+    #[property(get, set)]
+    icon_name: RefCell<String>,
 
     #[template_child]
     pub entry: TemplateChild<gtk::Entry>,
+    #[template_child]
+    pub btn: TemplateChild<gtk::Button>,
 }
 
 #[glib::object_subclass]

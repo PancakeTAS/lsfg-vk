@@ -25,7 +25,7 @@ pub fn add_entry(entry_: entry::Entry, profiles_: gtk::ListBox) {
 
         let profiles = profiles.clone();
         let entry = entry.clone();
-        dialog.choose(Some(&window), None::<&gio::Cancellable>, move |result| {
+        dialog.choose(Some(&window), gio::Cancellable::NONE, move |result| {
             if result.is_err() || result.unwrap() != 1 {
                 return;
             }
