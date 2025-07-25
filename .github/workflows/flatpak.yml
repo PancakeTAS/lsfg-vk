@@ -2,7 +2,7 @@ name: (Test) Build lsfg-vk Flatpak extensions
 
 on:
   push:
-    branches: ["test/deploying"]
+    branches: ["develop"]
 
 jobs:
   flatpak:

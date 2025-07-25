@@ -2,7 +2,7 @@ name: (Test) Build lsfg-vk
 
 on:
   push:
-    branches: ["test/deploying"]
+    branches: ["develop"]
 
 env:
   CARGO_TERM_COLOR: always

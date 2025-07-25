@@ -5,7 +5,7 @@ on:
     workflows: ["(Test) Build lsfg-vk"]
     types:
       - completed
-    branches: ["test/deploying"]
+    branches: ["develop"]
 
 jobs:
   package:
