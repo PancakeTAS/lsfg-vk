@@ -23,9 +23,11 @@ install -Dm755 %{_sourcedir}/lsfg-vk-ui %{buildroot}%{_bindir}/lsfg-vk-ui
 install -Dm755 %{_sourcedir}/liblsfg-vk.so %{buildroot}%{_libdir}/liblsfg-vk.so
 install -Dm644 %{_sourcedir}/VkLayer_LS_frame_generation.json %{buildroot}%{_datadir}/vulkan/implicit_layer.d/VkLayer_LS_frame_generation.json
 install -Dm644 %{_sourcedir}/lsfg-vk-ui.desktop %{buildroot}%{_datadir}/applications/lsfg-vk-ui.desktop
+install -Dm644 %{_sourcedir}/gay.pancake.lsfg-vk-ui.png %{buildroot}%{_datadir}/icons/hicolor/256x256/apps/gay.pancake.lsfg-vk-ui.png
 
 %files
 %{_bindir}/lsfg-vk-ui
 %{_libdir}/liblsfg-vk.so
 %{_datadir}/vulkan/implicit_layer.d/VkLayer_LS_frame_generation.json
 %{_datadir}/applications/lsfg-vk-ui.desktop
+%{_datadir}/icons/hicolor/256x256/apps/gay.pancake.lsfg-vk-ui.png
