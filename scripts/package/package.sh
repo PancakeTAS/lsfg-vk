@@ -51,7 +51,7 @@ mkdir -pv rpm/SOURCES
 cp -v bin/lsfg-vk-ui rpm/SOURCES
 cp -v lib/liblsfg-vk.so rpm/SOURCES
 cp -v share/vulkan/implicit_layer.d/VkLayer_LS_frame_generation.json rpm/SOURCES
-cp -v ui/rsc/gay.pancake.lsfg-vk-ui.desktop rpm/SOURCES
+cp -v ui/rsc/gay.pancake.lsfg-vk-ui.desktop rpm/SOURCES/lsfg-vk-ui.desktop
 
 rpmbuild -bb rpm/lsfg-vk.spec --define "_topdir $(pwd)/rpm"
 mv -v "rpm/RPMS/x86_64/lsfg-vk-$VERSION-1.x86_64.rpm" "lsfg-vk-$VERSION.x86_64.rpm"
