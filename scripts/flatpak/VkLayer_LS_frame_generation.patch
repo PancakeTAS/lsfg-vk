@@ -6,7 +6,7 @@ index ece2a5f..774a027 100644
      "name": "VK_LAYER_LS_frame_generation",
      "type": "GLOBAL",
      "api_version": "1.4.313",
--    "library_path": "../../../lib/liblsfg-vk.so",
+-    "library_path": "liblsfg-vk.so",
 +    "library_path": "/usr/lib/extensions/vulkan/lsfgvk/lib/liblsfg-vk.so",
      "implementation_version": "1",
      "description": "Lossless Scaling frame generation layer",

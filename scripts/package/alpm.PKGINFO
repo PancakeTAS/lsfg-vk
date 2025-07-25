@@ -1,0 +1,12 @@
+pkgname = lsfg-vk
+pkgbase = lsfg-vk
+pkgver = ${VERSION}-1
+pkgdesc = "Lossless Scaling Frame Generation on Linux via DXVK/Vulkan"
+url = https://discord.gg/losslessscaling
+packager = "PancakeTAS <???>"
+arch = x86_64
+license = MIT
+depend = vulkan-icd-loader
+depend = libadwaita
+depend = gtk4
+depend = glibc

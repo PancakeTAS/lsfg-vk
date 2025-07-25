@@ -20,5 +20,5 @@ jobs:
         uses: flatpak/flatpak-github-actions/flatpak-builder@v6
         with:
           bundle: "org.freedesktop.Platform.VulkanLayer.lsfg_vk_TEST_${{ matrix.version }}.flatpak"
-          manifest-path: "flatpak/org.freedesktop.Platform.VulkanLayer.lsfgvk_${{ matrix.version }}.yml"
+          manifest-path: "scripts/flatpak/org.freedesktop.Platform.VulkanLayer.lsfgvk_${{ matrix.version }}.yml"
           verbose: true
