@@ -35,9 +35,12 @@ pub fn register_signals(sidebar_: pane::PaneSidebar, main: &pane::PaneMain) {
         }
 
         // rename list entry
-        let row = sidebar.imp().profiles.selected_row()
-            .and_downcast::<entry::Entry>().unwrap();
-        row.set_exe(exe.clone());
+        let row_option = sidebar.imp().profiles.selected_row()
+            .and_downcast::<entry::Entry>();
+
+        if let Some(row) = row_option {
+            row.set_exe(exe.clone());
+        }
 
         // update the game configuration
         update_game(|conf| {
