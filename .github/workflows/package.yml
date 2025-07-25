@@ -1,0 +1,46 @@
+name: (Test) Package lsfg-vk
+
+on:
+  workflow_run:
+    workflows: ["(Test) Build lsfg-vk"]
+    types:
+      - completed
+    branches: ["test/deploying"]
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    steps:
+    # prepare system
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    - name: Download lsfg-vk artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: lsfg-vk_TEST
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        run-id: ${{ github.event.workflow_run.id }}
+    - name: Package lsfg-vk for various distros
+      run: |
+        export VERSION=$(grep -oP ' VERSION\s+\K[\d.]+' CMakeLists.txt)
+        chmod +x scripts/package/package.sh
+        ./scripts/package/package.sh
+    - name: Upload lsfg-vk for dpkg
+      uses: actions/upload-artifact@v4
+      with:
+        name: lsfg-vk.dpkg_TEST
+        path: |
+          *.deb
+    - name: Upload lsfg-vk for rpm
+      uses: actions/upload-artifact@v4
+      with:
+        name: lsfg-vk.rpm_TEST
+        path: |
+          *.rpm
+    - name: Upload lsfg-vk for alpm
+      uses: actions/upload-artifact@v4
+      with:
+        name: lsfg-vk.alpm_TEST
+        path: |
+          *.zst

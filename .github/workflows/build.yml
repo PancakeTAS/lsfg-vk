@@ -47,8 +47,8 @@ jobs:
     - name: Build lsfg-vk-ui with appimage.sh
       run: |
         pushd ui
-        chmod +x appimage.sh
-        ./appimage.sh
+        chmod +x ../scripts/build/appimage.sh
+        ../scripts/build/appimage.sh
         popd
     - name: Install lsfg-vk-ui
       run: |
