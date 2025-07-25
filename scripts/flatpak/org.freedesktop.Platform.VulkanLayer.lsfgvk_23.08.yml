@@ -25,6 +25,6 @@ modules:
     sources:
       - type: git
         url: https://github.com/PancakeTAS/lsfg-vk.git
-        branch: develop
+        branch: release
       - type: patch
         path: VkLayer_LS_frame_generation.patch

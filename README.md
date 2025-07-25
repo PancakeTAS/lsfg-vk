@@ -1,20 +1,26 @@
 # lsfg-vk
-This project brings [Lossless Scaling's Frame Generation](https://store.steampowered.com/app/993090/Lossless_Scaling/) to Linux!
+Lossless Scaling is a Windows-exclusive app with the goal of bringing frame generation (among other features) to every single game or app.
 
->[!NOTE]
-> The latest few commits replace the traditional environment system with a config file. Read [this wiki page](https://github.com/PancakeTAS/lsfg-vk/wiki/Configuring-lsfg%E2%80%90vk) for more information.
+lsfg-vk brings this frame generation to Linux users by acting as a Vulkan layer inbetween your game and your graphics card.
 
->[!CAUTION]
-> **This is a work-in-progress**. While frame generation has worked in quite a few games, compatibility in many games as well as frame pacing issues still need to be fixed.
+>[!TIP]
+> **This is a pre-release**. We are still ironing out the last few issues before finally releasing a first version, so beware of any issues you encounter on the way and report them via GitHub issues or the Discord.
 
-You can install lsfg-vk by running this in your command line. Always be careful when copy pasting commands from the internet:
-```bash
-curl -sSf https://pancake.gay/lsfg-vk.sh | sh
-```
+## Installation
 
-Please see the [Wiki](https://github.com/PancakeTAS/lsfg-vk/wiki) for more information and join the [Discord](https://discord.gg/losslessscaling) for help (In order to see the linux channels, verify your Steam account.)
+lsfg-vk can run on a variety of Linux distributions:
+- Click [here](https://github.com/PancakeTAS/lsfg-vk/releases) to download lsfg-vk for your distribution
+- Follow [this guide](https://github.com/PancakeTAS/lsfg-vk/wiki/Installation-Guide) if you any more help.
 
-Thanks to @Caliel666 for writing the GTK-based gui for lsfg-vk!
+Once installed, open up the lsfg-vk Configuration Window which should hopefully appear in your application menu.
 
->[!WARNING]
-> **Please do not open GitHub** issues for anything other than feature requests. Due to the nature of this project, it is much easier to deal with issues through Discord, than GitHub. Use the #linux-reports channel for game compatibility.
+Please see the [Wiki](https://github.com/PancakeTAS/lsfg-vk/wiki) for more information and join the [Discord](https://discord.gg/losslessscaling) for help (needs Steam verification).
+
+## Credits
+Most of the project has still only been written by me, PancakeTAS, but I couldn't have done it without the help of these people:
+- [0xNULLderef](https://github.com/0xNULLderef): Teaching me how to reverse engineer software.
+- [Caliel666](https://github.com/Caliel666): Writing the initial draft of the user interface.
+- [Samueru-sama](https://github.com/Samueru-sama): Helping with various things XDG as well as app images and testing.
+- Other contributors: Thank you for your contribution!
+
+I'd also like to thank every single person sponsoring this project. Thanks to you I'll be able to invest more time into this and hopefully bring some cool new features to everyone.

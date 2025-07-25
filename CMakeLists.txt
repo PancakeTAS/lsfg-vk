@@ -1,17 +1,11 @@
-cmake_minimum_required(VERSION 3.28)
+cmake_minimum_required(VERSION 3.25)
 
 set(CMAKE_SKIP_RPATH ON)
 
 # subprojects
 add_compile_options(-fPIC
     -Wno-deprecated-declarations
-    -Wno-unused-template
-    -Wno-tautological-compare
-    -Wno-undef)
-
-set(BUILD_EXAMPLES OFF)
-set(GLFW_BUILD_WAYLAND ON)
-set(GLFW_BUILD_X11 ON)
+    -Wno-unused-template)
 
 add_subdirectory(thirdparty/dxbc EXCLUDE_FROM_ALL)
 add_subdirectory(thirdparty/pe-parse/pe-parser-library EXCLUDE_FROM_ALL)
@@ -21,8 +15,8 @@ add_subdirectory(framegen)
 
 # main project
 project(lsfg-vk
-    VERSION 0.0.1
-    DESCRIPTION "LSFG on Linux"
+    VERSION 0.9.0
+    DESCRIPTION "Lossless Scaling Frame Generation on Linux"
     LANGUAGES CXX)
 
 file(GLOB SOURCES

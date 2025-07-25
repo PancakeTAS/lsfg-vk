@@ -1,11 +1,11 @@
-name: (Test) Package lsfg-vk
+name: Package lsfg-vk
 
 on:
   workflow_run:
-    workflows: ["(Test) Build lsfg-vk"]
+    workflows: ["Build lsfg-vk"]
     types:
       - completed
-    branches: ["develop"]
+    branches: ["release"]
 
 jobs:
   package:

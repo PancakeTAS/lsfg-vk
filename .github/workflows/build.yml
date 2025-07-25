@@ -1,8 +1,8 @@
-name: (Test) Build lsfg-vk
+name: Build lsfg-vk
 
 on:
   push:
-    branches: ["develop"]
+    branches: ["release"]
 
 env:
   CARGO_TERM_COLOR: always

@@ -3,9 +3,6 @@
 
 # cargo files
 /ui/target
-/ui/libs
-/ui/appimagetool
-/ui/icon.png
 
 # ide/lsp files
 /.zed
