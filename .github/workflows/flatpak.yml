@@ -1,0 +1,24 @@
+name: (Test) Build lsfg-vk Flatpak extensions
+
+on:
+  push:
+    branches: ["test/deploying"]
+
+jobs:
+  flatpak:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        version: ["23.08", "24.08"]
+    container:
+      image: ghcr.io/flathub-infra/flatpak-github-actions:freedesktop-${{ matrix.version }}
+      options: --privileged
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Build Flatpak extension (${{ matrix.version }})
+        uses: flatpak/flatpak-github-actions/flatpak-builder@v6
+        with:
+          bundle: "org.freedesktop.Platform.VulkanLayer.lsfg_vk_${{ matrix.version }}.flatpak"
+          manifest-path: "flatpak/org.freedesktop.Platform.VulkanLayer.lsfgvk_${{ matrix.version }}.yml"
+          verbose: true
