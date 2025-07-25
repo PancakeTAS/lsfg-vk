@@ -31,6 +31,11 @@ static CONFIG_WRITER: OnceLock<std::sync::mpsc::Sender<()>> = OnceLock::new();
 pub fn load_config() -> Result<(), anyhow::Error> {
     // load the configuration file
     let path = find_config_file();
+    if !std::path::Path::new(&path).exists() {
+        let default_config = TomlConfig::default();
+        save_config(&default_config)
+            .context("Failed to create default configuration")?;
+    }
     let data = std::fs::read(path)
         .context("Failed to read conf.toml")?;
     let mut config: TomlConfig = toml::from_slice(&data)

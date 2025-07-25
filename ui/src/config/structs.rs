@@ -60,7 +60,7 @@ impl Into<u32> for PresentMode {
 }
 
 /// Global configuration for the application
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
+#[derive(Debug, Default, Clone, Deserialize, Serialize)]
 pub struct TomlGlobal {
     pub dll: Option<String>
 }
@@ -83,7 +83,7 @@ pub struct TomlGame {
 }
 
 /// Main configuration structure
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Default, Clone, Deserialize, Serialize)]
 pub struct TomlConfig {
     pub version: i64,
     #[serde(default)]
