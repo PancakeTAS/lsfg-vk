@@ -9,5 +9,5 @@ Terminal=false
 Categories=GTK;Settings;
 Keywords=gaming;graphics;configuration;
 StartupNotify=true
-StartupWMClass=gay.pancake.lsfg-vk-ui
+StartupWMClass=gay.pancake.lsfg-vk-ui.ConfigurationUi
 MimeType=application/x-lsfg-profile;
