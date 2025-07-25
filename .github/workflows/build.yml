@@ -52,8 +52,10 @@ jobs:
         popd
     - name: Install lsfg-vk-ui
       run: |
-        mkdir -p build-release/bin
+        mkdir -p build-release/{bin,share/applications,share/icons/hicolor/256x256/apps}
         mv ui/lsfg-vk-ui.AppImage build-release/bin/lsfg-vk-ui
+        cp ui/rsc/gay.pancake.lsfg-vk-ui.desktop usr/share/applications/lsfg-vk-ui.desktop
+        cp ui/rsc/icon.png usr/share/icons/hicolor/256x256/apps/gay.pancake.lsfg-vk-ui.png
     # upload all files
     - name: Upload lsfg-vk artifact
       uses: actions/upload-artifact@v4
@@ -61,5 +63,7 @@ jobs:
         name: lsfg-vk_TEST
         path: |
           build-release/share/vulkan/implicit_layer.d/VkLayer_LS_frame_generation.json
+          build-release/share/applications/lsfg-vk-ui.desktop
+          build-release/share/icons/hicolor/256x256/apps/gay.pancake.lsfg-vk-ui.png
           build-release/lib/liblsfg-vk.so
           build-release/bin/lsfg-vk-ui
