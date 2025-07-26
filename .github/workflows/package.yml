@@ -18,7 +18,7 @@ jobs:
     - name: Download lsfg-vk artifacts
       uses: actions/download-artifact@v4
       with:
-        name: lsfg-vk_TEST
+        name: lsfg-vk
         path: .
         github-token: ${{ secrets.GITHUB_TOKEN }}
         run-id: ${{ github.event.workflow_run.id }}
@@ -30,18 +30,18 @@ jobs:
     - name: Upload lsfg-vk for dpkg
       uses: actions/upload-artifact@v4
       with:
-        name: lsfg-vk.dpkg_TEST
+        name: lsfg-vk.dpkg
         path: |
           *.deb
     - name: Upload lsfg-vk for rpm
       uses: actions/upload-artifact@v4
       with:
-        name: lsfg-vk.rpm_TEST
+        name: lsfg-vk.rpm
         path: |
           *.rpm
     - name: Upload lsfg-vk for alpm
       uses: actions/upload-artifact@v4
       with:
-        name: lsfg-vk.alpm_TEST
+        name: lsfg-vk.alpm
         path: |
           *.zst

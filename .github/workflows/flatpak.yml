@@ -19,6 +19,6 @@ jobs:
       - name: Build Flatpak extension (${{ matrix.version }})
         uses: flatpak/flatpak-github-actions/flatpak-builder@v6
         with:
-          bundle: "org.freedesktop.Platform.VulkanLayer.lsfg_vk_TEST_${{ matrix.version }}.flatpak"
+          bundle: "org.freedesktop.Platform.VulkanLayer.lsfg_vk_${{ matrix.version }}.flatpak"
           manifest-path: "scripts/flatpak/org.freedesktop.Platform.VulkanLayer.lsfgvk_${{ matrix.version }}.yml"
           verbose: true

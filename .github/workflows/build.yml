@@ -60,10 +60,17 @@ jobs:
     - name: Upload lsfg-vk artifact
       uses: actions/upload-artifact@v4
       with:
-        name: lsfg-vk_TEST
+        name: lsfg-vk
         path: |
           build-release/share/vulkan/implicit_layer.d/VkLayer_LS_frame_generation.json
           build-release/share/applications/lsfg-vk-ui.desktop
           build-release/share/icons/hicolor/256x256/apps/gay.pancake.lsfg-vk-ui.png
           build-release/lib/liblsfg-vk.so
           build-release/bin/lsfg-vk-ui
+    - name: Upload lsfg-vk artifact (without UI)
+      uses: actions/upload-artifact@v4
+      with:
+        name: lsfg-vk_noui
+        path: |
+          build-release/share/vulkan/implicit_layer.d/VkLayer_LS_frame_generation.json
+          build-release/lib/liblsfg-vk.so
