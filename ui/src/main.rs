@@ -8,7 +8,7 @@ mod wrapper;
 mod config;
 mod utils;
 
-const APP_ID: &str = "gay.pancake.lsfg-vk";
+const APP_ID: &str = "gay.pancake.lsfg-vk-ui";
 
 #[derive(Debug)]
 struct State {
