@@ -29,6 +29,11 @@ namespace {
 
 Configuration Config::activeConf{};
 
+extern "C" __attribute__((visibility("default")))
+void lsfg_get_active_conf(Configuration *cfg) {
+    *cfg = Config::activeConf;
+}
+
 namespace {
     /// Turn a string into a VkPresentModeKHR enum value.
     VkPresentModeKHR into_present(const std::string& mode) {
