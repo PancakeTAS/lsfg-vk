@@ -44,7 +44,7 @@
         <object class="LSPrefEntry" id="profile_name">
             <property name="opt-name">Profile name</property>
             <property name="opt-subtitle">Command name used for automatically activating in games.</property>
-            <property name="icon-name">search-symbolic</property>
+            <property name="icon-name">system-search-symbolic</property>
         </object>
         </child>
     </object>
