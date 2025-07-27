@@ -48,8 +48,9 @@ mv -v target/release/lsfg-vk-ui AppDir/shared/bin
 cd AppDir
     xvfb-run -a ../sharun-aio l -p -v -e -s -k \
         shared/bin/lsfg-vk-ui \
-        /usr/lib/gdk-pixbuf-*/*/loaders/* \
-        /usr/lib/gio/modules/libdconfsettings.so
+        /usr/lib/*/libdecor* \
+        /usr/lib/*/gdk-pixbuf-*/*/loaders/* \
+        /usr/lib/*/gio/modules/libdconfsettings.so
     ln -fv ./sharun ./AppRun
     ./sharun -g
 cd ..

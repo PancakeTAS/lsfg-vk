@@ -22,7 +22,7 @@ jobs:
         packages: git wget xvfb
           clang clang-tools llvm rustup
           cmake ninja-build pkg-config
-          libvulkan-dev
+          libdecor-0-0 libvulkan-dev
           libgtk-4-dev libadwaita-1-dev
         version: 1.0
         execute_install_scripts: true
