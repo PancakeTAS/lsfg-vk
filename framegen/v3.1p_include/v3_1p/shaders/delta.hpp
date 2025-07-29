@@ -32,19 +32,20 @@ namespace LSFG_3_1P::Shaders {
         /// @param inImg2 Second Input image
         /// @param optImg1 Optional image for non-first passes.
         /// @param optImg2 Second optional image for non-first passes.
+        /// @param optImg3 Third optional image for non-first passes.
         ///
         /// @throws LSFG::vulkan_error if resource creation fails.
         ///
         Delta(Vulkan& vk, std::array<std::array<Core::Image, 2>, 3> inImgs1,
             Core::Image inImg2,
             std::optional<Core::Image> optImg1,
-            std::optional<Core::Image> optImg2);
+            std::optional<Core::Image> optImg2,
+            std::optional<Core::Image> optImg3);
 
         ///
         /// Dispatch the shaderchain.
         ///
-        void Dispatch(const Core::CommandBuffer& buf, uint64_t frameCount, uint64_t pass_idx,
-            bool last);
+        void Dispatch(const Core::CommandBuffer& buf, uint64_t frameCount, uint64_t pass_idx);
 
         /// Get the first output image
         [[nodiscard]] const auto& getOutImage1() const { return this->outImg1; }
@@ -71,7 +72,7 @@ namespace LSFG_3_1P::Shaders {
 
         std::array<std::array<Core::Image, 2>, 3> inImgs1;
         Core::Image inImg2;
-        std::optional<Core::Image> optImg1, optImg2;
+        std::optional<Core::Image> optImg1, optImg2, optImg3;
         std::array<Core::Image, 3> tempImgs1;
         std::array<Core::Image, 2> tempImgs2;
         Core::Image outImg1, outImg2;

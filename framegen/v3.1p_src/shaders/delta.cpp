@@ -17,9 +17,11 @@ using namespace LSFG_3_1P::Shaders;
 Delta::Delta(Vulkan& vk, std::array<std::array<Core::Image, 2>, 3> inImgs1,
         Core::Image inImg2,
         std::optional<Core::Image> optImg1,
-        std::optional<Core::Image> optImg2)
+        std::optional<Core::Image> optImg2,
+        std::optional<Core::Image> optImg3)
         : inImgs1(std::move(inImgs1)), inImg2(std::move(inImg2)),
-          optImg1(std::move(optImg1)), optImg2(std::move(optImg2)) {
+          optImg1(std::move(optImg1)), optImg2(std::move(optImg2)),
+          optImg3(std::move(optImg3)) {
     // create resources
     this->shaderModules = {{
         vk.shaders.getShader(vk.device, "p_delta[0]",
@@ -114,7 +116,7 @@ Delta::Delta(Vulkan& vk, std::array<std::array<Core::Image, 2>, 3> inImgs1,
                 .add(VK_DESCRIPTOR_TYPE_SAMPLER, this->samplers.at(2))
                 .add(VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, this->inImgs1.at((i + 2) % 3))
                 .add(VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, this->inImgs1.at(i % 3))
-                .add(VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE)
+                .add(VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, this->optImg1)
                 .add(VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, this->tempImgs1)
                 .build();
         }
@@ -194,14 +196,13 @@ Delta::Delta(Vulkan& vk, std::array<std::array<Core::Image, 2>, 3> inImgs1,
             .add(VK_DESCRIPTOR_TYPE_SAMPLER, this->samplers.at(0))
             .add(VK_DESCRIPTOR_TYPE_SAMPLER, this->samplers.at(2))
             .add(VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, this->tempImgs1.at(0))
-            .add(VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE)
+            .add(VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, this->optImg3)
             .add(VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, this->outImg2)
             .build();
     }
 }
 
-void Delta::Dispatch(const Core::CommandBuffer& buf, uint64_t frameCount, uint64_t pass_idx,
-        bool last) {
+void Delta::Dispatch(const Core::CommandBuffer& buf, uint64_t frameCount, uint64_t pass_idx) {
     auto& pass = this->passes.at(pass_idx);
 
     // first shader
@@ -275,9 +276,6 @@ void Delta::Dispatch(const Core::CommandBuffer& buf, uint64_t frameCount, uint64
     pass.sixthDescriptorSet.at(frameCount % 3).bind(buf, this->pipelines.at(5));
     buf.dispatch(threadsX, threadsY, 1);
 
-    if (!last)
-        return;
-
     // seventh shader
     Utils::BarrierBuilder(buf)
         .addW2R(this->tempImgs2)
@@ -314,6 +312,7 @@ void Delta::Dispatch(const Core::CommandBuffer& buf, uint64_t frameCount, uint64
     Utils::BarrierBuilder(buf)
         .addW2R(this->tempImgs1.at(0))
         .addW2R(this->tempImgs1.at(1))
+        .addW2R(this->optImg3)
         .addR2W(this->outImg2)
         .build();
 
