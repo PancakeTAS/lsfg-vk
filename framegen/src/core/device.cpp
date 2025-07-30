@@ -1,3 +1,4 @@
+#include <iostream>
 #include <volk.h>
 #include <vulkan/vulkan_core.h>
 
@@ -15,7 +16,7 @@ using namespace LSFG::Core;
 const std::vector<const char*> requiredExtensions = {
     "VK_KHR_external_memory_fd",
     "VK_KHR_external_semaphore_fd",
-    "VK_EXT_robustness2",
+    "VK_EXT_robustness2"
 };
 
 Device::Device(const Instance& instance, uint64_t deviceUUID) {
@@ -62,11 +63,26 @@ Device::Device(const Instance& instance, uint64_t deviceUUID) {
     if (!computeFamilyIdx)
         throw LSFG::vulkan_error(VK_ERROR_INITIALIZATION_FAILED, "No compute queue family found");
 
+    // check if physical device supports float16
+    VkPhysicalDeviceVulkan12Features supported12Features{
+        .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES
+    };
+    VkPhysicalDeviceFeatures2 supportedFeatures{
+        .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2,
+        .pNext = &supported12Features
+    };
+    vkGetPhysicalDeviceFeatures2(*physicalDevice, &supportedFeatures);
+    this->supportsFP16 = supported12Features.shaderFloat16;
+    if (this->supportsFP16)
+        std::cerr << "lsfg-vk: Using FP16 acceleration" << '\n';
+    else
+        std::cerr << "lsfg-vk: FP16 acceleration not supported, using FP32" << '\n';
+
     // create logical device
     const float queuePriority{1.0F}; // highest priority
     VkPhysicalDeviceRobustness2FeaturesEXT robustness2{
         .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ROBUSTNESS_2_FEATURES_EXT,
-        .nullDescriptor = VK_TRUE,
+        .nullDescriptor = VK_TRUE
     };
     VkPhysicalDeviceVulkan13Features features13{
         .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES,
@@ -76,6 +92,7 @@ Device::Device(const Instance& instance, uint64_t deviceUUID) {
     const VkPhysicalDeviceVulkan12Features features12{
         .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES,
         .pNext = &features13,
+        .shaderFloat16 = this->supportsFP16,
         .timelineSemaphore = VK_TRUE,
         .vulkanMemoryModel = VK_TRUE
     };

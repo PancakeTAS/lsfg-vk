@@ -34,6 +34,8 @@ namespace LSFG::Core {
         [[nodiscard]] uint32_t getComputeFamilyIdx() const { return this->computeFamilyIdx; }
         /// Get the compute queue.
         [[nodiscard]] VkQueue getComputeQueue() const { return this->computeQueue; }
+        /// Check if the device supports FP16.
+        [[nodiscard]] bool getFP16Support() const { return this->supportsFP16; }
 
         // Trivially copyable, moveable and destructible
         Device(const Core::Device&) noexcept = default;
@@ -46,6 +48,7 @@ namespace LSFG::Core {
         VkPhysicalDevice physicalDevice{};
 
         uint32_t computeFamilyIdx{0};
+        bool supportsFP16{false};
 
         VkQueue computeQueue{};
     };
