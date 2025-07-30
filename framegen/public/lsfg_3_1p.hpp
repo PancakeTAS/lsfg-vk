@@ -23,7 +23,7 @@ namespace LSFG_3_1P {
     [[gnu::visibility("default")]]
     void initialize(uint64_t deviceUUID,
         bool isHdr, float flowScale, uint64_t generationCount,
-        const std::function<std::vector<uint8_t>(const std::string&)>& loader);
+        const std::function<std::vector<uint8_t>(const std::string&, bool)>& loader);
 
     ///
     /// Initialize the renderdoc API.

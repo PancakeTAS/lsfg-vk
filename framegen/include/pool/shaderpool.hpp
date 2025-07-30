@@ -27,11 +27,14 @@ namespace LSFG::Pool {
         /// Create the shader pool.
         ///
         /// @param source Function to retrieve shader source code by name.
+        /// @param fp16 If true, use the FP16 variant of shaders.
         ///
         /// @throws std::runtime_error if the shader pool cannot be created.
         ///
-        ShaderPool(const std::function<std::vector<uint8_t>(const std::string&)>& source)
-            : source(source) {}
+        ShaderPool(
+                const std::function<std::vector<uint8_t>(const std::string&, bool)>& source,
+                bool fp16)
+            : source(source), fp16(fp16) {}
 
         ///
         /// Retrieve a shader module by name or create it.
@@ -57,7 +60,9 @@ namespace LSFG::Pool {
         Core::Pipeline getPipeline(
             const Core::Device& device, const std::string& name);
     private:
-        std::function<std::vector<uint8_t>(const std::string&)> source;
+        std::function<std::vector<uint8_t>(const std::string&, bool)> source;
+        bool fp16{false};
+
         std::unordered_map<std::string, Core::ShaderModule> shaders;
         std::unordered_map<std::string, Core::Pipeline> pipelines;
     };

@@ -22,7 +22,7 @@ Core::ShaderModule ShaderPool::getShader(
         return it->second;
 
     // grab the shader
-    auto bytecode = this->source(name);
+    auto bytecode = this->source(name, this->fp16);
     if (bytecode.empty())
         throw std::runtime_error("Shader code is empty: " + name);
 

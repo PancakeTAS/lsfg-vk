@@ -35,7 +35,7 @@ namespace {
 
 void LSFG_3_1P::initialize(uint64_t deviceUUID,
         bool isHdr, float flowScale, uint64_t generationCount,
-        const std::function<std::vector<uint8_t>(const std::string&)>& loader) {
+        const std::function<std::vector<uint8_t>(const std::string&, bool)>& loader) {
     if (instance.has_value() || device.has_value())
         return;
 
@@ -52,7 +52,7 @@ void LSFG_3_1P::initialize(uint64_t deviceUUID,
     device->descriptorPool = Core::DescriptorPool(device->device);
 
     device->resources = Pool::ResourcePool(device->isHdr, device->flowScale);
-    device->shaders = Pool::ShaderPool(loader);
+    device->shaders = Pool::ShaderPool(loader, device->device.getFP16Support());
 
     std::srand(static_cast<uint32_t>(std::time(nullptr)));
 }
