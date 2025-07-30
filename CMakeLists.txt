@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.10)
 
 set(CMAKE_SKIP_RPATH ON)
+set(CMAKE_C_VISIBILITY_PRESET "hidden")
+set(CMAKE_CXX_VISIBILITY_PRESET "hidden")
 
 # subprojects
 add_compile_options(-fPIC

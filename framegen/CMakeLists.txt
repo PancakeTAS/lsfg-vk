@@ -1,5 +1,8 @@
 cmake_minimum_required(VERSION 3.10)
 
+set(CMAKE_C_VISIBILITY_PRESET "hidden")
+set(CMAKE_CXX_VISIBILITY_PRESET "hidden")
+
 project(lsfg-vk-framegen
     DESCRIPTION "Lossless Scaling Frame Generation Backend"
     LANGUAGES CXX)
