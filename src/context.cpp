@@ -2,7 +2,6 @@
 #include "config/config.hpp"
 #include "common/exception.hpp"
 #include "extract/extract.hpp"
-#include "extract/trans.hpp"
 #include "utils/utils.hpp"
 #include "hooks.hpp"
 #include "layer.hpp"
@@ -99,11 +98,7 @@ LsContext::LsContext(const Hooks::DeviceInfo& info, VkSwapchainKHR swapchain,
     lsfgInitialize(
         Utils::getDeviceUUID(info.physicalDevice),
         conf.hdr, 1.0F / conf.flowScale, conf.multiplier - 1,
-        [](const std::string& name) {
-            auto dxbc = Extract::getShader(name);
-            auto spirv = Extract::translateShader(dxbc);
-            return spirv;
-        }
+        Extract::getShader
     );
 
     this->lsfgCtxId = std::shared_ptr<int32_t>(

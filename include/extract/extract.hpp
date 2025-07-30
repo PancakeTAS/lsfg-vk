@@ -17,10 +17,11 @@ namespace Extract {
     /// Get a shader by name.
     ///
     /// @param name The name of the shader to get.
+    /// @param fp16 If true, use the FP16 variant of shaders.
     /// @return The shader bytecode.
     ///
     /// @throws std::runtime_error if the shader is not found.
     ///
-    std::vector<uint8_t> getShader(const std::string& name);
+    std::vector<uint8_t> getShader(const std::string& name, bool fp16);
 
 }

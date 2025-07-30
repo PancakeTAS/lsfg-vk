@@ -1,7 +1,6 @@
 #include "utils/benchmark.hpp"
 #include "config/config.hpp"
 #include "extract/extract.hpp"
-#include "extract/trans.hpp"
 
 #include <vulkan/vulkan_core.h>
 #include <lsfg_3_1.hpp>
@@ -42,11 +41,7 @@ void Benchmark::run(uint32_t width, uint32_t height) {
     lsfgInitialize(
         deviceUUID, // some magic number if not given
         conf.hdr, 1.0F / conf.flowScale, conf.multiplier - 1,
-        [](const std::string& name) -> std::vector<uint8_t> {
-            auto dxbc = Extract::getShader(name);
-            auto spirv = Extract::translateShader(dxbc);
-            return spirv;
-        }
+        Extract::getShader
     );
     const int32_t ctx = lsfgCreateContext(-1, -1, {},
         { .width = width, .height = height },
