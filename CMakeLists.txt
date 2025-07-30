@@ -17,7 +17,7 @@ add_subdirectory(framegen)
 
 # main project
 project(lsfg-vk
-    VERSION 0.9.0
+    VERSION 1.0.0
     DESCRIPTION "Lossless Scaling Frame Generation on Linux"
     LANGUAGES CXX)
 
