@@ -15,7 +15,9 @@
 #include <thread>
 
 namespace {
-    __attribute__((constructor)) void lsfgvk_init() {
+    __attribute__((constructor))
+    __attribute__((visibility("default")))
+    void lsfgvk_init() {
         std::cerr << std::unitbuf;
 
         // read configuration
