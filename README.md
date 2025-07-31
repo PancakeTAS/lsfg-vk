@@ -10,7 +10,7 @@ lsfg-vk brings this frame generation to Linux users by acting as a Vulkan layer 
 
 lsfg-vk can run on a variety of Linux distributions:
 - Click [here](https://github.com/PancakeTAS/lsfg-vk/releases) to download lsfg-vk for your distribution
-- Follow [this guide](https://github.com/PancakeTAS/lsfg-vk/wiki/Installation-Guide) if you any more help.
+- Follow [this guide](https://github.com/PancakeTAS/lsfg-vk/wiki/Installation-Guide) if you need any more help.
 
 Once installed, open up the lsfg-vk Configuration Window which should hopefully appear in your application menu.
 
