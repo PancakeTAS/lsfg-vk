@@ -19,6 +19,7 @@
 #include <string>
 #include <vector>
 #include <array>
+#include <regex>
 
 using namespace Utils;
 
@@ -232,6 +233,34 @@ std::pair<std::string, std::string> Utils::getProcessName() {
     std::string comm_str(comm.data());
     if (comm_str.back() == '\n')
         comm_str.pop_back();
+
+
+    // For .exe apps running through Proton/Wine
+
+    std::ifstream cmdline_file("/proc/self/cmdline");
+    if (!cmdline_file.is_open()) {
+        return {"", ""}; // Not sure what to do if it ISN'T open
+    }
+    std::string cmdline;
+    getline(cmdline_file, cmdline, '\0');
+
+    // If the process is a Proton/Wine app
+    if (cmdline.find(".exe") != std::string::npos) {
+
+        // Extract just the executable name
+        std::regex pattern(R"([-\w\s\.()\[\]!@]*(\.[Ee][Xx][Ee]))");
+        std::smatch match;
+        if (std::regex_search(cmdline, match, pattern)) {
+            comm_str = match[0];
+        } 
+    } else {
+
+        // If it's not a .exe app, just use the comm string
+
+        // Note: if not a Windows app, the name will still be
+        // cut off to just 15 characters as a limitation of
+        // using comm in /proc
+    }
 
     return{ std::string(exe.data()), comm_str };
 }
