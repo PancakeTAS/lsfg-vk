@@ -19,7 +19,11 @@ pub struct PaneMain {
     #[template_child]
     pub hdr_mode: TemplateChild<PrefSwitch>,
     #[template_child]
-    pub experimental_present_mode: TemplateChild<PrefDropdown>
+    pub experimental_present_mode: TemplateChild<PrefDropdown>,
+    #[template_child]
+    pub mangohud_fps_limit: TemplateChild<gtk::SpinButton>,
+    #[template_child]
+    pub mangohud_subtitle: TemplateChild<gtk::Label>
 }
 
 #[glib::object_subclass]

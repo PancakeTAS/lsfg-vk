@@ -5,6 +5,14 @@ use anyhow::Context;
 pub mod structs;
 pub use structs::*;
 
+/// Find the MangoHUD configuration file path
+fn find_mangohud_config_file() -> String {
+    if let Some(home) = std::env::var("HOME").ok() {
+        return format!("{}/.config/MangoHud/MangoHud.conf", home);
+    }
+    "MangoHud.conf".to_string()
+}
+
 /// Find the configuration file path based on environment variables
 fn find_config_file() -> String {
     if let Some(path) = std::env::var("LSFG_CONFIG").ok() {
@@ -30,6 +38,7 @@ pub fn default_config() -> TomlConfig {
         version: 1,
         global: TomlGlobal {
             dll: None,
+            mangohud: TomlMangoHud::default(),
         },
         game: vec![
             TomlGame {
@@ -167,5 +176,103 @@ pub fn save_config(config: &TomlConfig) -> Result<(), anyhow::Error> {
         .context("Failed to serialize conf.toml")?;
     std::fs::write(path, data)
         .context("Failed to write conf.toml")?;
+    Ok(())
+}
+
+///
+/// Load MangoHUD configuration from file
+///
+pub fn load_mangohud_config() -> Result<TomlMangoHud, anyhow::Error> {
+    let path = find_mangohud_config_file();
+    
+    if !std::path::Path::new(&path).exists() {
+        return Ok(TomlMangoHud::default());
+    }
+
+    let content = std::fs::read_to_string(&path)
+        .context("Failed to read MangoHud.conf")?;
+
+    let mut fps_limit = 60i64; // default value
+    let mut found_fps_limit = false;
+
+    for line in content.lines() {
+        let line = line.trim();
+        
+        // Check for commented fps_limit (disabled)
+        if line.starts_with("#fps_limit=") {
+            fps_limit = 0; // Return 0 to indicate no limit (commented)
+            found_fps_limit = true;
+        }
+        // Check for uncommented fps_limit (enabled)
+        else if line.starts_with("fps_limit=") {
+            if let Some(value_str) = line.strip_prefix("fps_limit=") {
+                if let Ok(value) = value_str.parse::<i64>() {
+                    fps_limit = value;
+                    found_fps_limit = true;
+                }
+            }
+        }
+    }
+
+    // If no fps_limit line was found, use default
+    if !found_fps_limit {
+        fps_limit = 60;
+    }
+
+    Ok(TomlMangoHud { fps_limit })
+}
+
+///
+/// Save MangoHUD configuration to file
+///
+pub fn save_mangohud_config(mangohud_config: &TomlMangoHud) -> Result<(), anyhow::Error> {
+    let path = find_mangohud_config_file();
+    
+    if !std::path::Path::new(&path).exists() {
+        return Err(anyhow::anyhow!("MangoHud.conf file does not exist at {}", path));
+    }
+
+    let content = std::fs::read_to_string(&path)
+        .context("Failed to read MangoHud.conf")?;
+
+    let mut new_content = String::new();
+    let mut fps_limit_updated = false;
+
+    for line in content.lines() {
+        let trimmed_line = line.trim();
+        
+        // Handle both commented and uncommented fps_limit lines
+        if trimmed_line.starts_with("fps_limit=") || trimmed_line.starts_with("#fps_limit=") {
+            if mangohud_config.fps_limit == 0 {
+                // Comment the line to disable fps limit
+                new_content.push_str(&format!("#fps_limit={}\n", 60)); // Use 60 as default when commenting
+            } else {
+                // Uncomment and set the value
+                new_content.push_str(&format!("fps_limit={}\n", mangohud_config.fps_limit));
+            }
+            fps_limit_updated = true;
+        } else {
+            new_content.push_str(line);
+            new_content.push('\n');
+        }
+    }
+
+    // If fps_limit wasn't found in the file, add it
+    if !fps_limit_updated {
+        if mangohud_config.fps_limit == 0 {
+            new_content.push_str("#fps_limit=60\n");
+        } else {
+            new_content.push_str(&format!("fps_limit={}\n", mangohud_config.fps_limit));
+        }
+    }
+
+    let parent = std::path::Path::new(&path).parent()
+        .context("Failed to get parent directory of MangoHud config path")?;
+    std::fs::create_dir_all(parent)
+        .context("Failed to create MangoHud config directory")?;
+
+    std::fs::write(&path, new_content)
+        .context("Failed to write MangoHud.conf")?;
+
     Ok(())
 }

@@ -62,7 +62,23 @@ impl Into<u32> for PresentMode {
 /// Global configuration for the application
 #[derive(Debug, Default, Clone, Deserialize, Serialize)]
 pub struct TomlGlobal {
-    pub dll: Option<String>
+    pub dll: Option<String>,
+    #[serde(default)]
+    pub mangohud: TomlMangoHud,
+}
+
+/// MangoHUD configuration
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct TomlMangoHud {
+    pub fps_limit: i64,
+}
+
+impl Default for TomlMangoHud {
+    fn default() -> Self {
+        TomlMangoHud {
+            fps_limit: 60,
+        }
+    }
 }
 
 /// Game-specific configuration

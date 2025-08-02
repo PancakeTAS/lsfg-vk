@@ -25,6 +25,7 @@ pub fn register_signals(sidebar_: pane::PaneSidebar, main: &pane::PaneMain) {
     let performance_mode = main.performance_mode.imp();
     let hdr_mode = main.hdr_mode.imp();
     let experimental_present_mode = main.experimental_present_mode.imp();
+    let mangohud_fps_limit = &main.mangohud_fps_limit;
 
     // preset opts
     let sidebar = sidebar_.clone();
@@ -93,6 +94,30 @@ pub fn register_signals(sidebar_: pane::PaneSidebar, main: &pane::PaneMain) {
                 config.global.dll = Some(text);
             }
         });
+    });
+
+    // mangohud opts
+    mangohud_fps_limit.connect_value_changed(|number| {
+        // Only process if the widget is sensitive (enabled)
+        if !number.is_sensitive() {
+            return;
+        }
+        
+        let fps_limit = number.value() as i64;
+        let _ = config::edit_config(|config| {
+            config.global.mangohud.fps_limit = fps_limit;
+        });
+        
+        // Check if MangoHUD config file exists before trying to save
+        let mangohud_path = format!("{}/.config/MangoHud/MangoHud.conf", 
+            std::env::var("HOME").unwrap_or_else(|_| String::from("/")));
+        
+        if std::path::Path::new(&mangohud_path).exists() {
+            let mangohud_config = config::TomlMangoHud { fps_limit };
+            if let Err(e) = config::save_mangohud_config(&mangohud_config) {
+                eprintln!("Failed to save MangoHUD configuration: {}", e);
+            }
+        }
     });
 
     // utility buttons

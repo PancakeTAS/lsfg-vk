@@ -77,6 +77,71 @@
         </child>
     </object>
     </child>
+    <!-- MangoHUD -->
+    <child>
+    <object class="AdwPreferencesGroup">
+        <property name="title">MangoHUD</property>
+        <!-- MangoHUD: FPS Limit -->
+        <child>
+        <object class="AdwPreferencesRow">
+            <child>
+            <object class="GtkBox">
+                <property name="orientation">horizontal</property>
+                <property name="spacing">16</property>
+                <property name="valign">center</property>
+                <property name="margin-start">12</property>
+                <property name="margin-end">12</property>
+                <property name="margin-top">8</property>
+                <property name="margin-bottom">8</property>
+                <child>
+                <object class="GtkBox">
+                    <property name="orientation">vertical</property>
+                    <property name="spacing">4</property>
+                    <property name="valign">center</property>
+                    <property name="hexpand">true</property>
+                    <child>
+                    <object class="GtkLabel">
+                        <property name="label">FPS Limit</property>
+                        <property name="halign">start</property>
+                        <property name="hexpand">true</property>
+                    </object>
+                    </child>
+                    <child>
+                    <object class="GtkLabel" id="mangohud_subtitle">
+                        <property name="label">Set the frame rate limit for MangoHUD overlay. (0 = no limit)</property>
+                        <property name="halign">start</property>
+                        <property name="hexpand">true</property>
+                        <style>
+                            <class name="dim-label"/>
+                            <class name="caption"/>
+                        </style>
+                    </object>
+                    </child>
+                </object>
+                </child>
+                <child>
+                <object class="GtkSpinButton" id="mangohud_fps_limit">
+                <property name="digits">0</property>
+                <property name="climb-rate">1</property>
+                <property name="numeric">true</property>
+                <property name="value">60</property>
+                <property name="adjustment">
+                <object class="GtkAdjustment">
+                    <property name="lower">0</property>
+                    <property name="upper">1000</property>
+                    <property name="step-increment">1</property>
+                    <property name="page-increment">10</property>
+                    <property name="value">60</property>
+                </object>
+                </property>
+                </object>
+                </child>
+            </object>
+            </child>
+        </object>
+        </child>
+    </object>
+    </child>
     <!-- Misc -->
     <child>
     <object class="AdwPreferencesGroup">

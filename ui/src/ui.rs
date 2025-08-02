@@ -26,6 +26,23 @@ pub fn build(app: &adw::Application) {
         imp.main.imp().dll.imp().entry.set_text(&dll_path);
     }
 
+    // Load MangoHUD configuration
+    let mangohud_path = format!("{}/.config/MangoHud/MangoHud.conf", 
+        std::env::var("HOME").unwrap_or_else(|_| String::from("/")));
+    
+    if std::path::Path::new(&mangohud_path).exists() {
+        if let Ok(mangohud_config) = config::load_mangohud_config() {
+            imp.main.imp().mangohud_fps_limit.set_value(mangohud_config.fps_limit as f64);
+        }
+        imp.main.imp().mangohud_fps_limit.set_sensitive(true);
+        imp.main.imp().mangohud_subtitle.set_text("Set the frame rate limit for MangoHUD overlay. (0 = no limit)");
+    } else {
+        // Disable the MangoHUD FPS limit field if config file doesn't exist
+        imp.main.imp().mangohud_fps_limit.set_sensitive(false);
+        imp.main.imp().mangohud_fps_limit.set_value(0.0);
+        imp.main.imp().mangohud_subtitle.set_text("MangoHUD config file not found. Please install MangoHUD first.");
+    }
+
     // register handlers on sidebar pane.
     sidebar_handler::register_signals(&imp.sidebar, imp.main.clone());
 
