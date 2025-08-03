@@ -11,7 +11,6 @@ toml = "0.9.2"
 anyhow = "1.0"
 procfs = "0.17.0"
 proc-maps = "0.4.0"
-regex = "1.11.1"
 
 [build-dependencies]
 glib-build-tools = "0.21.0"

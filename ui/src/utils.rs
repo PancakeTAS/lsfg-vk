@@ -26,7 +26,7 @@ pub fn find_vulkan_processes() -> ProcResult<Vec<(String, String)>> {
 
         let pid = process.pid();
 
-        // By default, assume Linux process, and use comm
+        // By default, assume Linux process, and use /proc/self/comm
         let mut name = process.stat()?.comm;
 
         // Solely just for checking if it's a Proton or Wine process
@@ -35,13 +35,13 @@ pub fn find_vulkan_processes() -> ProcResult<Vec<(String, String)>> {
         
 
         // If this is a Proton or Wine process with .exe,
-        // then extract just the .exe name with RegEx
+        // then just get filename from /proc/self/maps
         if cmdline.contains(".exe") {
             for map in &maps {
                 if let Some(path) = map.filename() {
                     let path_str = path.to_string_lossy().to_lowercase();
                     if path_str.contains(".exe") &&
-                       !path_str.contains("wine") && 
+                       !path_str.contains("wine") && // Make sure .exe is not from Wine
                        path_str.contains('/') ||
                        path_str.contains('\\') {
 
