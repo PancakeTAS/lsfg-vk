@@ -3,16 +3,13 @@ Lossless Scaling is a Windows-exclusive app with the goal of bringing frame gene
 
 lsfg-vk brings this frame generation to Linux users by acting as a Vulkan layer inbetween your game and your graphics card.
 
->[!TIP]
-> **This is a pre-release**. We are still ironing out the last few issues before finally releasing a first version, so beware of any issues you encounter on the way and report them via GitHub issues or the Discord.
-
 ## Installation
 
-lsfg-vk can run on a variety of Linux distributions:
+lsfg-vk has been prebuilt to run on a variety of Linux distributions:
 - Click [here](https://github.com/PancakeTAS/lsfg-vk/releases) to download lsfg-vk for your distribution
-- Follow [this guide](https://github.com/PancakeTAS/lsfg-vk/wiki/Installation-Guide) if you any more help.
+- Follow [this guide](https://github.com/PancakeTAS/lsfg-vk/wiki/Installation-Guide) if you need any more help.
 
-Once installed, open up the lsfg-vk Configuration Window which should hopefully appear in your application menu.
+Once installed, open up the lsfg-vk Configuration Window from your application menu or by typing `lsfg-vk-ui` into the console.
 
 Please see the [Wiki](https://github.com/PancakeTAS/lsfg-vk/wiki) for more information and join the [Discord](https://discord.gg/losslessscaling) for help (needs Steam verification).
 
