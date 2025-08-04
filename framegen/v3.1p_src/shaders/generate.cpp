@@ -21,12 +21,12 @@ Generate::Generate(Vulkan& vk,
           inImg3(std::move(inImg3)), inImg4(std::move(inImg4)),
           inImg5(std::move(inImg5)) {
     // create resources
-    this->shaderModule = vk.shaders.getShader(vk.device, "p_generate",
+    this->shaderModule = vk.shaders.getShader(vk.device, "generate",
         { { 1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER },
           { 2, VK_DESCRIPTOR_TYPE_SAMPLER },
           { 5, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE },
           { 1, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE } });
-    this->pipeline = vk.shaders.getPipeline(vk.device, "p_generate");
+    this->pipeline = vk.shaders.getPipeline(vk.device, "generate");
     this->samplers.at(0) = vk.resources.getSampler(vk.device);
     this->samplers.at(1) = vk.resources.getSampler(vk.device,
         VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE, VK_COMPARE_OP_ALWAYS);

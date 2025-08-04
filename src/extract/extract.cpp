@@ -11,7 +11,6 @@
 #include <stdexcept>
 #include <cstdint>
 #include <cstdlib>
-#include <cstring>
 #include <string>
 #include <utility>
 #include <vector>
@@ -20,6 +19,8 @@
 using namespace Extract;
 
 const uint32_t NO = 49; // native offset
+const uint32_t PO = NO + 23; // performance+native offset
+const uint32_t FP = 49; // fp32 offset
 const std::unordered_map<std::string, uint32_t> nameIdxTable = {{
     { "mipmaps",  255 + NO },
     { "alpha[0]", 267 + NO },
@@ -46,7 +47,31 @@ const std::unordered_map<std::string, uint32_t> nameIdxTable = {{
     { "delta[7]", 272 + NO },
     { "delta[8]", 273 + NO },
     { "delta[9]", 274 + NO },
-    { "generate", 256 + NO }
+    { "generate", 256 + NO },
+    { "p_alpha[0]", 267 + PO },
+    { "p_alpha[1]", 268 + PO },
+    { "p_alpha[2]", 269 + PO },
+    { "p_alpha[3]", 270 + PO },
+    { "p_beta[0]",  275 + PO },
+    { "p_beta[1]",  276 + PO },
+    { "p_beta[2]",  277 + PO },
+    { "p_beta[3]",  278 + PO },
+    { "p_beta[4]",  279 + PO },
+    { "p_gamma[0]", 257 + PO },
+    { "p_gamma[1]", 259 + PO },
+    { "p_gamma[2]", 260 + PO },
+    { "p_gamma[3]", 261 + PO },
+    { "p_gamma[4]", 262 + PO },
+    { "p_delta[0]", 257 + PO },
+    { "p_delta[1]", 263 + PO },
+    { "p_delta[2]", 264 + PO },
+    { "p_delta[3]", 265 + PO },
+    { "p_delta[4]", 266 + PO },
+    { "p_delta[5]", 258 + PO },
+    { "p_delta[6]", 271 + PO },
+    { "p_delta[7]", 272 + PO },
+    { "p_delta[8]", 273 + PO },
+    { "p_delta[9]", 274 + PO },
 }};
 
 namespace {
@@ -95,81 +120,6 @@ namespace {
         // final fallback
         return "Lossless.dll";
     }
-
-    std::array<std::vector<uint8_t>, 2> fixShaders(const std::vector<uint8_t>& spirv) {
-        std::vector<uint32_t> shader(spirv.size() / 4);
-        std::copy_n(spirv.data(), spirv.size(), reinterpret_cast<uint8_t*>(shader.data()));
-
-        // patch bindings
-        std::vector<size_t> samplerOffsets{};
-        std::vector<size_t> sampledImageOffsets{};
-        std::vector<size_t> storageImageOffsets{};
-        std::vector<size_t> uniformBufferOffsets{};
-
-        uint32_t prevIdx{ 0 };
-        uint32_t type{ 0 };
-
-        size_t i{ 5 };
-        while (i < shader.size()) {
-            const uint32_t word = shader[i];
-            const uint16_t op = word & 0xFFFF;
-            const uint16_t len = word >> 16;
-            if (op == 71 /*spv::OpDecorate*/) {
-                const uint32_t decoration = shader[i + 2];
-                if (decoration == 33 /*spv::DecorationBinding*/) {
-                    const uint32_t idx = shader[i + 3];
-                    if (idx <= prevIdx)
-                        type++;
-                    prevIdx = idx;
-
-                    switch (type) {
-                        case 1:
-                            samplerOffsets.emplace_back(i + 3);
-                            break;
-                        case 2:
-                            sampledImageOffsets.emplace_back(i + 3);
-                            break;
-                        case 3:
-                            storageImageOffsets.emplace_back(i + 3);
-                            break;
-                        case 4:
-                            uniformBufferOffsets.emplace_back(i + 3);
-                            break;
-                        default:
-                            break;
-                    }
-                }
-            }
-
-            if (op == 54 /*spv::OpFunction*/)
-                break;
-
-            i += len ? len : 1;
-        }
-
-        uint32_t binding{ 0 };
-        for (const auto& idx : uniformBufferOffsets)
-            shader[idx] = binding++;
-        for (const auto& idx : samplerOffsets)
-            shader[idx] = binding++;
-        for (const auto& idx : sampledImageOffsets)
-            shader[idx] = binding++;
-        for (const auto& idx : storageImageOffsets)
-            shader[idx] = binding++;
-
-        std::vector<uint8_t> result_fp32(shader.size() * sizeof(uint32_t));
-        std::copy_n(reinterpret_cast<uint8_t*>(shader.data()),
-            result_fp32.size(), result_fp32.data());
-
-        spvtools::Optimizer optimizer(SPV_ENV_VULKAN_1_3);
-        optimizer.RegisterPass(spvtools::CreateConvertRelaxedToHalfPass());
-        optimizer.Run(shader.data(), shader.size() * sizeof(uint32_t), &shader);
-
-        std::vector<uint8_t> result_fp16(shader.size() * sizeof(uint32_t));
-        std::copy_n(reinterpret_cast<uint8_t*>(shader.data()),
-            result_fp16.size(), result_fp16.data());
-        return { std::move(result_fp32), std::move(result_fp16) };
-    }
 }
 
 void Extract::extractShaders() {
@@ -186,13 +136,19 @@ void Extract::extractShaders() {
     peparse::DestructParsedPE(dll);
 
     // ensure all shaders are present
-    for (const auto& [name, idx] : nameIdxTable)
-        if (shaders.find(idx) == shaders.end())
-            throw std::runtime_error("Shader not found: " + name + ".\n- Is Lossless Scaling up to date?");
+    for (const auto& [name, idx] : nameIdxTable) {
+        auto fp16 = shaders.find(idx);
+        if (fp16 == shaders.end())
+            throw std::runtime_error("Shader not found: " + name + " (FP16).\n- Is Lossless Scaling up to date?");
+        auto fp32 = shaders.find(idx + FP);
+        if (fp32 == shaders.end())
+            throw std::runtime_error("Shader not found: " + name + " (FP32).\n- Is Lossless Scaling up to date?");
 
-    // fix shader bytecode
-    for (auto& [idx, data] : shaders)
-        pshaders()[idx] = fixShaders(data);
+        pshaders().emplace(idx, std::array<std::vector<uint8_t>, 2>{
+            std::move(fp32->second),
+            std::move(fp16->second)
+        });
+    }
 }
 
 std::vector<uint8_t> Extract::getShader(const std::string& name, bool fp16) {
