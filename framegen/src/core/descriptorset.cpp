@@ -12,8 +12,9 @@
 #include "core/buffer.hpp"
 #include "common/exception.hpp"
 
-#include <memory>
+#include <cstddef>
 #include <cstdint>
+#include <memory>
 
 using namespace LSFG::Core;
 
@@ -55,10 +56,11 @@ void DescriptorSet::bind(const CommandBuffer& commandBuffer, const Pipeline& pip
 // updater class
 
 DescriptorSetUpdateBuilder& DescriptorSetUpdateBuilder::add(VkDescriptorType type, const Image& image) {
+    size_t* idx{type == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE ? &this->outputIdx : &this->inputIdx};
     this->entries.push_back({
         .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
         .dstSet = this->descriptorSet->handle(),
-        .dstBinding = static_cast<uint32_t>(this->entries.size()),
+        .dstBinding = static_cast<uint32_t>(*idx),
         .descriptorCount = 1,
         .descriptorType = type,
         .pImageInfo = new VkDescriptorImageInfo {
@@ -67,6 +69,7 @@ DescriptorSetUpdateBuilder& DescriptorSetUpdateBuilder::add(VkDescriptorType typ
         },
         .pBufferInfo = nullptr
     });
+    (*idx)++;
     return *this;
 }
 
@@ -74,7 +77,7 @@ DescriptorSetUpdateBuilder& DescriptorSetUpdateBuilder::add(VkDescriptorType typ
     this->entries.push_back({
         .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
         .dstSet = this->descriptorSet->handle(),
-        .dstBinding = static_cast<uint32_t>(this->entries.size()),
+        .dstBinding = static_cast<uint32_t>(this->samplerIdx++),
         .descriptorCount = 1,
         .descriptorType = type,
         .pImageInfo = new VkDescriptorImageInfo {
@@ -89,7 +92,7 @@ DescriptorSetUpdateBuilder& DescriptorSetUpdateBuilder::add(VkDescriptorType typ
     this->entries.push_back({
         .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
         .dstSet = this->descriptorSet->handle(),
-        .dstBinding = static_cast<uint32_t>(this->entries.size()),
+        .dstBinding = static_cast<uint32_t>(this->samplerIdx++),
         .descriptorCount = 1,
         .descriptorType = type,
         .pImageInfo = nullptr,
@@ -102,16 +105,34 @@ DescriptorSetUpdateBuilder& DescriptorSetUpdateBuilder::add(VkDescriptorType typ
 }
 
 DescriptorSetUpdateBuilder& DescriptorSetUpdateBuilder::add(VkDescriptorType type) {
+    size_t* idx{};
+    switch (type) {
+        case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
+            idx = &this->inputIdx;
+            break;
+        case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE:
+            idx = &this->outputIdx;
+            break;
+        case VK_DESCRIPTOR_TYPE_SAMPLER:
+            idx = &this->samplerIdx;
+            break;
+        case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
+            idx = &this->bufferIdx;
+            break;
+        default:
+            throw LSFG::vulkan_error(VK_ERROR_UNKNOWN, "Unsupported descriptor type");
+    }
     this->entries.push_back({
         .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
         .dstSet = this->descriptorSet->handle(),
-        .dstBinding = static_cast<uint32_t>(this->entries.size()),
+        .dstBinding = static_cast<uint32_t>(*idx),
         .descriptorCount = 1,
         .descriptorType = type,
         .pImageInfo = new VkDescriptorImageInfo {
         },
         .pBufferInfo = nullptr
     });
+    (*idx)++;
     return *this;
 }
 
