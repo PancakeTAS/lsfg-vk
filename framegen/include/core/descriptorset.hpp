@@ -119,6 +119,10 @@ namespace LSFG::Core {
                 : descriptorSet(&descriptorSet), device(&device) {}
 
         std::vector<VkWriteDescriptorSet> entries;
+        size_t bufferIdx{0};
+        size_t samplerIdx{16};
+        size_t inputIdx{32};
+        size_t outputIdx{48};
     };
 
 }
