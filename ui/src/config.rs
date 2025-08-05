@@ -30,6 +30,7 @@ pub fn default_config() -> TomlConfig {
         version: 1,
         global: TomlGlobal {
             dll: None,
+            no_fp16: false
         },
         game: vec![
             TomlGame {

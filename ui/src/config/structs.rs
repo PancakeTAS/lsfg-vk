@@ -62,7 +62,9 @@ impl Into<u32> for PresentMode {
 /// Global configuration for the application
 #[derive(Debug, Default, Clone, Deserialize, Serialize)]
 pub struct TomlGlobal {
-    pub dll: Option<String>
+    pub dll: Option<String>,
+    #[serde(default)]
+    pub no_fp16: bool
 }
 
 /// Game-specific configuration

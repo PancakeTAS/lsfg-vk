@@ -39,6 +39,14 @@
             <property name="icon-name">folder-symbolic</property>
         </object>
         </child>
+        <!--General Properties: FP16 Override -->
+        <child>
+        <object class="LSPrefSwitch" id="no_fp16">
+            <property name="opt-name">Force-disable FP16</property>
+            <property name="opt-subtitle">(Global Option) Force-disable FP16 acceleration (use on older NVIDIA GPUs)</property>
+            <property name="default-state">false</property>
+        </object>
+        </child>
         <!--General Properties: Profile name -->
         <child>
         <object class="LSPrefEntry" id="profile_name">

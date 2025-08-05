@@ -94,6 +94,12 @@ pub fn register_signals(sidebar_: pane::PaneSidebar, main: &pane::PaneMain) {
             }
         });
     });
+    let no_fp16 = main.no_fp16.imp();
+    no_fp16.switch.connect_state_notify(|switch| {
+        let _ = config::edit_config(|config| {
+            config.global.no_fp16 = switch.state();
+        });
+    });
 
     // utility buttons
     let entry = dll.entry.clone();
