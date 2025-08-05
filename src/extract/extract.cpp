@@ -1,8 +1,6 @@
 #include "extract/extract.hpp"
 #include "config/config.hpp"
 
-#include <spirv-tools/optimizer.hpp>
-#include <spirv-tools/libspirv.h>
 #include <pe-parse/parse.h>
 
 #include <unordered_map>
