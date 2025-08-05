@@ -6,6 +6,8 @@ const std::string DEFAULT_CONFIG = R"(version = 1
 [global]
 # override the location of Lossless Scaling
 # dll = "/games/Lossless Scaling/Lossless.dll"
+# force-disable fp16 (use on older nvidia cards)
+# no_fp16 = true
 
 # [[game]] # example entry
 # exe = "Game.exe"
