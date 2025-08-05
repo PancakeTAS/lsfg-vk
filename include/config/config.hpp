@@ -15,6 +15,8 @@ namespace Config {
         bool enable{false};
         /// Path to Lossless.dll.
         std::string dll;
+        /// Whether FP16 is force-disabled
+        bool no_fp16{false};
 
         /// The frame generation muliplier
         size_t multiplier{2};

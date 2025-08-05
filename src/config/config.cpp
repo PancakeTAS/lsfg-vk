@@ -73,7 +73,8 @@ void Config::updateConfig(const std::string& file) {
     // parse global configuration
     const toml::value globalTable = toml::find_or_default<toml::table>(toml, "global");
     const Configuration global{
-        .dll =   toml::find_or(globalTable, "dll", std::string()),
+        .dll =     toml::find_or(globalTable, "dll", std::string()),
+        .no_fp16 = toml::find_or(globalTable, "no_fp16", false),
         .config_file = file,
         .timestamp = std::filesystem::last_write_time(file)
     };
@@ -97,6 +98,7 @@ void Config::updateConfig(const std::string& file) {
         Configuration game{
             .enable = true,
             .dll = global.dll,
+            .no_fp16 = global.no_fp16,
             .multiplier = toml::find_or(gameTable, "multiplier", 2U),
             .flowScale = toml::find_or(gameTable, "flow_scale", 1.0F),
             .performance = toml::find_or(gameTable, "performance_mode", false),

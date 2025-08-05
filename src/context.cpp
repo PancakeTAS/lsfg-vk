@@ -53,6 +53,7 @@ LsContext::LsContext(const Hooks::DeviceInfo& info, VkSwapchainKHR swapchain,
         // print config
         std::cerr << "lsfg-vk: Reloaded configuration for " << name.second << ":\n";
         if (!conf.dll.empty()) std::cerr << "  Using DLL from: " << conf.dll << '\n';
+        if (conf.no_fp16) std::cerr << "  FP16 Acceleration: Force-disabled\n";
         std::cerr << "  Multiplier: " << conf.multiplier << '\n';
         std::cerr << "  Flow Scale: " << conf.flowScale << '\n';
         std::cerr << "  Performance Mode: " << (conf.performance ? "Enabled" : "Disabled") << '\n';
@@ -98,6 +99,7 @@ LsContext::LsContext(const Hooks::DeviceInfo& info, VkSwapchainKHR swapchain,
     lsfgInitialize(
         Utils::getDeviceUUID(info.physicalDevice),
         conf.hdr, 1.0F / conf.flowScale, conf.multiplier - 1,
+        conf.no_fp16,
         Extract::getShader
     );
 

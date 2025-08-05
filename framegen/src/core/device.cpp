@@ -19,7 +19,7 @@ const std::vector<const char*> requiredExtensions = {
     "VK_EXT_robustness2"
 };
 
-Device::Device(const Instance& instance, uint64_t deviceUUID) {
+Device::Device(const Instance& instance, uint64_t deviceUUID, bool forceDisableFp16) {
     // get all physical devices
     uint32_t deviceCount{};
     auto res = vkEnumeratePhysicalDevices(instance.handle(), &deviceCount, nullptr);
@@ -72,10 +72,10 @@ Device::Device(const Instance& instance, uint64_t deviceUUID) {
         .pNext = &supported12Features
     };
     vkGetPhysicalDeviceFeatures2(*physicalDevice, &supportedFeatures);
-    this->supportsFP16 = supported12Features.shaderFloat16;
+    this->supportsFP16 = !forceDisableFp16 && supported12Features.shaderFloat16;
     if (this->supportsFP16)
         std::cerr << "lsfg-vk: Using FP16 acceleration" << '\n';
-    else
+    else if (!forceDisableFp16)
         std::cerr << "lsfg-vk: FP16 acceleration not supported, using FP32" << '\n';
 
     // create logical device

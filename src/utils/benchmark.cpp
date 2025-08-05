@@ -41,6 +41,7 @@ void Benchmark::run(uint32_t width, uint32_t height) {
     lsfgInitialize(
         deviceUUID, // some magic number if not given
         conf.hdr, 1.0F / conf.flowScale, conf.multiplier - 1,
+        conf.no_fp16,
         Extract::getShader
     );
     const int32_t ctx = lsfgCreateContext(-1, -1, {},

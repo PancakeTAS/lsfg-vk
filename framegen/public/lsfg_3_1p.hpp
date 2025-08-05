@@ -16,6 +16,7 @@ namespace LSFG_3_1P {
     /// @param isHdr Whether the images are in HDR format.
     /// @param flowScale Internal flow scale factor.
     /// @param generationCount Number of frames to generate.
+    /// @param forceDisableFp16 Whether to force-disable FP16 optimizations.
     /// @param loader Function to load shader source code by name.
     ///
     /// @throws LSFG::vulkan_error if Vulkan objects fail to initialize.
@@ -23,6 +24,7 @@ namespace LSFG_3_1P {
     [[gnu::visibility("default")]]
     void initialize(uint64_t deviceUUID,
         bool isHdr, float flowScale, uint64_t generationCount,
+        bool forceDisableFp16,
         const std::function<std::vector<uint8_t>(const std::string&, bool)>& loader);
 
     ///

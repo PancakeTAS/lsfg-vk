@@ -21,10 +21,11 @@ namespace LSFG::Core {
         ///
         /// @param instance Vulkan instance
         /// @param deviceUUID The UUID of the Vulkan device to use.
+        /// @param forceDisableFp16 Force-disable FP16 shaders.
         ///
         /// @throws LSFG::vulkan_error if object creation fails.
         ///
-        Device(const Instance& instance, uint64_t deviceUUID);
+        Device(const Instance& instance, uint64_t deviceUUID, bool forceDisableFp16);
 
         /// Get the Vulkan handle.
         [[nodiscard]] auto handle() const { return *this->device; }

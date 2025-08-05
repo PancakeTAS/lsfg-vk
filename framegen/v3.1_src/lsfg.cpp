@@ -35,13 +35,14 @@ namespace {
 
 void LSFG_3_1::initialize(uint64_t deviceUUID,
         bool isHdr, float flowScale, uint64_t generationCount,
+        bool forceDisableFp16,
         const std::function<std::vector<uint8_t>(const std::string&, bool)>& loader) {
     if (instance.has_value() || device.has_value())
         return;
 
     instance.emplace();
     device.emplace(Vulkan {
-        .device{*instance, deviceUUID},
+        .device{*instance, deviceUUID, forceDisableFp16},
         .generationCount = generationCount,
         .flowScale = flowScale,
         .isHdr = isHdr

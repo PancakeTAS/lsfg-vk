@@ -47,6 +47,7 @@ namespace {
         // print config
         std::cerr << "lsfg-vk: Loaded configuration for " << name.second << ":\n";
         if (!conf.dll.empty()) std::cerr << "  Using DLL from: " << conf.dll << '\n';
+        if (conf.no_fp16) std::cerr << "  FP16 Acceleration: Force-disabled\n";
         std::cerr << "  Multiplier: " << conf.multiplier << '\n';
         std::cerr << "  Flow Scale: " << conf.flowScale << '\n';
         std::cerr << "  Performance Mode: " << (conf.performance ? "Enabled" : "Disabled") << '\n';
