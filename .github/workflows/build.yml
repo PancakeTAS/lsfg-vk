@@ -3,6 +3,7 @@ name: Build lsfg-vk
 on:
   push:
     branches: ["release"]
+  workflow_dispatch:
 
 env:
   CARGO_TERM_COLOR: always
