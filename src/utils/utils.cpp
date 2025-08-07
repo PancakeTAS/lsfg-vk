@@ -8,7 +8,6 @@
 #include <unistd.h>
 
 #include <unordered_map>
-#include <filesystem>
 #include <algorithm>
 #include <optional>
 #include <iostream>
@@ -210,20 +209,25 @@ void Utils::resetLimitN(const std::string& id) noexcept {
 }
 
 std::pair<std::string, std::string> Utils::getProcessName() {
+    // check override first
     const char* process_name = std::getenv("LSFG_PROCESS");
     if (process_name && *process_name != '\0')
         return { process_name, process_name };
 
+    // then check benchmark flag
     const char* benchmark_flag = std::getenv("LSFG_BENCHMARK");
     if (benchmark_flag)
         return { "benchmark", "benchmark" };
     std::array<char, 4096> exe{};
 
+    // find executed binary
     const ssize_t exe_len = readlink("/proc/self/exe", exe.data(), exe.size() - 1);
     if (exe_len <= 0)
         return { "Unknown Process", "unknown" };
     exe.at(static_cast<size_t>(exe_len)) = '\0';
+    std::string exe_str(exe.data());
 
+    // find command name as well
     std::ifstream comm_file("/proc/self/comm");
     if (!comm_file.is_open())
         return { std::string(exe.data()), "unknown" };
@@ -234,28 +238,33 @@ std::pair<std::string, std::string> Utils::getProcessName() {
     if (comm_str.back() == '\n')
         comm_str.pop_back();
 
+    // replace binary with exe for wine apps
+    if (exe_str.find("wine") != std::string::npos
+        || exe_str.find("proton") != std::string::npos) {
 
-    // For .exe apps running through Proton/Wine
+        std::ifstream proc_maps("/proc/self/maps");
+        if (!proc_maps.is_open())
+            return{ exe_str, comm_str };
 
-    std::ifstream maps_file("/proc/self/maps");
-    std::string line;
+        std::string line;
+        while (std::getline(proc_maps, line)) {
+            if (!line.ends_with(".exe"))
+                continue;
 
-    while (getline(maps_file, line)) {
-        if (line.find(".exe") != std::string::npos) {
+            const size_t pos = line.find_last_of(' ');
+            if (pos == std::string::npos)
+                continue;
 
-            // Backslash needs to be a raw string literal
-            size_t path_start = line.find("/") || line.find(R"(\)"); 
-            if (path_start != std::string::npos) {
-                std::string path = line.substr(path_start);
-                comm_str = std::filesystem::path(path).filename().string();
-            } else {
-                // If nothing found, default to 0
-                path_start = 0;
-            }
+            const std::string exe_name = line.substr(pos + 1);
+            if (exe_name.empty())
+                continue;
+
+            exe_str = exe_name;
+            break;
         }
     }
 
-    return{ std::string(exe.data()), comm_str };
+    return{ exe_str, comm_str };
 }
 
 std::string Utils::getConfigFile() {
