@@ -34,7 +34,7 @@ namespace {
         try {
             Config::activeConf = Config::getConfig(name);
         } catch (const std::exception& e) {
-            std::cerr << "lsfg-vk: The configuration for " << name.second << " is invalid, IGNORING:\n";
+            std::cerr << "lsfg-vk: The configuration for " << name.first << " is invalid, IGNORING:\n";
             std::cerr << e.what() << '\n';
             return; // default configuration will unload
         }
@@ -45,7 +45,7 @@ namespace {
             return; // default configuration will unload
 
         // print config
-        std::cerr << "lsfg-vk: Loaded configuration for " << name.second << ":\n";
+        std::cerr << "lsfg-vk: Loaded configuration for " << name.first << ":\n";
         if (!conf.dll.empty()) std::cerr << "  Using DLL from: " << conf.dll << '\n';
         if (conf.no_fp16) std::cerr << "  FP16 Acceleration: Force-disabled\n";
         std::cerr << "  Multiplier: " << conf.multiplier << '\n';
