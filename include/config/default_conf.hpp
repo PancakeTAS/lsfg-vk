@@ -32,7 +32,7 @@ multiplier = 4
 performance_mode = false
 
 [[game]] # override Genshin Impact
-exe = "Genshin"
+exe = "GenshinImpact.exe"
 
 multiplier = 3
 )";

@@ -50,7 +50,7 @@ pub fn default_config() -> TomlConfig {
                 experimental_present_mode: PresentMode::Vsync,
             },
             TomlGame {
-                exe: String::from("Genshin"),
+                exe: String::from("GenshinImpact.exe"),
                 multiplier: Multiplier::from(3),
                 flow_scale: FlowScale::from(1.0),
                 performance_mode: false,
