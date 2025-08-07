@@ -51,7 +51,7 @@ LsContext::LsContext(const Hooks::DeviceInfo& info, VkSwapchainKHR swapchain,
         LSFG_3_1::finalize();
 
         // print config
-        std::cerr << "lsfg-vk: Reloaded configuration for " << name.second << ":\n";
+        std::cerr << "lsfg-vk: Reloaded configuration for " << name.first << ":\n";
         if (!conf.dll.empty()) std::cerr << "  Using DLL from: " << conf.dll << '\n';
         if (conf.no_fp16) std::cerr << "  FP16 Acceleration: Force-disabled\n";
         std::cerr << "  Multiplier: " << conf.multiplier << '\n';
