@@ -22,7 +22,8 @@ set_target_properties(lsfg-vk-test PROPERTIES
 target_include_directories(lsfg-vk-test
     PRIVATE include)
 target_link_libraries(lsfg-vk-test PUBLIC
-    vulkan lsfg-vk)
+    lsfg-vk lsfg-vk-framegen
+    vulkan)
 
 # diagnostics
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")

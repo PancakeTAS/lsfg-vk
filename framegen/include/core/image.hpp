@@ -48,6 +48,21 @@ namespace LSFG::Core {
         Image(const Core::Device& device, VkExtent2D extent, VkFormat format,
             VkImageUsageFlags usage, VkImageAspectFlags aspectFlags, int fd);
 
+        ///
+        /// Create the image and export the backing fd
+        ///
+        /// @param device Vulkan device
+        /// @param extent Extent of the image in pixels.
+        /// @param format Vulkan format of the image
+        /// @param usage Usage flags for the image
+        /// @param aspectFlags Aspect flags for the image view
+        /// @param fd Pointer to an integer where the file descriptor will be stored.
+        ///
+        /// @throws LSFG::vulkan_error if object creation fails.
+        ///
+        Image(const Core::Device& device, VkExtent2D extent, VkFormat format,
+            VkImageUsageFlags usage, VkImageAspectFlags aspectFlags, int* fd);
+
         /// Get the Vulkan handle.
         [[nodiscard]] auto handle() const { return *this->image; }
         /// Get the Vulkan device memory handle.
