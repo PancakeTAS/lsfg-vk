@@ -19,8 +19,6 @@ add_executable(lsfg-vk-test ${SOURCES})
 set_target_properties(lsfg-vk-test PROPERTIES
     CXX_STANDARD 20
     CXX_STANDARD_REQUIRED ON)
-target_include_directories(lsfg-vk-test
-    PRIVATE include)
 target_link_libraries(lsfg-vk-test PUBLIC
     lsfg-vk lsfg-vk-framegen
     vulkan)

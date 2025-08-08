@@ -4,6 +4,7 @@
 #include "core/image.hpp"
 #include "core/instance.hpp"
 #include "extract/extract.hpp"
+#include "extract/trans.hpp"
 
 #include <vulkan/vulkan_core.h>
 #include <renderdoc_app.h>
@@ -23,7 +24,6 @@ using namespace LSFG;
 
 const VkExtent2D SRC_EXTENT = { 2560 , 1440 };
 const VkFormat SRC_FORMAT = VK_FORMAT_R8G8B8A8_UNORM;
-const std::string EMPTY_FILE = "test/empty.dds";
 const std::array<std::string, 2> SRC_FILES = {
     "test/f0.dds",
     "test/f1.dds"
@@ -87,7 +87,11 @@ namespace {
         initialize(
             0x1463ABAC,
             IS_HDR, FLOW_SCALE, MULTIPLIER - 3,
-            Extract::getShader
+            [](const std::string& name) -> std::vector<uint8_t> {
+                auto dxbc = Extract::getShader(name);
+                auto spirv = Extract::translateShader(dxbc);
+                return spirv;
+            }
         );
         return createContext(
             fds.at(0), fds.at(1), outFds,
