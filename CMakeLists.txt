@@ -1,8 +1,11 @@
 cmake_minimum_required(VERSION 3.10)
 
 set(CMAKE_SKIP_RPATH ON)
-set(CMAKE_C_VISIBILITY_PRESET "hidden")
-set(CMAKE_CXX_VISIBILITY_PRESET "hidden")
+
+if(NOT LSFGVK_EXCESS_DEBUG)
+    set(CMAKE_C_VISIBILITY_PRESET "hidden")
+    set(CMAKE_CXX_VISIBILITY_PRESET "hidden")
+endif()
 
 # subprojects
 add_compile_options(-fPIC
@@ -14,6 +17,10 @@ add_subdirectory(thirdparty/pe-parse/pe-parser-library EXCLUDE_FROM_ALL)
 add_subdirectory(thirdparty/toml11 EXCLUDE_FROM_ALL)
 add_subdirectory(thirdparty/volk EXCLUDE_FROM_ALL)
 add_subdirectory(framegen)
+
+if(LSFGVK_EXCESS_DEBUG)
+    add_subdirectory(test)
+endif()
 
 # main project
 project(lsfg-vk
@@ -36,8 +43,8 @@ set_target_properties(lsfg-vk PROPERTIES
     CXX_STANDARD 20
     CXX_STANDARD_REQUIRED ON)
 target_include_directories(lsfg-vk
-    PRIVATE include)
-target_link_libraries(lsfg-vk PRIVATE
+    PUBLIC include)
+target_link_libraries(lsfg-vk PUBLIC
     pe-parse dxbc toml11
     lsfg-vk-framegen)
 

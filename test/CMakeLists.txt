@@ -5,50 +5,33 @@ if(NOT LSFGVK_EXCESS_DEBUG)
     set(CMAKE_CXX_VISIBILITY_PRESET "hidden")
 endif()
 
-project(lsfg-vk-framegen
-    DESCRIPTION "Lossless Scaling Frame Generation Backend"
+project(lsfg-vk-test
+    DESCRIPTION "Test: lsfg-vk"
     LANGUAGES CXX)
 
 file(GLOB SOURCES
-    "src/common/*.cpp"
-    "src/config/*.cpp"
-    "src/core/*.cpp"
-    "src/pool/*.cpp"
     "src/*.cpp"
-    "v3.1_src/core/*.cpp"
-    "v3.1_src/pool/*.cpp"
-    "v3.1_src/shaders/*.cpp"
-    "v3.1_src/utils/*.cpp"
-    "v3.1_src/*.cpp"
-    "v3.1p_src/core/*.cpp"
-    "v3.1p_src/pool/*.cpp"
-    "v3.1p_src/shaders/*.cpp"
-    "v3.1p_src/utils/*.cpp"
-    "v3.1p_src/*.cpp"
 )
 
-add_library(lsfg-vk-framegen STATIC ${SOURCES})
+add_executable(lsfg-vk-test ${SOURCES})
 
 # target
-set_target_properties(lsfg-vk-framegen PROPERTIES
+set_target_properties(lsfg-vk-test PROPERTIES
     CXX_STANDARD 20
     CXX_STANDARD_REQUIRED ON)
-target_include_directories(lsfg-vk-framegen
-    PUBLIC include
-    PUBLIC public
-    PRIVATE v3.1_include
-    PRIVATE v3.1p_include)
-target_link_libraries(lsfg-vk-framegen
-    PUBLIC volk)
+target_include_directories(lsfg-vk-test
+    PRIVATE include)
+target_link_libraries(lsfg-vk-test PUBLIC
+    vulkan lsfg-vk)
 
 # diagnostics
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-    set_target_properties(lsfg-vk-framegen PROPERTIES
+    set_target_properties(lsfg-vk-test PROPERTIES
         EXPORT_COMPILE_COMMANDS ON)
 endif()
 
 if(LSFGVK_EXCESS_DEBUG)
-    target_compile_options(lsfg-vk-framegen PRIVATE
+    target_compile_options(lsfg-vk-test PRIVATE
         -Weverything
         # disable compat c++ flags
         -Wno-pre-c++20-compat-pedantic
@@ -66,6 +49,6 @@ if(LSFGVK_EXCESS_DEBUG)
         -Wno-cast-function-type-strict # for vulkan
     )
 
-    set_target_properties(lsfg-vk-framegen PROPERTIES
+    set_target_properties(lsfg-vk-test PROPERTIES
         CXX_CLANG_TIDY clang-tidy)
 endif()
