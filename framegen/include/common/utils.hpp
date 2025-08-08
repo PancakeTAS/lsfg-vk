@@ -13,6 +13,7 @@
 #include <optional>
 #include <cstddef>
 #include <cstdint>
+#include <string>
 #include <array>
 #include <vector>
 
@@ -62,6 +63,21 @@ namespace LSFG::Utils {
 
         std::vector<VkImageMemoryBarrier2> barriers;
     };
+
+    ///
+    /// Upload a DDS file to a Vulkan image.
+    ///
+    /// @param device The Vulkan device
+    /// @param commandPool The command pool
+    /// @param image The Vulkan image to upload to
+    /// @param path The path to the DDS file.
+    ///
+    /// @throws std::system_error If the file cannot be opened or read.
+    /// @throws ls:vulkan_error If the Vulkan image cannot be created or updated.
+    ///
+    void uploadImage(const Core::Device& device,
+        const Core::CommandPool& commandPool,
+        Core::Image& image, const std::string& path);
 
     ///
     /// Clear a texture to white during setup.
