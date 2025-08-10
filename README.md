@@ -33,15 +33,7 @@ After installation, you can open the **lsfg-vk** Configuration Window from your 
 
 ## Building from Source
 
-If you prefer to build **lsfg-vk** yourself for development, debugging, or to use the latest source, detailed build guides are available for various distributions:
-
-* [Build Guide](https://github.com/PancakeTAS/lsfg-vk/wiki/Build-Guide)
-  * [Steam Deck](https://github.com/PancakeTAS/lsfg-vk/wiki/Build-Guide:-Steam-Deck)
-  * [Arch Linux](https://github.com/PancakeTAS/lsfg-vk/wiki/Build-Guide:-Arch-Linux)
-  * [Debian](https://github.com/PancakeTAS/lsfg-vk/wiki/Build-Guide:-Debian)
-  * [Ubuntu](https://github.com/PancakeTAS/lsfg-vk/wiki/Build-Guide:-Ubuntu)
-  * [Fedora](https://github.com/PancakeTAS/lsfg-vk/wiki/Build-Guide:-Fedora)
-  * [Building from Source (Generic)](https://github.com/PancakeTAS/lsfg-vk/wiki/Building-from-source)
+If you prefer to build **lsfg-vk** yourself for development, debugging, or to use the latest source, a detailed build guide is available in the [Build Guide](https://github.com/PancakeTAS/lsfg-vk/wiki/Build-Guide) page.
 
 ## Support and Troubleshooting
 
