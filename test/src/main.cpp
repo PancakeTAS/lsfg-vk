@@ -7,10 +7,8 @@
 #include "extract/trans.hpp"
 
 #include <vulkan/vulkan_core.h>
-#include <renderdoc_app.h>
-#include <unistd.h>
-#include <dlfcn.h>
 
+#include <cstdlib>
 #include <utility>
 #include <cstddef>
 #include <cstdint>
@@ -24,16 +22,16 @@ using namespace LSFG;
 
 const VkExtent2D SRC_EXTENT = { 2560 , 1440 };
 const VkFormat SRC_FORMAT = VK_FORMAT_R8G8B8A8_UNORM;
-const std::array<std::string, 2> SRC_FILES = {
+const std::array<std::string, 3> SRC_FILES = {
     "test/f0.dds",
-    "test/f1.dds"
+    "test/f1.dds",
+    "test/f2.dds"
 };
 
-const size_t MULTIPLIER = 4;
+const size_t MULTIPLIER = 3;
 const bool IS_HDR = false;
-const float FLOW_SCALE = 1.0F;
-#define PERFORMANCE_MODE true
-
+const float FLOW_SCALE = 0.7F;
+#define PERFORMANCE_MODE false
 
 // test configuration end
 
@@ -46,16 +44,6 @@ using namespace LSFG_3_1;
 #endif
 
 namespace {
-    RENDERDOC_API_1_6_0* rdoc{};
-
-    /// Attempt to load the RenderDoc API.
-    void setup_renderdoc() {
-        if(void* mod = dlopen("librenderdoc.so", RTLD_NOW | RTLD_NOLOAD)) {
-            auto rdocGetAPI = reinterpret_cast<pRENDERDOC_GetAPI>(dlsym(mod, "RENDERDOC_GetAPI"));
-            rdocGetAPI(eRENDERDOC_API_Version_1_1_2, reinterpret_cast<void**>(&rdoc));
-        }
-    }
-
     /// Create images for frame generation
     std::pair<Core::Image, Core::Image> create_images(const Core::Device& device,
             std::array<int, 2>& fds,
@@ -86,13 +74,14 @@ namespace {
         Extract::extractShaders();
         initialize(
             0x1463ABAC,
-            IS_HDR, FLOW_SCALE, MULTIPLIER - 3,
+            IS_HDR, 1.0F / FLOW_SCALE, MULTIPLIER - 1,
             [](const std::string& name) -> std::vector<uint8_t> {
                 auto dxbc = Extract::getShader(name);
                 auto spirv = Extract::translateShader(dxbc);
                 return spirv;
             }
         );
+        initializeRenderDoc();
         return createContext(
             fds.at(0), fds.at(1), outFds,
             SRC_EXTENT, SRC_FORMAT
@@ -121,7 +110,6 @@ int main() {
     const Core::CommandPool commandPool{device};
 
     // setup test
-    setup_renderdoc();
     frames = create_images(device, fds, outFds, out_n);
     lsfg_id = create_lsfg(fds, outFds);
 
@@ -135,16 +123,8 @@ int main() {
         else
             Utils::uploadImage(device, commandPool, frames.second, SRC_FILES.at(fc));
 
-        if (rdoc) rdoc->StartFrameCapture(nullptr, nullptr);
-
         // run the present
-        const std::vector<int> null_sems(MULTIPLIER - 1, -1);
-        presentContext(lsfg_id, -1, null_sems);
-
-        // wait until the present is done
-        usleep(1000 * 100);
-
-        if (rdoc) rdoc->EndFrameCapture(nullptr, nullptr);
+        presentContext(lsfg_id, -1, {});
     }
 
     // destroy test

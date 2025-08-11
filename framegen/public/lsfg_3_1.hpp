@@ -26,6 +26,14 @@ namespace LSFG_3_1 {
         const std::function<std::vector<uint8_t>(const std::string&)>& loader);
 
     ///
+    /// Initialize the renderdoc API.
+    ///
+    /// @throws LSFG::vulkan_error if the renderdoc API cannot be initialized.
+    ///
+    [[gnu::visibility("default")]]
+    void initializeRenderDoc();
+
+    ///
     /// Create a new LSFG context on a swapchain.
     ///
     /// @param in0 File descriptor for the first input image.

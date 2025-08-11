@@ -10,6 +10,9 @@
 #include "common/exception.hpp"
 #include "common/utils.hpp"
 
+#include <renderdoc_app.h>
+#include <dlfcn.h>
+
 #include <cstdint>
 #include <optional>
 #include <cstdlib>
@@ -26,6 +29,8 @@ namespace {
     std::optional<Core::Instance> instance;
     std::optional<Vulkan> device;
     std::unordered_map<int32_t, Context> contexts;
+
+    std::optional<RENDERDOC_API_1_6_0*> renderdoc;
 }
 
 void LSFG_3_1::initialize(uint64_t deviceUUID,
@@ -52,6 +57,23 @@ void LSFG_3_1::initialize(uint64_t deviceUUID,
     std::srand(static_cast<uint32_t>(std::time(nullptr)));
 }
 
+void LSFG_3_1::initializeRenderDoc() {
+    if (renderdoc.has_value())
+        return;
+
+    if (void* mod = dlopen("librenderdoc.so", RTLD_NOW | RTLD_NOLOAD)) {
+        auto rdocGetAPI = reinterpret_cast<pRENDERDOC_GetAPI>(dlsym(mod, "RENDERDOC_GetAPI"));
+        RENDERDOC_API_1_6_0* rdoc{};
+        rdocGetAPI(eRENDERDOC_API_Version_1_6_0, reinterpret_cast<void**>(&rdoc));
+
+        renderdoc.emplace(rdoc);
+    }
+
+    if (!renderdoc.has_value()) {
+        throw LSFG::vulkan_error(VK_ERROR_INITIALIZATION_FAILED, "RenderDoc API not found");
+    }
+}
+
 int32_t LSFG_3_1::createContext(
         int in0, int in1, const std::vector<int>& outN,
         VkExtent2D extent, VkFormat format) {
@@ -71,7 +93,15 @@ void LSFG_3_1::presentContext(int32_t id, int inSem, const std::vector<int>& out
     if (it == contexts.end())
         throw LSFG::vulkan_error(VK_ERROR_UNKNOWN, "Context not found");
 
+    if (renderdoc.has_value())
+        (*renderdoc)->StartFrameCapture(RENDERDOC_DEVICEPOINTER_FROM_VKINSTANCE(instance->handle()), nullptr);
+
     it->second.present(*device, inSem, outSem);
+
+    if (renderdoc.has_value()) {
+        vkDeviceWaitIdle(device->device.handle());
+        (*renderdoc)->EndFrameCapture(RENDERDOC_DEVICEPOINTER_FROM_VKINSTANCE(instance->handle()), nullptr);
+    }
 }
 
 void LSFG_3_1::deleteContext(int32_t id) {
