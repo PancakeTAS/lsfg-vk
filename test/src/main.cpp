@@ -4,7 +4,6 @@
 #include "core/image.hpp"
 #include "core/instance.hpp"
 #include "extract/extract.hpp"
-#include "extract/trans.hpp"
 
 #include <vulkan/vulkan_core.h>
 
@@ -35,7 +34,7 @@ const float FLOW_SCALE = 0.7F;
 
 // test configuration end
 
-#ifdef PERFORMANCE_MODE
+#if PERFORMANCE_MODE
 #include "lsfg_3_1p.hpp"
 using namespace LSFG_3_1P;
 #else
@@ -75,11 +74,8 @@ namespace {
         initialize(
             0x1463ABAC,
             IS_HDR, 1.0F / FLOW_SCALE, MULTIPLIER - 1,
-            [](const std::string& name) -> std::vector<uint8_t> {
-                auto dxbc = Extract::getShader(name);
-                auto spirv = Extract::translateShader(dxbc);
-                return spirv;
-            }
+            false,
+            Extract::getShader
         );
         initializeRenderDoc();
         return createContext(
@@ -106,7 +102,7 @@ namespace {
 int main() {
     // initialize host Vulkan
     const Core::Instance instance{};
-    const Core::Device device{instance, 0x1463ABAC};
+    const Core::Device device{instance, 0x1463ABAC, false};
     const Core::CommandPool commandPool{device};
 
     // setup test
