@@ -251,11 +251,15 @@ std::pair<std::string, std::string> Utils::getProcessName() {
             if (!line.ends_with(".exe"))
                 continue;
 
-            const size_t pos = line.find_last_of(' ');
-            if (pos == std::string::npos)
-                continue;
+            size_t pos = line.find_first_of('/');
+            if (pos == std::string::npos) {
+                pos = line.find_last_of(' ');
+                if (pos == std::string::npos)
+                    continue;
+                pos += 1; // skip space
+            }
 
-            const std::string exe_name = line.substr(pos + 1);
+            const std::string exe_name = line.substr(pos);
             if (exe_name.empty())
                 continue;
 
