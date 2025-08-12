@@ -1,7 +1,7 @@
 {
   "id": "io.pancakeTAS.lsfg-vk-ui",
   "runtime": "org.gnome.Platform",
-  "runtime-version": "46",
+  "runtime-version": "48",
   "sdk": "org.gnome.Sdk",
   "command": "lsfg-vk-ui",
   "finish-args": [
