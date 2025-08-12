@@ -1,6 +1,7 @@
 name: Build lsfg-vk FlatpakUI
 
 on:
+  workflow_dispatch:
   push:
     branches: ["release"]
 
