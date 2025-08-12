@@ -3,6 +3,12 @@
   "runtime": "org.gnome.Platform",
   "runtime-version": "48",
   "sdk": "org.gnome.Sdk",
+  "sdk-extensions": [
+    "org.freedesktop.Sdk.Extension.rust-stable"
+  ],
+  "build-options": {
+    "append-path": "/usr/lib/sdk/rust-stable/bin"
+  },
   "command": "lsfg-vk-ui",
   "finish-args": [
     "--share=ipc",
