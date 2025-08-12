@@ -34,6 +34,9 @@
           "CARGO_HOME": "/run/build/lsfg-vk-ui/cargo",
           "RUSTUP_HOME": "/run/build/lsfg-vk-ui/rustup"
         }
+        "build-args": [
+          "--share=network"
+        ]
       },
       "sources": [
         {
