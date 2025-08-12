@@ -23,10 +23,10 @@
       "name": "lsfg-vk-ui",
       "buildsystem": "simple",
       "build-commands": [
-        "cargo build --release --locked",
-        "install -Dm755 target/release/lsfg-vk-ui /app/bin/lsfg-vk-ui",
-        "install -Dm644 rsc/gay.pancake.lsfg-vk-ui.desktop /app/share/applications/gay.pancake.lsfg-vk-ui.desktop",
-        "install -Dm644 rsc/icon.png /app/share/icons/hicolor/256x256/apps/gay.pancake.lsfg-vk-ui.png"
+        "cd ui && cargo build --release --locked",
+        "install -Dm755 ui/target/release/lsfg-vk-ui /app/bin/lsfg-vk-ui",
+        "install -Dm644 ui/rsc/gay.pancake.lsfg-vk-ui.desktop /app/share/applications/gay.pancake.lsfg-vk-ui.desktop",
+        "install -Dm644 ui/rsc/icon.png /app/share/icons/hicolor/256x256/apps/gay.pancake.lsfg-vk-ui.png"
       ],
       "build-options": {
         "env": {
@@ -38,8 +38,7 @@
         {
           "type": "git",
           "url": "https://github.com/Twig6943/lsfg-vk",
-          "branch": "develop",
-          "subdir": "ui"
+          "branch": "develop"
         }
       ]
     }
