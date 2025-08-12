@@ -1,0 +1,40 @@
+{
+  "id": "io.pancakeTAS.lsfg-vk-ui",
+  "runtime": "org.gnome.Platform",
+  "runtime-version": "46",
+  "sdk": "org.gnome.Sdk",
+  "command": "lsfg-vk-ui",
+  "finish-args": [
+    "--share=ipc",
+    "--socket=fallback-x11",
+    "--socket=wayland",
+    "--device=all",
+    "--filesystem=home",
+    "--env=RUST_BACKTRACE=1"
+  ],
+  "modules": [
+    {
+      "name": "lsfg-vk-ui",
+      "buildsystem": "simple",
+      "build-commands": [
+        "cargo build --release --locked",
+        "install -Dm755 target/release/lsfg-vk-ui /app/bin/lsfg-vk-ui",
+        "install -Dm644 ui/rsc/gay.pancake.lsfg-vk-ui.desktop /app/share/applications/gay.pancake.lsfg-vk-ui.desktop",
+        "install -Dm644 ui/rsc/icon.png /app/share/icons/hicolor/256x256/apps/gay.pancake.lsfg-vk-ui.png"
+      ],
+      "build-options": {
+        "env": {
+          "CARGO_HOME": "/run/build/lsfg-vk-ui/cargo",
+          "RUSTUP_HOME": "/run/build/lsfg-vk-ui/rustup"
+        }
+      },
+      "sources": [
+        {
+          "type": "git",
+          "url": "https://github.com/Twig6943/lsfg-vk",
+          "branch": "release"
+        }
+      ]
+    }
+  ]
+}
