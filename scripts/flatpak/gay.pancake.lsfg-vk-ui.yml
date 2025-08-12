@@ -1,5 +1,5 @@
 {
-  "id": "io.pancakeTAS.lsfg-vk-ui",
+  "id": "gay.pancake.lsfg-vk-ui",
   "runtime": "org.gnome.Platform",
   "runtime-version": "48",
   "sdk": "org.gnome.Sdk",
@@ -16,7 +16,8 @@
     "--socket=wayland",
     "--device=all",
     "--filesystem=home",
-    "--env=RUST_BACKTRACE=1"
+    "--env=RUST_BACKTRACE=1",
+    "--own-name=gay.pancake.lsfg-vk-ui"
   ],
   "modules": [
     {
@@ -32,10 +33,7 @@
         "env": {
           "CARGO_HOME": "/run/build/lsfg-vk-ui/cargo",
           "RUSTUP_HOME": "/run/build/lsfg-vk-ui/rustup"
-        },
-        "build-args": [
-          "--share=network"
-        ]
+        }
       },
       "sources": [
         {
