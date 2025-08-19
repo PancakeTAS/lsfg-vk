@@ -1,5 +1,5 @@
 use adw::subclass::prelude::ObjectSubclassIsExt;
-use gtk::{gio, glib::object::CastNone, prelude::{ButtonExt, ListBoxRowExt, WidgetExt}};
+use gtk::{gio, glib::{self, object::CastNone}, prelude::{ButtonExt, ListBoxRowExt, WidgetExt, BoxExt, EntryExt, GtkWindowExt, WindowExt, EditableExt}};
 
 use crate::{config, wrapper::entry, STATE};
 
@@ -91,9 +91,8 @@ pub fn add_entry(entry_: entry::Entry, profiles_: gtk::ListBox) {
             
             // Update config
             let _ = config::edit_config(|config| {
-                if let Some(index) = profiles.children().iter().position(|w| {
-                    w.downcast_ref::<entry::Entry>().map_or(false, |e| e == &entry)
-                }) {
+                let index = entry.index() as usize;
+                if index < config.game.len() {
                     if new_name.trim().is_empty() || new_name == entry.exe() {
                         config.game[index].name = None;
                     } else {

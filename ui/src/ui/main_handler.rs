@@ -1,5 +1,5 @@
 use adw::subclass::prelude::ObjectSubclassIsExt;
-use gtk::{gio::{self, prelude::FileExt}, glib::object::CastNone, prelude::{ButtonExt, EditableExt, GtkWindowExt, ListBoxRowExt, RangeExt, WidgetExt}};
+use gtk::{gio::{self, prelude::FileExt}, glib::{self, object::CastNone}, prelude::{ButtonExt, EditableExt, GtkWindowExt, ListBoxRowExt, RangeExt, WidgetExt}};
 
 use crate::{config, utils, wrapper::{entry, pane, popup}, STATE};
 
