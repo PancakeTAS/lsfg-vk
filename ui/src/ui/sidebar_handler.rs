@@ -21,6 +21,7 @@ pub fn register_signals(sidebar_: &pane::PaneSidebar, main: pane::PaneMain) {
 
         // update main pane
         let main = main.imp();
+        let display_name = main.display_name.imp();
         let exe = main.profile_name.imp();
         let multiplier = main.multiplier.imp();
         let flow_scale = main.flow_scale.imp();
@@ -30,6 +31,7 @@ pub fn register_signals(sidebar_: &pane::PaneSidebar, main: pane::PaneMain) {
 
         // (lock state early, so the ui update doesn't override the config)
         if let Ok(mut state) = state.write() {
+            display_name.entry.set_text(&conf.name.unwrap_or_default());
             exe.entry.set_text(&conf.exe);
             multiplier.number.set_value(conf.multiplier.into());
             flow_scale.slider.set_value(Into::<f64>::into(conf.flow_scale) * 100.0);
@@ -60,7 +62,8 @@ pub fn register_signals(sidebar_: &pane::PaneSidebar, main: pane::PaneMain) {
 
         // add entry to sidebar
         let entry = entry::Entry::new();
-        entry.set_exe(conf_entry.exe);
+        entry.set_exe(conf_entry.exe.clone());
+        entry.set_name(conf_entry.name.clone());
         entry_handler::add_entry(entry.clone(), sidebar.imp().profiles.clone());
 
         // select the new entry

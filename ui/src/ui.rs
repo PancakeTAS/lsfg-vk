@@ -19,6 +19,7 @@ pub fn build(app: &adw::Application) {
     for game in config.game.iter() {
         let entry = wrapper::entry::Entry::new();
         entry.set_exe(game.exe.clone());
+        entry.set_name(game.name.clone());
         entry_handler::add_entry(entry, imp.sidebar.imp().profiles.clone());
     }
 

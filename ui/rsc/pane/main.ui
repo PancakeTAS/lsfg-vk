@@ -47,6 +47,13 @@
             <property name="default-state">false</property>
         </object>
         </child>
+        <!--General Properties: Display name -->
+        <child>
+        <object class="LSPrefEntry" id="display_name">
+            <property name="opt-name">Display name</property>
+            <property name="opt-subtitle">Custom name for this profile (optional, defaults to profile name)</property>
+        </object>
+        </child>
         <!--General Properties: Profile name -->
         <child>
         <object class="LSPrefEntry" id="profile_name">

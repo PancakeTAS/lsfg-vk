@@ -71,6 +71,8 @@ pub struct TomlGlobal {
 #[derive(Debug, Default, Clone, Deserialize, Serialize)]
 pub struct TomlGame {
     pub exe: String,
+    #[serde(default)]
+    pub name: Option<String>,
 
     #[serde(default)]
     pub multiplier: Multiplier,

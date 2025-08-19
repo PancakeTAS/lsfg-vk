@@ -10,11 +10,20 @@
     <property name="margin-bottom">8</property>
     <property name="spacing">8</property>
     <child>
-    <object class="GtkLabel">
+    <object class="GtkLabel" id="label">
         <property name="halign">start</property>
         <property name="hexpand">true</property>
         <property name="label"
             bind-source="LSEntry" bind-property="exe" bind-flags="sync-create"/>
+    </object>
+    </child>
+    <child>
+    <object class="GtkButton" id="edit">
+        <property name="icon-name">document-edit-symbolic</property>
+        <style>
+            <class name="flat"/>
+            <class name="circular"/>
+        </style>
     </object>
     </child>
     <child>

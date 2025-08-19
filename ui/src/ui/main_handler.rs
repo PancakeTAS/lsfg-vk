@@ -19,6 +19,7 @@ fn update_game<F: FnOnce(&mut config::TomlGame)>(update: F) {
 ///
 pub fn register_signals(sidebar_: pane::PaneSidebar, main: &pane::PaneMain) {
     let main = main.imp();
+    let display_name = main.display_name.imp();
     let exe = main.profile_name.imp();
     let multiplier = main.multiplier.imp();
     let flow_scale = main.flow_scale.imp();
@@ -28,18 +29,45 @@ pub fn register_signals(sidebar_: pane::PaneSidebar, main: &pane::PaneMain) {
 
     // preset opts
     let sidebar = sidebar_.clone();
+    
+    // Handle display name changes
+    display_name.entry.connect_changed(glib::clone!(@weak sidebar => move |entry| {
+        let display_name_text = entry.text().to_string();
+        let display_name_opt = if display_name_text.trim().is_empty() {
+            None
+        } else {
+            Some(display_name_text.clone())
+        };
+
+        // Update the sidebar entry display
+        if let Some(row) = sidebar.imp().profiles.selected_row()
+            .and_downcast::<entry::Entry>() {
+            row.set_name(display_name_opt.clone());
+        }
+
+        // Update the game configuration
+        update_game(|conf| {
+            conf.name = display_name_opt;
+        });
+    }));
     exe.entry.connect_changed(move |entry| {
         let mut exe = entry.text().to_string();
         if exe.trim().is_empty() {
             exe = "new preset".to_string();
         }
 
-        // rename list entry
+        // rename list entry (only if no custom name is set)
         let row_option = sidebar.imp().profiles.selected_row()
             .and_downcast::<entry::Entry>();
 
         if let Some(row) = row_option {
-            row.set_exe(exe.clone());
+            // Only update the display if there's no custom name set
+            if row.name().is_none() || row.name().as_ref().map_or(true, |n| n.trim().is_empty()) {
+                row.set_exe(exe.clone());
+            } else {
+                // Just update the exe field, not the display
+                row.set_exe(exe.clone());
+            }
         }
 
         // update the game configuration

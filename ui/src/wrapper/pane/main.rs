@@ -11,6 +11,8 @@ pub struct PaneMain {
     #[template_child]
     pub no_fp16: TemplateChild<PrefSwitch>,
     #[template_child]
+    pub display_name: TemplateChild<PrefEntry>,
+    #[template_child]
     pub profile_name: TemplateChild<PrefEntry>,
     #[template_child]
     pub multiplier: TemplateChild<PrefNumber>,
