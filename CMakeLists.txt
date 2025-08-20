@@ -39,8 +39,9 @@ add_library(lsfg-vk SHARED ${SOURCES})
 set_target_properties(lsfg-vk PROPERTIES
     CXX_STANDARD 20
     CXX_STANDARD_REQUIRED ON)
+target_include_directories(lsfg-vk SYSTEM
+    PUBLIC include/thirdparty)
 target_include_directories(lsfg-vk
-    PUBLIC include/thirdparty
     PUBLIC include)
 target_link_libraries(lsfg-vk PUBLIC
     pe-parse

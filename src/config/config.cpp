@@ -14,6 +14,7 @@
 #include <iostream>
 #include <optional>
 #include <fstream>
+#include <cstdint>
 #include <cstdlib>
 #include <utility>
 #include <chrono>
