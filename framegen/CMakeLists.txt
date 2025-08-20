@@ -11,13 +11,14 @@ endif()
 
 project(lsfg-vk-framegen
     DESCRIPTION "Lossless Scaling Frame Generation Backend"
-    LANGUAGES CXX)
+    LANGUAGES C CXX)
 
 file(GLOB SOURCES
     "src/common/*.cpp"
     "src/config/*.cpp"
     "src/core/*.cpp"
     "src/pool/*.cpp"
+    "src/thirdparty/*.c"
     "src/*.cpp"
     "v3.1_src/core/*.cpp"
     "v3.1_src/pool/*.cpp"
@@ -38,12 +39,11 @@ set_target_properties(lsfg-vk-framegen PROPERTIES
     CXX_STANDARD 20
     CXX_STANDARD_REQUIRED ON)
 target_include_directories(lsfg-vk-framegen
+    PUBLIC include/thirdparty
     PUBLIC include
     PUBLIC public
     PRIVATE v3.1_include
     PRIVATE v3.1p_include)
-target_link_libraries(lsfg-vk-framegen
-    PUBLIC volk)
 
 # diagnostics
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
