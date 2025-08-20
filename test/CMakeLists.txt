@@ -5,6 +5,10 @@ if(NOT LSFGVK_EXCESS_DEBUG)
     set(CMAKE_CXX_VISIBILITY_PRESET "hidden")
 endif()
 
+if(LSFGVK_EXCESS_DEBUG)
+    add_compile_definitions(LSFGVK_EXCESS_DEBUG)
+endif()
+
 project(lsfg-vk-test
     DESCRIPTION "Test: lsfg-vk"
     LANGUAGES CXX)

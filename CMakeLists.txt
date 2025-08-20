@@ -14,7 +14,6 @@ add_compile_options(-fPIC
 
 add_subdirectory(thirdparty/pe-parse/pe-parser-library EXCLUDE_FROM_ALL)
 add_subdirectory(thirdparty/toml11 EXCLUDE_FROM_ALL)
-add_subdirectory(thirdparty/volk EXCLUDE_FROM_ALL)
 add_subdirectory(framegen)
 
 if(LSFGVK_EXCESS_DEBUG)
