@@ -9,15 +9,21 @@
 
 namespace Config {
 
-    /// lsfg-vk configuration
-    struct Configuration {
-        /// Whether lsfg-vk should be loaded in the first place.
-        bool enable{false};
+    /// Global lsfg-vk configuration.
+    struct GlobalConfiguration {
         /// Path to Lossless.dll.
         std::string dll;
         /// Whether FP16 is force-disabled
         bool no_fp16{false};
 
+        /// Path to the configuration file.
+        std::filesystem::path config_file;
+        /// File timestamp of the configuration file
+        std::chrono::time_point<std::chrono::file_clock> timestamp;
+    };
+
+    /// Per-application lsfg-vk configuration.
+    struct GameConfiguration {
         /// The frame generation muliplier
         size_t multiplier{2};
         /// The internal flow scale factor
@@ -28,35 +34,34 @@ namespace Config {
         bool hdr{false};
 
         /// Experimental flag for overriding the synchronization method.
-        VkPresentModeKHR e_present;
+        VkPresentModeKHR e_present{ VK_PRESENT_MODE_FIFO_KHR };
 
-        /// Path to the configuration file.
-        std::filesystem::path config_file;
-        /// File timestamp of the configuration file
-        std::chrono::time_point<std::chrono::file_clock> timestamp;
     };
 
-    /// Active configuration. Must be set in main.cpp.
-    extern Configuration activeConf;
+    /// Global configuration.
+    extern GlobalConfiguration globalConf;
+    /// Currently active configuration.
+    extern std::optional<GameConfiguration> currentConf;
 
     ///
     /// Read the configuration file while preserving the previous configuration
     /// in case of an error.
     ///
     /// @param file The path to the configuration file.
+    /// @param name The preset to activate
     ///
     /// @throws std::runtime_error if an error occurs while loading the configuration file.
     ///
-    void updateConfig(const std::string& file);
+    void updateConfig(
+        const std::string& file,
+        const std::pair<std::string, std::string>& name
+    );
 
     ///
-    /// Get the configuration for a game.
+    /// Check if the configuration file is still up-to-date
     ///
-    /// @param name The name of the executable to fetch.
-    /// @return The configuration for the game or global configuration.
+    /// @return Whether the configuration is up-to-date or not.
     ///
-    /// @throws std::runtime_error if the configuration is invalid.
-    ///
-    Configuration getConfig(const std::pair<std::string, std::string>& name);
+    bool checkStatus();
 
 }

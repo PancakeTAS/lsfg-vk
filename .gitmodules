@@ -1,6 +1,3 @@
 [submodule "thirdparty/pe-parse"]
 	path = thirdparty/pe-parse
 	url = https://github.com/trailofbits/pe-parse
-[submodule "thirdparty/toml11"]
-	path = thirdparty/toml11
-	url = https://github.com/ToruNiina/toml11

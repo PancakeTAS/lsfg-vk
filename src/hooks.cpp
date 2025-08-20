@@ -8,7 +8,6 @@
 #include <vulkan/vulkan_core.h>
 
 #include <unordered_map>
-#include <filesystem>
 #include <stdexcept>
 #include <algorithm>
 #include <exception>
@@ -107,7 +106,6 @@ namespace {
 
     std::unordered_map<VkSwapchainKHR, LsContext> swapchains;
     std::unordered_map<VkSwapchainKHR, VkDevice> swapchainToDeviceTable;
-    std::unordered_map<VkSwapchainKHR, VkPresentModeKHR> swapchainToPresent;
 
     ///
     /// Adjust swapchain creation parameters and create a swapchain context.
@@ -117,6 +115,21 @@ namespace {
             const VkSwapchainCreateInfoKHR* pCreateInfo,
             const VkAllocationCallbacks* pAllocator,
             VkSwapchainKHR* pSwapchain) noexcept {
+        // retire potential old swapchain
+        if (pCreateInfo->oldSwapchain) {
+            swapchains.erase(pCreateInfo->oldSwapchain);
+            swapchainToDeviceTable.erase(pCreateInfo->oldSwapchain);
+        }
+
+        // ensure configuration is up to date
+        Config::checkStatus();
+
+        // return early if disabled
+        if (!Config::currentConf.has_value() || Config::currentConf->multiplier <= 1)
+            return Layer::ovkCreateSwapchainKHR(device, pCreateInfo, pAllocator, pSwapchain);
+        auto& conf = Config::currentConf;
+
+
         // find device
         auto it = deviceToInfo.find(device);
         if (it == deviceToInfo.end()) {
@@ -150,13 +163,7 @@ namespace {
         createInfo.imageUsage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
 
         // enforce present mode
-        createInfo.presentMode = Config::activeConf.e_present;
-
-        // retire potential old swapchain
-        if (pCreateInfo->oldSwapchain) {
-            swapchains.erase(pCreateInfo->oldSwapchain);
-            swapchainToDeviceTable.erase(pCreateInfo->oldSwapchain);
-        }
+        createInfo.presentMode = conf->e_present;
 
         // create swapchain
         auto res = Layer::ovkCreateSwapchainKHR(device, &createInfo, pAllocator, pSwapchain);
@@ -164,8 +171,6 @@ namespace {
             return res; // can't be caused by lsfg-vk (yet)
 
         try {
-            swapchainToPresent.emplace(*pSwapchain, createInfo.presentMode);
-
             // get all swapchain images
             uint32_t imageCount{};
             res = Layer::ovkGetSwapchainImagesKHR(device, *pSwapchain, &imageCount, nullptr);
@@ -205,6 +210,16 @@ namespace {
     VkResult myvkQueuePresentKHR(
             VkQueue queue,
             const VkPresentInfoKHR* pPresentInfo) noexcept {
+        // ensure configuration is up to date
+        if (!Config::checkStatus())
+            return VK_ERROR_OUT_OF_DATE_KHR;
+
+        // return early if disabled
+        if (!Config::currentConf.has_value() || Config::currentConf->multiplier <= 1)
+            return Layer::ovkQueuePresentKHR(queue, pPresentInfo);
+        auto& conf = Config::currentConf;
+
+
         // find swapchain device
         auto it = swapchainToDeviceTable.find(*pPresentInfo->pSwapchains);
         if (it == swapchainToDeviceTable.end()) {
@@ -212,33 +227,27 @@ namespace {
                 "Swapchain not found in map");
             return Layer::ovkQueuePresentKHR(queue, pPresentInfo);
         }
+        Utils::resetLimitN("swapMap");
 
         // find device info
         auto it2 = deviceToInfo.find(it->second);
         if (it2 == deviceToInfo.end()) {
-            Utils::logLimitN("swapMap", 5,
+            Utils::logLimitN("deviceMap", 5,
                 "Device not found in map");
             return Layer::ovkQueuePresentKHR(queue, pPresentInfo);
         }
+        Utils::resetLimitN("deviceMap");
         auto& deviceInfo = it2->second;
 
         // find swapchain context
         auto it3 = swapchains.find(*pPresentInfo->pSwapchains);
         if (it3 == swapchains.end()) {
-            Utils::logLimitN("swapMap", 5,
+            Utils::logLimitN("swapCtxMap", 5,
                 "Swapchain context not found in map");
             return Layer::ovkQueuePresentKHR(queue, pPresentInfo);
         }
+        Utils::resetLimitN("swapCtxMap");
         auto& swapchain = it3->second;
-
-        // find present mode
-        auto it4 = swapchainToPresent.find(*pPresentInfo->pSwapchains);
-        if (it4 == swapchainToPresent.end()) {
-            Utils::logLimitN("swapMap", 5,
-                "Swapchain present mode not found in map");
-            return Layer::ovkQueuePresentKHR(queue, pPresentInfo);
-        }
-        auto& present = it4->second;
 
         // enforce present mode | NOLINTBEGIN
         #pragma clang diagnostic push
@@ -249,7 +258,7 @@ namespace {
             if (presentModeInfo->sType == VK_STRUCTURE_TYPE_SWAPCHAIN_PRESENT_MODE_INFO_EXT) {
                 for (size_t i = 0; i < presentModeInfo->swapchainCount; i++)
                     const_cast<VkPresentModeKHR*>(presentModeInfo->pPresentModes)[i] =
-                        present;
+                        conf->e_present;
             }
             presentModeInfo =
                 reinterpret_cast<const VkSwapchainPresentModeInfoEXT*>(presentModeInfo->pNext);
@@ -259,27 +268,6 @@ namespace {
         // NOLINTEND | present the next frame
         VkResult res{}; // might return VK_SUBOPTIMAL_KHR
         try {
-            // ensure config is valid
-            auto& conf = Config::activeConf;
-            if (!conf.config_file.empty()
-                    && (
-                            !std::filesystem::exists(conf.config_file)
-                          || conf.timestamp != std::filesystem::last_write_time(conf.config_file)
-                    )) {
-                Layer::ovkQueuePresentKHR(queue, pPresentInfo);
-                return VK_ERROR_OUT_OF_DATE_KHR;
-            }
-
-            // ensure present mode is still valid
-            if (present != conf.e_present) {
-                Layer::ovkQueuePresentKHR(queue, pPresentInfo);
-                return VK_ERROR_OUT_OF_DATE_KHR;
-            }
-
-            // skip if disabled
-            if (conf.multiplier <= 1)
-                return Layer::ovkQueuePresentKHR(queue, pPresentInfo);
-
             // present the swapchain
             std::vector<VkSemaphore> semaphores(pPresentInfo->waitSemaphoreCount);
             std::copy_n(pPresentInfo->pWaitSemaphores, semaphores.size(), semaphores.data());
@@ -304,7 +292,6 @@ namespace {
             const VkAllocationCallbacks* pAllocator) noexcept {
         swapchains.erase(swapchain);
         swapchainToDeviceTable.erase(swapchain);
-        swapchainToPresent.erase(swapchain);
         Layer::ovkDestroySwapchainKHR(device, swapchain, pAllocator);
     }
 }

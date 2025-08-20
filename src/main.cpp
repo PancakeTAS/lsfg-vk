@@ -18,41 +18,17 @@ namespace {
         std::cerr << std::unitbuf;
 
         // read configuration
-        const std::string file = Utils::getConfigFile();
         try {
-            Config::updateConfig(file);
+            Config::updateConfig(Utils::getConfigFile(), Utils::getProcessName());
         } catch (const std::exception& e) {
             std::cerr << "lsfg-vk: An error occured while trying to parse the configuration, IGNORING:\n";
             std::cerr << "- " << e.what() << '\n';
-            return; // default configuration will unload
-        }
-
-        const auto name = Utils::getProcessName();
-        try {
-            Config::activeConf = Config::getConfig(name);
-        } catch (const std::exception& e) {
-            std::cerr << "lsfg-vk: The configuration for " << name.first << " is invalid, IGNORING:\n";
-            std::cerr << e.what() << '\n';
-            return; // default configuration will unload
+            return;
         }
 
         // exit silently if not enabled
-        auto& conf = Config::activeConf;
-        if (!conf.enable && name.second != "benchmark")
-            return; // default configuration will unload
-
-        // print config
-        std::cerr << "lsfg-vk: Loaded configuration for " << name.first << ":\n";
-        if (!conf.dll.empty()) std::cerr << "  Using DLL from: " << conf.dll << '\n';
-        if (conf.no_fp16) std::cerr << "  FP16 Acceleration: Force-disabled\n";
-        std::cerr << "  Multiplier: " << conf.multiplier << '\n';
-        std::cerr << "  Flow Scale: " << conf.flowScale << '\n';
-        std::cerr << "  Performance Mode: " << (conf.performance ? "Enabled" : "Disabled") << '\n';
-        std::cerr << "  HDR Mode: " << (conf.hdr ? "Enabled" : "Disabled") << '\n';
-        if (conf.e_present != 2) std::cerr << "  ! Present Mode: " << conf.e_present << '\n';
-
-        // remove mesa var in favor of config
-        unsetenv("MESA_VK_WSI_PRESENT_MODE"); // NOLINT
+        if (!Config::currentConf.has_value())
+            return;
 
         // load shaders
         try {
@@ -105,6 +81,5 @@ namespace {
             }
         });
         benchmark.detach();
-        conf.enable = false;
     }
 }

@@ -10,58 +10,23 @@
 #include <lsfg_3_1.hpp>
 #include <lsfg_3_1p.hpp>
 
-#include <filesystem>
-#include <exception>
-#include <iostream>
+#include <stdexcept>
 #include <cstdint>
 #include <cstdlib>
 #include <vector>
-#include <chrono>
 #include <memory>
 #include <string>
-#include <thread>
 #include <array>
 
 LsContext::LsContext(const Hooks::DeviceInfo& info, VkSwapchainKHR swapchain,
         VkExtent2D extent, const std::vector<VkImage>& swapchainImages)
         : swapchain(swapchain), swapchainImages(swapchainImages),
           extent(extent) {
-    // get updated configuration
-    auto& conf = Config::activeConf;
-    if (!conf.config_file.empty()
-            && (
-                    !std::filesystem::exists(conf.config_file)
-                  || conf.timestamp != std::filesystem::last_write_time(conf.config_file)
-            )) {
-        std::cerr << "lsfg-vk: Rereading configuration, as it is no longer valid.\n";
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    if (!Config::currentConf.has_value())
+        throw std::runtime_error("No configuration set");
+    auto& globalConf = Config::globalConf;
+    auto& conf = *Config::currentConf;
 
-        // reread configuration
-        const std::string file = Utils::getConfigFile();
-        const auto name = Utils::getProcessName();
-        try {
-            Config::updateConfig(file);
-            conf = Config::getConfig(name);
-        } catch (const std::exception& e) {
-            std::cerr << "lsfg-vk: Failed to update configuration, continuing using old:\n";
-            std::cerr << "- " << e.what() << '\n';
-        }
-
-        LSFG_3_1P::finalize();
-        LSFG_3_1::finalize();
-
-        // print config
-        std::cerr << "lsfg-vk: Reloaded configuration for " << name.first << ":\n";
-        if (!conf.dll.empty()) std::cerr << "  Using DLL from: " << conf.dll << '\n';
-        if (conf.no_fp16) std::cerr << "  FP16 Acceleration: Force-disabled\n";
-        std::cerr << "  Multiplier: " << conf.multiplier << '\n';
-        std::cerr << "  Flow Scale: " << conf.flowScale << '\n';
-        std::cerr << "  Performance Mode: " << (conf.performance ? "Enabled" : "Disabled") << '\n';
-        std::cerr << "  HDR Mode: " << (conf.hdr ? "Enabled" : "Disabled") << '\n';
-        if (conf.e_present != 2) std::cerr << "  ! Present Mode: " << conf.e_present << '\n';
-
-        if (conf.multiplier <= 1) return;
-    }
     // we could take the format from the swapchain,
     // but honestly this is safer.
     const VkFormat format = conf.hdr
@@ -99,7 +64,7 @@ LsContext::LsContext(const Hooks::DeviceInfo& info, VkSwapchainKHR swapchain,
     lsfgInitialize(
         Utils::getDeviceUUID(info.physicalDevice),
         conf.hdr, 1.0F / conf.flowScale, conf.multiplier - 1,
-        conf.no_fp16,
+        globalConf.no_fp16,
         Extract::getShader
     );
 
@@ -126,7 +91,10 @@ LsContext::LsContext(const Hooks::DeviceInfo& info, VkSwapchainKHR swapchain,
 
 VkResult LsContext::present(const Hooks::DeviceInfo& info, const void* pNext, VkQueue queue,
         const std::vector<VkSemaphore>& gameRenderSemaphores, uint32_t presentIdx) {
-    const auto& conf = Config::activeConf;
+    if (!Config::currentConf.has_value())
+        throw std::runtime_error("No configuration set");
+    auto& conf = *Config::currentConf;
+
     auto& pass = this->passInfos.at(this->frameIdx % 8);
 
     // 1. copy swapchain image to frame_0/frame_1

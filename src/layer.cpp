@@ -9,6 +9,7 @@
 #include <unordered_map>
 #include <exception>
 #include <iostream>
+#include <cstdlib>
 #include <cstdint>
 #include <string>
 
@@ -103,7 +104,7 @@ namespace {
                     "Failed to get instance function pointer for vkCreateInstance");
 
             // NOLINTEND | skip initialization if the layer is disabled
-            if (!Config::activeConf.enable) {
+            if (!Config::currentConf.has_value() || std::getenv("LSFG_BENCHMARK")) {
                 auto res = next_vkCreateInstance(pCreateInfo, pAllocator, pInstance);
                 initInstanceFunc(*pInstance, "vkCreateDevice", &next_vkCreateDevice);
                 return res;
@@ -182,7 +183,7 @@ namespace {
             next_vSetDeviceLoaderData = layerDesc2->u.pfnSetDeviceLoaderData;
 
             // NOLINTEND | skip initialization if the layer is disabled
-            if (!Config::activeConf.enable)
+            if (!Config::currentConf.has_value() || std::getenv("LSFG_BENCHMARK"))
                 return next_vkCreateDevice(physicalDevice, pCreateInfo, pAllocator, pDevice);
 
             // create device
@@ -262,7 +263,7 @@ PFN_vkVoidFunction layer_vkGetInstanceProcAddr(VkInstance instance, const char* 
         return it->second;
 
     it = Hooks::hooks.find(name);
-    if (it != Hooks::hooks.end() && Config::activeConf.enable)
+    if (it != Hooks::hooks.end() && (Config::currentConf.has_value() && !std::getenv("LSFG_BENCHMARK")))
         return it->second;
 
     return next_vkGetInstanceProcAddr(instance, pName);
@@ -275,7 +276,7 @@ PFN_vkVoidFunction layer_vkGetDeviceProcAddr(VkDevice device, const char* pName)
         return it->second;
 
     it = Hooks::hooks.find(name);
-    if (it != Hooks::hooks.end() && Config::activeConf.enable)
+    if (it != Hooks::hooks.end() && (Config::currentConf.has_value() && !std::getenv("LSFG_BENCHMARK")))
         return it->second;
 
     return next_vkGetDeviceProcAddr(device, pName);

@@ -13,7 +13,6 @@ add_compile_options(-fPIC
     -Wno-unused-template)
 
 add_subdirectory(thirdparty/pe-parse/pe-parser-library EXCLUDE_FROM_ALL)
-add_subdirectory(thirdparty/toml11 EXCLUDE_FROM_ALL)
 add_subdirectory(framegen)
 
 if(LSFGVK_EXCESS_DEBUG)
@@ -41,13 +40,11 @@ set_target_properties(lsfg-vk PROPERTIES
     CXX_STANDARD 20
     CXX_STANDARD_REQUIRED ON)
 target_include_directories(lsfg-vk
+    PUBLIC include/thirdparty
     PUBLIC include)
 target_link_libraries(lsfg-vk PUBLIC
-    pe-parse toml11
+    pe-parse
     lsfg-vk-framegen)
-
-get_target_property(TOML11_INCLUDE_DIRS toml11 INTERFACE_INCLUDE_DIRECTORIES)
-target_include_directories(lsfg-vk SYSTEM PRIVATE ${TOML11_INCLUDE_DIRS})
 
 # diagnostics
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")

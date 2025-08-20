@@ -19,7 +19,10 @@
 using namespace Benchmark;
 
 void Benchmark::run(uint32_t width, uint32_t height) {
-    const auto& conf = Config::activeConf;
+    if (!Config::currentConf.has_value())
+        _exit(1); // not possible
+    const auto& globalConf = Config::globalConf;
+    const auto& conf = *Config::currentConf;
 
     auto* lsfgInitialize = LSFG_3_1::initialize;
     auto* lsfgCreateContext = LSFG_3_1::createContext;
@@ -41,7 +44,7 @@ void Benchmark::run(uint32_t width, uint32_t height) {
     lsfgInitialize(
         deviceUUID, // some magic number if not given
         conf.hdr, 1.0F / conf.flowScale, conf.multiplier - 1,
-        conf.no_fp16,
+        globalConf.no_fp16,
         Extract::getShader
     );
     const int32_t ctx = lsfgCreateContext(-1, -1, {},

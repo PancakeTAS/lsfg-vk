@@ -1,16 +1,14 @@
 #include "config/config.hpp"
 #include "common/exception.hpp"
-
 #include "config/default_conf.hpp"
+#include "utils/utils.hpp"
 
-#include <vulkan/vulkan_core.h>
-#include <toml11/find.hpp>
-#include <toml11/parser.hpp>
+#define TOML_ENABLE_FORMATTERS 0 // NOLINT
 #include <toml.hpp>
 
-#include <unordered_map>
+#include <vulkan/vulkan_core.h>
+
 #include <filesystem>
-#include <algorithm>
 #include <exception>
 #include <stdexcept>
 #include <iostream>
@@ -18,16 +16,14 @@
 #include <fstream>
 #include <cstdlib>
 #include <utility>
+#include <chrono>
+#include <thread>
 #include <string>
 
 using namespace Config;
 
-namespace {
-    Configuration globalConf{};
-    std::optional<std::unordered_map<std::string, Configuration>> gameConfs;
-}
-
-Configuration Config::activeConf{};
+GlobalConfiguration Config::globalConf{};
+std::optional<GameConfiguration> Config::currentConf{};
 
 namespace {
     /// Turn a string into a VkPresentModeKHR enum value.
@@ -42,7 +38,30 @@ namespace {
     }
 }
 
-void Config::updateConfig(const std::string& file) {
+void Config::updateConfig(
+        const std::string& file,
+        const std::pair<std::string, std::string>& name) {
+    // process unchecked legacy environment variables
+    if (std::getenv("LSFG_LEGACY")) {
+        const char* dll = std::getenv("LSFG_DLL_PATH");
+        if (dll) globalConf.dll = std::string(dll);
+
+        currentConf.emplace();
+        const char* multiplier = std::getenv("LSFG_MULTIPLIER");
+        if (multiplier) currentConf->multiplier = std::stoul(multiplier);
+        const char* flow_scale = std::getenv("LSFG_FLOW_SCALE");
+        if (flow_scale) currentConf->flowScale = std::stof(flow_scale);
+        const char* performance = std::getenv("LSFG_PERFORMANCE_MODE");
+        if (performance) currentConf->performance = std::string(performance) == "1";
+        const char* hdr = std::getenv("LSFG_HDR_MODE");
+        if (hdr) currentConf->hdr = std::string(hdr) == "1";
+        const char* e_present = std::getenv("LSFG_EXPERIMENTAL_PRESENT_MODE");
+        if (e_present) currentConf->e_present = into_present(std::string(e_present));
+
+        return;
+    }
+
+    // ensure configuration file exists
     if (!std::filesystem::exists(file)) {
         std::cerr << "lsfg-vk: Placing default configuration file at " << file << '\n';
         const auto parent = std::filesystem::path(file).parent_path();
@@ -58,105 +77,97 @@ void Config::updateConfig(const std::string& file) {
     }
 
     // parse config file
-    std::optional<toml::value> parsed;
+    toml::table config{};
     try {
-        parsed.emplace(toml::parse(file));
-        if (!parsed->contains("version"))
-            throw std::runtime_error("Configuration file is missing 'version' field");
-        if (parsed->at("version").as_integer() != 1)
+        config = toml::parse_file(file);
+
+        const auto* version = config.get_as<toml::value<int64_t>>("version");
+        if (!version || *version != 1)
             throw std::runtime_error("Configuration file version is not supported, expected 1");
     } catch (const std::exception& e) {
         throw LSFG::rethrowable_error("Unable to parse configuration file", e);
     }
-    auto& toml = *parsed;
 
     // parse global configuration
-    const toml::value globalTable = toml::find_or_default<toml::table>(toml, "global");
-    const Configuration global{
-        .dll =     toml::find_or(globalTable, "dll", std::string()),
-        .no_fp16 = toml::find_or(globalTable, "no_fp16", false),
+    Config::globalConf = {
         .config_file = file,
         .timestamp = std::filesystem::last_write_time(file)
     };
-
-    // validate global configuration
-    if (global.multiplier < 2)
-        throw std::runtime_error("Global Multiplier cannot be less than 2");
-    if (global.flowScale < 0.25F || global.flowScale > 1.0F)
-        throw std::runtime_error("Flow scale must be between 0.25 and 1.0");
+    if (const auto* global = config.get_as<toml::table>("global")) {
+        if (const auto* val = global->get_as<toml::value<std::string>>("dll"))
+            globalConf.dll = val->get();
+        if (const auto* val = global->get_as<toml::value<bool>>("no_fp16"))
+            globalConf.no_fp16 = val->get();
+    }
 
     // parse game-specific configuration
-    std::unordered_map<std::string, Configuration> games;
-    const toml::value gamesList = toml::find_or_default<toml::array>(toml, "game");
-    for (const auto& gameTable : gamesList.as_array()) {
-        if (!gameTable.is_table())
-            throw std::runtime_error("Invalid game configuration entry");
-        if (!gameTable.contains("exe"))
-            throw std::runtime_error("Game override missing 'exe' field");
+    std::optional<GameConfiguration> gameConf;
+    if (const auto* games = config["game"].as_array()) {
+        for (auto&& elem : *games) {
+            if (!elem.is_table())
+                throw std::runtime_error("Invalid game configuration entry");
+            const auto* game = elem.as_table();
 
-        const std::string exe = toml::find<std::string>(gameTable, "exe");
-        Configuration game{
-            .enable = true,
-            .dll = global.dll,
-            .no_fp16 = global.no_fp16,
-            .multiplier = toml::find_or(gameTable, "multiplier", 2U),
-            .flowScale = toml::find_or(gameTable, "flow_scale", 1.0F),
-            .performance = toml::find_or(gameTable, "performance_mode", false),
-            .hdr = toml::find_or(gameTable, "hdr_mode", false),
-            .e_present =   into_present(toml::find_or(gameTable, "experimental_present_mode", "")),
-            .config_file = file,
-            .timestamp = global.timestamp
-        };
+            const auto* exe = game->at("exe").value_or("?");
+            if (!name.first.ends_with(exe) && name.second != exe)
+                continue;
 
-        // validate the configuration
-        if (game.multiplier < 1)
-            throw std::runtime_error("Multiplier cannot be less than 1");
-        if (game.flowScale < 0.25F || game.flowScale > 1.0F)
-            throw std::runtime_error("Flow scale must be between 0.25 and 1.0");
-        games[exe] = std::move(game);
+            gameConf = Config::currentConf;
+            if (!gameConf.has_value()) gameConf.emplace();
+
+            if (const auto* val = game->get_as<toml::value<int64_t>>("multiplier"))
+                gameConf->multiplier = static_cast<size_t>(val->get());
+            if (const auto* val = game->get_as<toml::value<double>>("flow_scale"))
+                gameConf->flowScale = static_cast<float>(val->get());
+            if (const auto* val = game->get_as<toml::value<bool>>("performance_mode"))
+                gameConf->performance = val->get();
+            if (const auto* val = game->get_as<toml::value<bool>>("hdr_mode"))
+                gameConf->hdr = val->get();
+            if (const auto* val = game->get_as<toml::value<std::string>>("experimental_present_mode"))
+                gameConf->e_present = into_present(val->get());
+
+            break;
+        }
     }
 
-    // store configurations
-    globalConf = global;
-    gameConfs = std::move(games);
+    if (!gameConf.has_value()) {
+        Config::currentConf.reset();
+        std::cout << "lsfg-vk: Configuration entry disappeared, disabling.\n";
+        return;
+    }
+
+    Config::currentConf = *gameConf;
+
+    // print updated config info
+    std::cerr << "lsfg-vk: Loaded configuration for " << name.first << ":\n";
+    if (!globalConf.dll.empty()) std::cerr << "  Using DLL from: " << globalConf.dll << '\n';
+    if (globalConf.no_fp16) std::cerr << "  FP16 Acceleration: Force-disabled\n";
+    std::cerr << "  Multiplier: " << gameConf->multiplier << '\n';
+    std::cerr << "  Flow Scale: " << gameConf->flowScale << '\n';
+    std::cerr << "  Performance Mode: " << (gameConf->performance ? "Enabled" : "Disabled") << '\n';
+    std::cerr << "  HDR Mode: " << (gameConf->hdr ? "Enabled" : "Disabled") << '\n';
+    if (gameConf->e_present != 2) std::cerr << "  ! Present Mode: " << gameConf->e_present << '\n';
 }
 
-Configuration Config::getConfig(const std::pair<std::string, std::string>& name) {
-    // process legacy environment variables
-    if (std::getenv("LSFG_LEGACY")) {
-        Configuration conf{
-            .enable = true,
-            .multiplier = 2,
-            .flowScale = 1.0F,
-            .e_present = VkPresentModeKHR::VK_PRESENT_MODE_FIFO_KHR
-        };
+bool Config::checkStatus() {
+    // check if config is up-to-date
+    auto& globalConf = Config::globalConf;
+    if (globalConf.config_file.empty())
+        return true;
+    if (!std::filesystem::exists(globalConf.config_file))
+        return true; // ignore deletion
+    if (std::filesystem::last_write_time(globalConf.config_file) == globalConf.timestamp)
+        return true;
 
-        const char* dll = std::getenv("LSFG_DLL_PATH");
-        if (dll) conf.dll = std::string(dll);
-        const char* multiplier = std::getenv("LSFG_MULTIPLIER");
-        if (multiplier) conf.multiplier = std::stoul(multiplier);
-        const char* flow_scale = std::getenv("LSFG_FLOW_SCALE");
-        if (flow_scale) conf.flowScale = std::stof(flow_scale);
-        const char* performance = std::getenv("LSFG_PERFORMANCE_MODE");
-        if (performance) conf.performance = std::string(performance) == "1";
-        const char* hdr = std::getenv("LSFG_HDR_MODE");
-        if (hdr) conf.hdr = std::string(hdr) == "1";
-        const char* e_present = std::getenv("LSFG_EXPERIMENTAL_PRESENT_MODE");
-        if (e_present) conf.e_present = into_present(std::string(e_present));
-
-        return conf;
+    // reload config
+    std::cerr << "lsfg-vk: Rereading configuration, as it is no longer valid.\n";
+    std::this_thread::sleep_for(std::chrono::milliseconds(73));
+    try {
+        Config::updateConfig(Utils::getConfigFile(), Utils::getProcessName());
+    } catch (const std::exception& e) {
+        std::cerr << "lsfg-vk: Failed to update configuration, continuing using old:\n";
+        std::cerr << "- " << e.what() << '\n';
     }
 
-    // process new configuration system
-    if (!gameConfs.has_value())
-        return globalConf;
-
-    const auto& games = *gameConfs;
-    auto it = std::ranges::find_if(games, [&name](const auto& pair) {
-        return name.first.ends_with(pair.first) || (name.second == pair.first);
-    });
-    if (it != games.end())
-        return it->second;
-
-    return globalConf;
+    return false;
 }

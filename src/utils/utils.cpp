@@ -209,16 +209,16 @@ void Utils::resetLimitN(const std::string& id) noexcept {
 }
 
 std::pair<std::string, std::string> Utils::getProcessName() {
-    // check override first
-    const char* process_name = std::getenv("LSFG_PROCESS");
-    if (process_name && *process_name != '\0')
-        return { process_name, process_name };
-
-    // then check benchmark flag
+    // check benchmark flag
     const char* benchmark_flag = std::getenv("LSFG_BENCHMARK");
     if (benchmark_flag)
         return { "benchmark", "benchmark" };
     std::array<char, 4096> exe{};
+
+    // then check override
+    const char* process_name = std::getenv("LSFG_PROCESS");
+    if (process_name && *process_name != '\0')
+        return { process_name, process_name };
 
     // find executed binary
     const ssize_t exe_len = readlink("/proc/self/exe", exe.data(), exe.size() - 1);
