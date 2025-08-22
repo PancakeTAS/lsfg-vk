@@ -133,7 +133,7 @@ void Config::updateConfig(
 
     if (!gameConf.has_value()) {
         Config::currentConf.reset();
-        std::cout << "lsfg-vk: Configuration entry disappeared, disabling.\n";
+        std::cerr << "lsfg-vk: Configuration entry disappeared, disabling.\n";
         return;
     }
 
