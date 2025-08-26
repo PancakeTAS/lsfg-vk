@@ -12,7 +12,6 @@ add_compile_options(-fPIC
     -Wno-deprecated-declarations
     -Wno-unused-template)
 
-add_subdirectory(thirdparty/pe-parse/pe-parser-library EXCLUDE_FROM_ALL)
 add_subdirectory(framegen)
 
 if(LSFGVK_EXCESS_DEBUG)
@@ -44,7 +43,6 @@ target_include_directories(lsfg-vk SYSTEM
 target_include_directories(lsfg-vk
     PUBLIC include)
 target_link_libraries(lsfg-vk PUBLIC
-    pe-parse
     lsfg-vk-framegen)
 
 # diagnostics

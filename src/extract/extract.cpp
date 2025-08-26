@@ -1,16 +1,14 @@
 #include "extract/extract.hpp"
 #include "config/config.hpp"
+#include "extract/dll.hpp"
 
-#include <pe-parse/parse.h>
-
+#include <iostream>
 #include <unordered_map>
 #include <filesystem>
-#include <algorithm>
 #include <stdexcept>
 #include <cstdint>
 #include <cstdlib>
 #include <string>
-#include <utility>
 #include <vector>
 #include <array>
 
@@ -73,20 +71,9 @@ const std::unordered_map<std::string, uint32_t> nameIdxTable = {{
 }};
 
 namespace {
-    auto& pshaders() {
+    auto& shaders() {
         static std::unordered_map<uint32_t, std::array<std::vector<uint8_t>, 2>> shaderData;
         return shaderData;
-    }
-
-    int on_resource(void* ptr, const peparse::resource& res) {
-        if (res.type != peparse::RT_RCDATA || res.buf == nullptr || res.buf->bufLen <= 0)
-            return 0;
-        std::vector<uint8_t> resource_data(res.buf->bufLen);
-        std::copy_n(res.buf->buf, res.buf->bufLen, resource_data.data());
-
-        auto* shaders = reinterpret_cast<std::unordered_map<uint32_t, std::vector<uint8_t>>*>(ptr);
-        shaders->emplace(res.name, std::move(resource_data));
-        return 0;
     }
 
     const std::vector<std::filesystem::path> PATHS{{
@@ -121,44 +108,39 @@ namespace {
 }
 
 void Extract::extractShaders() {
-    if (!pshaders().empty())
+    if (!shaders().empty())
         return;
 
-    std::unordered_map<uint32_t, std::vector<uint8_t>> shaders{};
-
     // parse the dll
-    peparse::parsed_pe* dll = peparse::ParsePEFromFile(getDllPath().c_str());
-    if (!dll)
-        throw std::runtime_error("Unable to read Lossless.dll, is it installed?");
-    peparse::IterRsrc(dll, on_resource, reinterpret_cast<void*>(&shaders));
-    peparse::DestructParsedPE(dll);
+    const auto resources = DLL::parse_dll(getDllPath());
+    std::cerr << "lsfg-vk: Extracted " << resources.size() << " resources from dll.\n";
 
     // ensure all shaders are present
     for (const auto& [name, idx] : nameIdxTable) {
-        auto fp16 = shaders.find(idx);
-        if (fp16 == shaders.end())
+        auto fp16 = resources.find(idx);
+        if (fp16 == resources.end())
             throw std::runtime_error("Shader not found: " + name + " (FP16).\n- Is Lossless Scaling up to date?");
-        auto fp32 = shaders.find(idx + FP);
-        if (fp32 == shaders.end())
+        auto fp32 = resources.find(idx + FP);
+        if (fp32 == resources.end())
             throw std::runtime_error("Shader not found: " + name + " (FP32).\n- Is Lossless Scaling up to date?");
 
-        pshaders().emplace(idx, std::array<std::vector<uint8_t>, 2>{
-            std::move(fp32->second),
-            std::move(fp16->second)
+        shaders().emplace(idx, std::array<std::vector<uint8_t>, 2>{
+            fp32->second,
+            fp16->second
         });
     }
 }
 
 std::vector<uint8_t> Extract::getShader(const std::string& name, bool fp16) {
-    if (pshaders().empty())
+    if (shaders().empty())
         throw std::runtime_error("Shaders are not loaded.");
 
     auto hit = nameIdxTable.find(name);
     if (hit == nameIdxTable.end())
         throw std::runtime_error("Shader hash not found: " + name);
 
-    auto sit = pshaders().find(hit->second);
-    if (sit == pshaders().end())
+    auto sit = shaders().find(hit->second);
+    if (sit == shaders().end())
         throw std::runtime_error("Shader not found: " + name);
     return fp16 ? sit->second.at(1) : sit->second.at(0);
 }
