@@ -20,7 +20,6 @@ endif()
 
 # main project
 project(lsfg-vk
-    VERSION 1.0.0
     DESCRIPTION "Lossless Scaling Frame Generation on Linux"
     LANGUAGES CXX)
 
