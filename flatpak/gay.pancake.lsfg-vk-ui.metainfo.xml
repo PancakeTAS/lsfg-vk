@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>gay.pancake.lsfg-vk-ui</id>
+
+  <name>lsfg-vk-ui</name>
+  <summary>Lossless Scaling Frame Generation on Linux (user interface only)</summary>
+  <developer id="gay.pancake">
+    <name>PancakeTAS</name>
+  </developer>
+
+  <url type="homepage">https://github.com/PancakeTAS/lsfg-vk</url>
+  <url type="bugtracker">https://github.com/PancakeTAS/lsfg-vk/issues</url>
+  <url type="faq">https://github.com/PancakeTAS/lsfg-vk/wiki</url>
+  <url type="help">https://github.com/PancakeTAS/lsfg-vk/wiki</url>
+
+  <metadata_license>MIT</metadata_license>
+  <project_license>MIT</project_license>
+
+  <description>
+    <p>lsfg-vk brings Lossless Scaling&apos;s frame generation to Linux users by acting as a Vulkan layer inbetween your game and your graphics card.</p>
+  </description>
+
+  <releases>
+    <release date="2025-07-30" version="1.0.0" />
+  </releases>
+
+  <launchable type="desktop-id">gay.pancake.lsfg-vk-ui.desktop</launchable>
+  <content_rating type="oars-1.1" />
+</component>

@@ -1,6 +1,5 @@
 id: org.freedesktop.Platform.VulkanLayer.lsfgvk
 default-branch: develop
-version: 1.0.0
 
 runtime: org.freedesktop.Platform
 runtime-version: '23.08'
