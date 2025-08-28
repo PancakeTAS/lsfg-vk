@@ -1,0 +1,35 @@
+id: gay.pancake.lsfg-vk-ui
+version: 1.0.0
+command: lsfg-vk-ui
+default-branch: develop
+
+runtime: org.gnome.Platform
+runtime-version: '48'
+sdk: org.gnome.Sdk
+
+finish-args:
+  - --share=ipc
+  - --socket=x11
+  - --socket=wayland
+  - --device=dri
+  - --filesystem=xdg-config
+
+sdk-extensions:
+  - org.freedesktop.Sdk.Extension.rust-stable
+
+build-options:
+  append-path: /usr/lib/sdk/rust-stable/bin
+  build-args:
+    - --share=network
+
+modules:
+  - name: lsfg-vk-ui
+    buildsystem: simple
+    build-commands:
+      - cargo build --release --locked
+      - install -Dm755 ./target/release/lsfg-vk-ui /app/bin/lsfg-vk-ui
+      - install -Dm644 ./rsc/gay.pancake.lsfg-vk-ui.desktop /app/share/applications/gay.pancake.lsfg-vk-ui.desktop
+      - install -Dm644 ./rsc/icon.png /app/share/icons/hicolor/256x256/apps/gay.pancake.lsfg-vk-ui.png
+    sources:
+      - type: dir
+        path: ../../ui
