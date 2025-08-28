@@ -23,7 +23,7 @@ chmod 644 share/icons/hicolor/256x256/apps/gay.pancake.lsfg-vk-ui.png
 echo "Building ALPM package..."
 
 mkdir -pv alpm
-envsubst < scripts/package/alpm.PKGINFO > alpm/.PKGINFO
+envsubst < package/alpm.PKGINFO > alpm/.PKGINFO
 
 mkdir -pv alpm/usr/{bin,lib,share/vulkan/implicit_layer.d,share/applications,share/icons/hicolor/256x256/apps}
 cp -v bin/lsfg-vk-ui alpm/usr/bin/lsfg-vk-ui
@@ -42,7 +42,7 @@ tar -cvzf "lsfg-vk-$VERSION.x86_64.tar.zst" -C alpm \
 echo "Building DEB package..."
 
 mkdir -pv deb/DEBIAN
-envsubst < scripts/package/dpkg.control > deb/DEBIAN/control
+envsubst < package/dpkg.control > deb/DEBIAN/control
 
 mkdir -pv deb/usr/{bin,lib,share/vulkan/implicit_layer.d,share/applications,share/icons/hicolor/256x256/apps}
 cp -v bin/lsfg-vk-ui deb/usr/bin/lsfg-vk-ui
@@ -60,7 +60,7 @@ dpkg-deb --root-owner-group --build deb "lsfg-vk-$VERSION.x86_64.deb"
 echo "Building RPM package..."
 
 mkdir -pv rpm
-envsubst < scripts/package/rpm.spec > rpm/lsfg-vk.spec
+envsubst < package/rpm.spec > rpm/lsfg-vk.spec
 
 mkdir -pv rpm/SOURCES
 cp -v bin/lsfg-vk-ui rpm/SOURCES
@@ -73,7 +73,7 @@ cp -v share/icons/hicolor/256x256/apps/gay.pancake.lsfg-vk-ui.png \
     rpm/SOURCES/gay.pancake.lsfg-vk-ui.png
 
 rpmbuild -bb rpm/lsfg-vk.spec --define "_topdir $(pwd)/rpm"
-mv -v "rpm/RPMS/x86_64/lsfg-vk-$VERSION-1.x86_64.rpm" "lsfg-vk-$VERSION.x86_64.rpm"
+mv -v "rpm/RPMS/x86_64/lsfg-vk-$RPM_VERSION-1.x86_64.rpm" "lsfg-vk-$VERSION.x86_64.rpm"
 
 # cleanup
 rm -rf alpm deb rpm

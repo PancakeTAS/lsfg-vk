@@ -1,8 +1,8 @@
-name: Package lsfg-vk
+name: (CI) Package lsfg-vk
 
 on:
   workflow_run:
-    workflows: ["Build lsfg-vk"]
+    workflows: ["(CI) Build lsfg-vk"]
     types:
       - completed
 
