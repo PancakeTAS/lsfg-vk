@@ -1,11 +1,11 @@
-name: Build lsfg-vk Flatpak extensions
+name: Build lsfg-vk for Flatpak
 
 on:
   push:
     branches: ["release"]
 
 jobs:
-  flatpak:
+  flatpak-extensions:
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -20,5 +20,21 @@ jobs:
         uses: flatpak/flatpak-github-actions/flatpak-builder@v6
         with:
           bundle: "org.freedesktop.Platform.VulkanLayer.lsfg_vk_${{ matrix.version }}.flatpak"
-          manifest-path: "scripts/flatpak/org.freedesktop.Platform.VulkanLayer.lsfgvk_${{ matrix.version }}.yml"
-          verbose: true
+          manifest-path: "flatpak/org.freedesktop.Platform.VulkanLayer.lsfgvk_${{ matrix.version }}.yml"
+          branch: "${{ matrix.version }}"
+          cache: false
+  flatpak-ui:
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/flathub-infra/flatpak-github-actions:gnome-48
+      options: --privileged
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Build Flatpak
+        uses: flatpak/flatpak-github-actions/flatpak-builder@v6
+        with:
+          bundle: "gay.pancake.lsfg-vk-ui.flatpak"
+          manifest-path: "flatpak/gay.pancake.lsfg-vk-ui.yml"
+          branch: "release"
+          cache: false
