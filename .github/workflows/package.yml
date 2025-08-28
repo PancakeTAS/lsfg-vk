@@ -23,6 +23,7 @@ jobs:
         run-id: ${{ github.event.workflow_run.id }}
     - name: Package lsfg-vk for various distros
       run: |
+        export VERSION=1.0.0
         chmod +x ./package/package.sh
         ./package/package.sh
     - name: Upload lsfg-vk for dpkg
