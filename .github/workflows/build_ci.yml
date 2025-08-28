@@ -1,8 +1,8 @@
-name: Build lsfg-vk
+name: (CI) Build lsfg-vk
 
 on:
   push:
-    branches: ["release"]
+    branches: ["develop"]
 
 jobs:
   build:
