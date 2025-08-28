@@ -1,10 +1,16 @@
 #!/bin/bash
 if [ -z "$VERSION" ]; then
-    echo "VERSION environment variable is not set."
-    exit 1
+    set -eux
+    export VERSION="1.1.0"
+    export ALPM_VERSION=$(git describe --long --tags | sed 's/\([^-]*-\)g/r\1/;s/-/./g' | sed "s/.\..\../$VERSION/")
+    export DPKG_VERSION=$(git describe --long --tags | sed 's/\([^-]*-\)g/r\1/;s/-/./g' | sed "s/^v.\..\..\.r[1-9]\+./$VERSION~git$(date '+%Y%m%d')./")
+    export RPM_VERSION=$(git describe --long --tags | sed 's/\([^-]*-\)g/r\1/;s/-/./g' | sed "s/v.\..\...r/$VERSION^/")
+else
+    set -eux
+    export ALPM_VERSION="$VERSION"
+    export DPKG_VERSION="$VERSION"
+    export RPM_VERSION="$VERSION"
 fi
-
-set -eux
 
 # set permission bits
 chmod 755 bin/lsfg-vk-ui

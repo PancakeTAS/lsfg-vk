@@ -1,6 +1,6 @@
 pkgname = lsfg-vk
 pkgbase = lsfg-vk
-pkgver = ${VERSION}-1
+pkgver = ${ALPM_VERSION}-1
 pkgdesc = "Lossless Scaling Frame Generation on Linux via DXVK/Vulkan"
 url = https://discord.gg/losslessscaling
 packager = "PancakeTAS <???>"

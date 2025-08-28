@@ -2,7 +2,7 @@ Package: lsfg-vk
 Description: Lossless Scaling Frame Generation on Linux via DXVK/Vulkan
 Homepage: https://discord.gg/losslessscaling
 Maintainer: "PancakeTAS <???>"
-Version: ${VERSION}-1
+Version: ${DPKG_VERSION}
 Architecture: amd64
 Section: utils
 Priority: optional
