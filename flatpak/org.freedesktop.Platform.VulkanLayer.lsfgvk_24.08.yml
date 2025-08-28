@@ -26,6 +26,6 @@ modules:
       - -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=On
     sources:
       - type: dir
-        path: ../..
+        path: ..
       - type: patch
         path: VkLayer_LS_frame_generation.patch
