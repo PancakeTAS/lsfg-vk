@@ -8,10 +8,6 @@ URUNTIME="https://github.com/VHSgunzo/uruntime/releases/latest/download/uruntime
 URUNTIME_LITE="https://github.com/VHSgunzo/uruntime/releases/latest/download/uruntime-appimage-dwarfs-lite-x86_64"
 SHARUN="https://github.com/VHSgunzo/sharun/releases/latest/download/sharun-x86_64-aio"
 
-LIBXML_URL="https://github.com/pkgforge-dev/llvm-libs-debloated/releases/download/continuous/libxml2-iculess-x86_64.pkg.tar.zst"
-MESA_URL="https://github.com/pkgforge-dev/llvm-libs-debloated/releases/download/continuous/mesa-mini-x86_64.pkg.tar.zst"
-LLVM_URL="https://github.com/pkgforge-dev/llvm-libs-debloated/releases/download/continuous/llvm-libs-nano-x86_64.pkg.tar.zst"
-
 VERSION=$(awk -F'=|"' '/^version/{print $3}' ./Cargo.toml)
 echo "$VERSION-dev" > ~/version
 
@@ -25,16 +21,7 @@ chmod +x uruntime uruntime-lite
 
 # build lsfg-vk-ui
 echo "Building lsfg-vk-ui..."
-cargo build --release # doesn't compile with debloated llvm
-
-# install debloated dependencies
-echo "Installing debloated packages..."
-wget -O libxml2.pkg.tar.zst "$LIBXML_URL"
-wget -O mesa.pkg.tar.zst "$MESA_URL"
-wget -O llvm-libs.pkg.tar.zst "$LLVM_URL"
-
-#pacman -U --noconfirm *.pkg.tar.zst
-rm -fv *.pkg.tar.zst
+cargo build --release
 
 # deploy app directory
 echo "Deploying app directory..."
