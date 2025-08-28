@@ -1,8 +1,11 @@
 id: org.freedesktop.Platform.VulkanLayer.lsfgvk
-branch: '24.08'
+default-branch: develop
+version: 1.0.0
+
 runtime: org.freedesktop.Platform
 runtime-version: '24.08'
 sdk: org.freedesktop.Sdk
+branch: '24.08'
 build-extension: true
 
 sdk-extensions:
@@ -10,21 +13,19 @@ sdk-extensions:
 
 build-options:
   prefix: /usr/lib/extensions/vulkan/lsfgvk
+  append-path: /usr/lib/sdk/llvm20/bin
+  prepend-ld-library-path: /usr/lib/sdk/llvm20/lib
 
 modules:
   - name: lsfg-vk
     buildsystem: cmake-ninja
-    build-options:
-      append-path: /usr/lib/sdk/llvm20/bin
-      prepend-ld-library-path: /usr/lib/sdk/llvm20/lib
     config-opts:
       - -DCMAKE_BUILD_TYPE=Release
       - -DCMAKE_C_COMPILER=clang
       - -DCMAKE_CXX_COMPILER=clang++
       - -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=On
     sources:
-      - type: git
-        url: https://github.com/PancakeTAS/lsfg-vk.git
-        branch: release
+      - type: dir
+        path: ../..
       - type: patch
         path: VkLayer_LS_frame_generation.patch

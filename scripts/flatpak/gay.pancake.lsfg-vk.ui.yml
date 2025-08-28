@@ -1,7 +1,7 @@
 id: gay.pancake.lsfg-vk-ui
-version: 1.0.0
 command: lsfg-vk-ui
 default-branch: develop
+version: 1.0.0
 
 runtime: org.gnome.Platform
 runtime-version: '48'
