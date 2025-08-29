@@ -11,8 +11,6 @@ jobs:
     # prepare system
     - name: Checkout repository
       uses: actions/checkout@v4
-      with:
-        submodules: true
     - name: Install build dependencies
       uses: awalsh128/cache-apt-pkgs-action@latest
       with:

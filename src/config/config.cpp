@@ -132,8 +132,9 @@ void Config::updateConfig(
     }
 
     if (!gameConf.has_value()) {
+        if (Config::currentConf.has_value()) // print log message only if previously enabled
+            std::cerr << "lsfg-vk: Configuration entry disappeared, disabling.\n";
         Config::currentConf.reset();
-        std::cerr << "lsfg-vk: Configuration entry disappeared, disabling.\n";
         return;
     }
 

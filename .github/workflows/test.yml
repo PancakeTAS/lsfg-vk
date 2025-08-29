@@ -1,16 +1,30 @@
 name: (Manual) Build lsfg-vk
 
-on: ["workflow_dispatch"]
+on:
+  issue_comment:
+    types: ["created"]
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    if: |
+      github.event.issue.pull_request &&
+      github.event.comment.body == '@actions build' &&
+      github.event.comment.user.login == 'PancakeTAS'
     steps:
     # prepare system
+    - name: Find commit hash
+      id: prRef
+      run: |
+        echo "ref=$(gh pr view $PR_NUMBER --repo ${{ github.repository }} --json headRefName \
+          | jq -r '.headRefName')" >> $GITHUB_OUTPUT
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        PR_NUMBER: ${{ github.event.issue.number }}
     - name: Checkout repository
       uses: actions/checkout@v4
       with:
-        submodules: true
+        ref: ${{ steps.prRef.outputs.ref }}
     - name: Install build dependencies
       uses: awalsh128/cache-apt-pkgs-action@latest
       with:
@@ -28,17 +42,16 @@ jobs:
     - name: Configure with CMake and Ninja
       run: |
         cmake -B build -G Ninja \
-          -DCMAKE_BUILD_TYPE=Release \
+          -DCMAKE_BUILD_TYPE=Debug \
           -DCMAKE_INSTALL_PREFIX=./target \
           -DCMAKE_C_COMPILER=clang \
-          -DCMAKE_CXX_COMPILER=clang++ \
-          -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=On
+          -DCMAKE_CXX_COMPILER=clang++
     - name: Build with Ninja
       run: |
         ninja -C build
     - name: Install with CMake
       run: |
-        cmake --install build --strip
+        cmake --install build
     - name: Build lsfg-vk-ui
       run: |
         pushd ui
@@ -51,6 +64,12 @@ jobs:
         mv ui/lsfg-vk-ui.AppImage target/bin/lsfg-vk-ui
         cp ui/rsc/gay.pancake.lsfg-vk-ui.desktop target/share/applications/lsfg-vk-ui.desktop
         cp ui/rsc/icon.png target/share/icons/hicolor/256x256/apps/gay.pancake.lsfg-vk-ui.png
+    # create packages for various distros
+    - name: Package lsfg-vk for various distros
+      run: |
+        cp -rv target/* .
+        chmod +x ./package/package.sh
+        ./package/package.sh
     # upload all files
     - name: Upload lsfg-vk artifact
       uses: actions/upload-artifact@v4
@@ -69,3 +88,21 @@ jobs:
         path: |
           target/share/vulkan/implicit_layer.d/VkLayer_LS_frame_generation.json
           target/lib/liblsfg-vk.so
+    - name: Upload lsfg-vk for dpkg
+      uses: actions/upload-artifact@v4
+      with:
+        name: lsfg-vk.dpkg
+        path: |
+          *.deb
+    - name: Upload lsfg-vk for rpm
+      uses: actions/upload-artifact@v4
+      with:
+        name: lsfg-vk.rpm
+        path: |
+          *.rpm
+    - name: Upload lsfg-vk for alpm
+      uses: actions/upload-artifact@v4
+      with:
+        name: lsfg-vk.alpm
+        path: |
+          *.zst
