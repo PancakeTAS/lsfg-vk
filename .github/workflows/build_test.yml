@@ -1,0 +1,71 @@
+name: (Manual) Build lsfg-vk
+
+on: ["workflow_dispatch"]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    # prepare system
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        submodules: true
+    - name: Install build dependencies
+      uses: awalsh128/cache-apt-pkgs-action@latest
+      with:
+        packages: git wget xvfb
+          clang clang-tools llvm rustup
+          cmake ninja-build pkg-config
+          libdecor-0-0 libvulkan-dev
+          libgtk-4-dev libadwaita-1-dev
+        version: 1.0
+        execute_install_scripts: true
+    - name: Install rust dependency
+      run: |
+        rustup default stable
+    # build the project
+    - name: Configure with CMake and Ninja
+      run: |
+        cmake -B build -G Ninja \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DCMAKE_INSTALL_PREFIX=./target \
+          -DCMAKE_C_COMPILER=clang \
+          -DCMAKE_CXX_COMPILER=clang++ \
+          -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=On
+    - name: Build with Ninja
+      run: |
+        ninja -C build
+    - name: Install with CMake
+      run: |
+        cmake --install build --strip
+    - name: Build lsfg-vk-ui
+      run: |
+        pushd ui
+        chmod +x ./build_appimage.sh
+        ./build_appimage.sh
+        popd
+    - name: Install lsfg-vk-ui
+      run: |
+        mkdir -p target/{bin,share/applications,share/icons/hicolor/256x256/apps}
+        mv ui/lsfg-vk-ui.AppImage target/bin/lsfg-vk-ui
+        cp ui/rsc/gay.pancake.lsfg-vk-ui.desktop target/share/applications/lsfg-vk-ui.desktop
+        cp ui/rsc/icon.png target/share/icons/hicolor/256x256/apps/gay.pancake.lsfg-vk-ui.png
+    # upload all files
+    - name: Upload lsfg-vk artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: lsfg-vk
+        path: |
+          target/share/vulkan/implicit_layer.d/VkLayer_LS_frame_generation.json
+          target/share/applications/lsfg-vk-ui.desktop
+          target/share/icons/hicolor/256x256/apps/gay.pancake.lsfg-vk-ui.png
+          target/lib/liblsfg-vk.so
+          target/bin/lsfg-vk-ui
+    - name: Upload lsfg-vk artifact (without UI)
+      uses: actions/upload-artifact@v4
+      with:
+        name: lsfg-vk_noui
+        path: |
+          target/share/vulkan/implicit_layer.d/VkLayer_LS_frame_generation.json
+          target/lib/liblsfg-vk.so
