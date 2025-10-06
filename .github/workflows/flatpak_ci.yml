@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        version: ["23.08", "24.08"]
+        version: ["23.08", "24.08", "25.08"]
     container:
       image: ghcr.io/flathub-infra/flatpak-github-actions:freedesktop-${{ matrix.version }}
       options: --privileged

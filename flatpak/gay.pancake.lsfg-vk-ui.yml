@@ -3,7 +3,7 @@ command: lsfg-vk-ui
 default-branch: develop
 
 runtime: org.gnome.Platform
-runtime-version: '48'
+runtime-version: '49'
 sdk: org.gnome.Sdk
 
 finish-args:

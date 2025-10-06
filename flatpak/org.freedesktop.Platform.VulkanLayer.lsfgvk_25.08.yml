@@ -1,0 +1,30 @@
+id: org.freedesktop.Platform.VulkanLayer.lsfgvk
+default-branch: develop
+
+runtime: org.freedesktop.Platform
+runtime-version: '25.08'
+sdk: org.freedesktop.Sdk
+branch: '25.08'
+build-extension: true
+
+sdk-extensions:
+  - org.freedesktop.Sdk.Extension.llvm21
+
+build-options:
+  prefix: /usr/lib/extensions/vulkan/lsfgvk
+  append-path: /usr/lib/sdk/llvm21/bin
+  prepend-ld-library-path: /usr/lib/sdk/llvm21/lib
+
+modules:
+  - name: lsfg-vk
+    buildsystem: cmake-ninja
+    config-opts:
+      - -DCMAKE_BUILD_TYPE=Release
+      - -DCMAKE_C_COMPILER=clang
+      - -DCMAKE_CXX_COMPILER=clang++
+      - -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=On
+    sources:
+      - type: dir
+        path: ..
+      - type: patch
+        path: VkLayer_LS_frame_generation.patch
