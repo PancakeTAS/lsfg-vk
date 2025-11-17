@@ -1,81 +1,33 @@
 cmake_minimum_required(VERSION 3.10)
+project(lsfg-vk LANGUAGES CXX)
 
-set(CMAKE_SKIP_RPATH ON)
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-if(NOT LSFGVK_EXCESS_DEBUG)
-    set(CMAKE_C_VISIBILITY_PRESET "hidden")
-    set(CMAKE_CXX_VISIBILITY_PRESET "hidden")
-endif()
-
-# subprojects
-add_compile_options(-fPIC
-    -Wno-deprecated-declarations
-    -Wno-unused-template)
-
-add_subdirectory(framegen)
-
-if(LSFGVK_EXCESS_DEBUG)
-    add_subdirectory(test)
-endif()
-
-# main project
-project(lsfg-vk
-    DESCRIPTION "Lossless Scaling Frame Generation on Linux"
-    LANGUAGES CXX)
-
-file(GLOB SOURCES
-    "src/config/*.cpp"
-    "src/extract/*.cpp"
-    "src/mini/*.cpp"
-    "src/utils/*.cpp"
-    "src/*.cpp"
-)
-
-add_library(lsfg-vk SHARED ${SOURCES})
-
-# target
-set_target_properties(lsfg-vk PROPERTIES
-    CXX_STANDARD 20
-    CXX_STANDARD_REQUIRED ON)
-target_include_directories(lsfg-vk SYSTEM
-    PUBLIC include/thirdparty)
-target_include_directories(lsfg-vk
-    PUBLIC include)
-target_link_libraries(lsfg-vk PUBLIC
-    lsfg-vk-framegen)
-
-# diagnostics
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-    set_target_properties(lsfg-vk PROPERTIES
-        EXPORT_COMPILE_COMMANDS ON)
+    set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+    if(NOT CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+        message(WARNING "Debug builds should use Clang for better diagnostics")
+    else()
+        message(STATUS "Building with further diagnostics")
+
+        set(CMAKE_CXX_CLANG_TIDY clang-tidy)
+
+        add_compile_options(
+            -Weverything
+            # disable incompatible warnings
+            -Wno-pre-c++20-compat-pedantic
+            -Wno-c++98-compat
+            -Wno-switch-default
+            -Wno-switch-enum
+            # disable noisy warnings
+            -Wno-missing-designated-field-initializers
+            -Wno-cast-function-type-strict
+            -Wno-padded
+            -Wno-shadow
+        )
+    endif()
 endif()
 
-if(LSFGVK_EXCESS_DEBUG)
-    message(STATUS "LSFGVK_EXCESS_DEBUG is only compatible with clang")
-    target_compile_options(lsfg-vk PRIVATE
-        -Weverything
-        # disable compat c++ flags
-        -Wno-pre-c++20-compat-pedantic
-        -Wno-pre-c++17-compat
-        -Wno-c++98-compat-pedantic
-        -Wno-c++98-compat
-        # disable other flags
-        -Wno-missing-designated-field-initializers
-        -Wno-shadow         # allow shadowing
-        -Wno-switch-enum    # ignore missing cases
-        -Wno-switch-default # ignore missing default
-        -Wno-padded         # ignore automatic padding
-        -Wno-exit-time-destructors # allow globals
-        -Wno-global-constructors   # allow globals
-        -Wno-cast-function-type-strict # for vulkan
-    )
-
-    set_target_properties(lsfg-vk PROPERTIES
-        CXX_CLANG_TIDY clang-tidy)
-endif()
-
-# install
-install(FILES "${CMAKE_BINARY_DIR}/liblsfg-vk.so"
-    DESTINATION lib)
-install(FILES "${CMAKE_SOURCE_DIR}/VkLayer_LS_frame_generation.json"
-    DESTINATION share/vulkan/implicit_layer.d)
+add_subdirectory(lsfg-vk-common)

@@ -1,0 +1,40 @@
+#pragma once
+
+#include "../helpers/pointers.hpp"
+#include "vulkan.hpp"
+
+#include <cstdint>
+#include <optional>
+
+#include <vulkan/vulkan_core.h>
+
+namespace vk {
+    /// vulkan timeline semaphore
+    class TimelineSemaphore {
+    public:
+        /// create a timeline semaphore
+        /// @param vk the vulkan instance
+        /// @param initial initial value of the timeline semaphore
+        /// @param fd optional file descriptor to import the semaphore from
+        /// @throws ls::vulkan_error on failure
+        TimelineSemaphore(const vk::Vulkan& vk, uint32_t initial,
+            std::optional<int> fd = std::nullopt);
+
+        /// signal the timeline semaphore
+        /// @param vk the vulkan instance
+        /// @param value the value to signal to
+        /// @throws ls::vulkan_error on failure
+        void signal(const vk::Vulkan& vk, uint64_t value) const;
+
+        /// wait for the timeline semaphore
+        /// @param vk the vulkan instance
+        /// @param value the value to wait for
+        /// @param timeout the timeout in nanoseconds, or UINT64_MAX for no timeout
+        /// @returns true if the semaphore reached the value, false if it timed out
+        /// @throws ls::vulkan_error on failure
+        [[nodiscard]] bool wait(const vk::Vulkan& vk,
+            uint64_t value, uint64_t timeout = UINT64_MAX) const;
+    private:
+        ls::owned_ptr<VkSemaphore> semaphore;
+    };
+}

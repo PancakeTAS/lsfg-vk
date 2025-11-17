@@ -1,12 +1,11 @@
 # cmake files
 /build
 
-# cargo files
-/ui/target
-
-# ide/lsp files
+# ide
 /.zed
 /.vscode
+
+# tools
 /.clangd
 /.cache
 /.ccls
