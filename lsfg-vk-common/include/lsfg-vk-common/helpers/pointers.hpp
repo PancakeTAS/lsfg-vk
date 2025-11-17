@@ -61,16 +61,4 @@ namespace ls {
         T* ptr{};
         std::function<void(T&)> deleter{};
     };
-
-    /// turn a vector of images into a vector of references
-    template<typename T>
-    std::vector<ls::R<const T>> refs(const std::vector<T>& images) {
-        std::vector<ls::R<const T>> result;
-        result.reserve(images.size());
-
-        for (const auto& img : images)
-            result.push_back(std::ref(img));
-
-        return result;
-    }
 }
