@@ -31,3 +31,4 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
 endif()
 
 add_subdirectory(lsfg-vk-common)
+add_subdirectory(lsfg-vk-backend)

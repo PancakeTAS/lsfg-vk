@@ -1,7 +1,8 @@
-#include "extract/dll.hpp"
+#include "dll_reader.hpp"
 
-#include <unordered_map>
 #include <stdexcept>
+#include <unordered_map>
+#include <filesystem>
 #include <algorithm>
 #include <iostream>
 #include <optional>
@@ -9,10 +10,11 @@
 #include <cstdint>
 #include <fstream>
 #include <utility>
-#include <string>
 #include <vector>
 #include <array>
 #include <span>
+
+using namespace extr;
 
 /// DOS file header
 struct DOSHeader {
@@ -76,7 +78,7 @@ namespace {
     const T* safe_cast(const std::vector<uint8_t>& data, size_t offset) {
         const size_t end = offset + sizeof(T);
         if (end > data.size() || end < offset)
-            throw std::runtime_error("Buffer overflow during safe cast");
+            throw std::runtime_error("buffer overflow/underflow during safe cast");
         return reinterpret_cast<const T*>(&data.at(offset));
     }
 
@@ -85,41 +87,42 @@ namespace {
     std::span<const T> span_cast(const std::vector<uint8_t>& data, size_t offset, size_t count) {
         const size_t end = offset + (count * sizeof(T));
         if (end > data.size() || end < offset)
-            throw std::runtime_error("Buffer overflow during safe cast");
+            throw std::runtime_error("buffer overflow/underflow during safe cast");
         return std::span<const T>(reinterpret_cast<const T*>(&data.at(offset)), count);
     }
 }
 #pragma clang diagnostic pop
 
-std::unordered_map<uint32_t, std::vector<uint8_t>> DLL::parse_dll(const std::string& filename) {
-    std::ifstream file(filename, std::ios::binary | std::ios::ate);
+std::unordered_map<uint32_t, std::vector<uint8_t>> extr::extractResourcesFromDLL(
+        const std::filesystem::path& dll) {
+    std::ifstream file(dll, std::ios::binary | std::ios::ate);
     if (!file.is_open())
-        throw std::runtime_error("Failed to open Lossless.dll");
+        throw std::runtime_error("failed to open dll file");
 
     const auto size = file.tellg();
     file.seekg(0, std::ios::beg);
 
     std::vector<uint8_t> data(static_cast<size_t>(size));
     if (!file.read(reinterpret_cast<char*>(data.data()), size))
-        throw std::runtime_error("Failed to read Lossless.dll");
+        throw std::runtime_error("failed to read dll file");
 
     // parse dos header
     size_t fileOffset = 0;
     const auto* dosHdr = safe_cast<const DOSHeader>(data, 0);
     if (dosHdr->magic != 0x5A4D)
-        throw std::runtime_error("Invalid DOS header magic number");
+        throw std::runtime_error("dos header magic number is incorrect");
 
     // parse pe header
     fileOffset += static_cast<size_t>(dosHdr->pe_offset);
     const auto* peHdr = safe_cast<const PEHeader>(data, fileOffset);
     if (peHdr->signature != 0x00004550)
-        throw std::runtime_error("Invalid PE header signature");
+        throw std::runtime_error("pe header signature is incorrect");
 
     // parse optional pe header
     fileOffset += sizeof(PEHeader);
     const auto* peOptHdr = safe_cast<const PEOptionalHeader>(data, fileOffset);
     if (peOptHdr->magic != 0x20B)
-        throw std::runtime_error("Unsupported PE format (not PE32+)");
+        throw std::runtime_error("pe format is not PE32+");
     const auto& [rsrc_rva, rsrc_size] = peOptHdr->resource_table;
 
     // locate section containing resources
@@ -134,13 +137,13 @@ std::unordered_map<uint32_t, std::vector<uint8_t>> DLL::parse_dll(const std::str
         break;
     }
     if (!rsrc_offset)
-        throw std::runtime_error("Failed to locate resource section");
+        throw std::runtime_error("unable to locate resource section");
 
     // parse resource directory
     fileOffset = rsrc_offset.value();
     const auto* rsrcDir = safe_cast<const ResourceDirectory>(data, fileOffset);
     if (rsrcDir->id_count < 3)
-        throw std::runtime_error("Incorrect resource directory");
+        throw std::runtime_error("resource directory does not have enough entries");
 
     // find resource table with data type
     std::optional<size_t> rsrc_tbl_offset;
@@ -151,18 +154,18 @@ std::unordered_map<uint32_t, std::vector<uint8_t>> DLL::parse_dll(const std::str
         if (rsrcDirEntry.id != 10) // RT_RCDATA
             continue;
         if ((rsrcDirEntry.offset & 0x80000000) == 0)
-            throw std::runtime_error("Expected resource directory, but found data entry");
+            throw std::runtime_error("expected resource directory, found data entry");
 
         rsrc_tbl_offset.emplace(rsrcDirEntry.offset & 0x7FFFFFFF);
     }
     if (!rsrc_tbl_offset)
-        throw std::runtime_error("Failed to locate RT_RCDATA directory");
+        throw std::runtime_error("unabele to locate RT_RCDATA directory");
 
     // parse data type resource directory
     fileOffset = rsrc_offset.value() + rsrc_tbl_offset.value();
     const auto* rsrcTbl = safe_cast<const ResourceDirectory>(data, fileOffset);
     if (rsrcTbl->id_count < 1)
-        throw std::runtime_error("Incorrect RT_RCDATA directory");
+        throw std::runtime_error("RT_RCDATA directory does not have enough entries");
 
     // collect all resources
     fileOffset += sizeof(ResourceDirectory);
@@ -171,7 +174,7 @@ std::unordered_map<uint32_t, std::vector<uint8_t>> DLL::parse_dll(const std::str
     std::unordered_map<uint32_t, std::vector<uint8_t>> resources;
     for (const auto& rsrcTblEntry : rsrcTblEntries) {
         if ((rsrcTblEntry.offset & 0x80000000) == 0)
-            throw std::runtime_error("Expected resource directory, but found data entry");
+            throw std::runtime_error("expected resource directory, found data entry");
 
         // skip over language directory
         fileOffset = rsrc_offset.value() + (rsrcTblEntry.offset & 0x7FFFFFFF);
@@ -182,19 +185,19 @@ std::unordered_map<uint32_t, std::vector<uint8_t>> DLL::parse_dll(const std::str
         fileOffset += sizeof(ResourceDirectory);
         const auto* langDirEntry = safe_cast<const ResourceDirectoryEntry>(data, fileOffset);
         if ((langDirEntry->offset & 0x80000000) != 0)
-            throw std::runtime_error("Expected resource data entry, but found directory");
+            throw std::runtime_error("expected resource data entry, but found directory");
 
         // parse resource data entry
         fileOffset = rsrc_offset.value() + (langDirEntry->offset & 0x7FFFFFFF);
         const auto* entry = safe_cast<const ResourceDataEntry>(data, fileOffset);
         if (entry->offset < rsrc_rva || entry->offset > (rsrc_rva + rsrc_size))
-            throw std::runtime_error("Resource data entry points outside resource section");
+            throw std::runtime_error("resource data entry points outside resource section");
 
         // extract resource
         std::vector<uint8_t> resource(entry->size);
         fileOffset = (entry->offset - rsrc_rva) + rsrc_offset.value();
         if (fileOffset + entry->size > data.size())
-            throw std::runtime_error("Resource data entry points outside file");
+            throw std::runtime_error("resource data entry points outside file");
         std::copy_n(&data.at(fileOffset), entry->size, resource.data());
         resources.emplace(rsrcTblEntry.id, std::move(resource));
     }
