@@ -1,6 +1,7 @@
 set(BACKEND_SOURCES
     "src/extraction/dll_reader.cpp"
-    "src/extraction/shader_registry.cpp")
+    "src/extraction/shader_registry.cpp"
+    "src/helpers/managed_shader.cpp")
 
 add_library(lsfg-vk-backend STATIC ${BACKEND_SOURCES})
 
