@@ -15,10 +15,12 @@ namespace vk {
         /// create a timeline semaphore
         /// @param vk the vulkan instance
         /// @param initial initial value of the timeline semaphore
-        /// @param fd optional file descriptor to import the semaphore from
+        /// @param importFd optional file descriptor to import from
+        /// @param exportFd optional file descriptor to export to
         /// @throws ls::vulkan_error on failure
         TimelineSemaphore(const vk::Vulkan& vk, uint32_t initial,
-            std::optional<int> fd = std::nullopt);
+            std::optional<int> importFd = std::nullopt,
+            std::optional<int*> exportFd = std::nullopt);
 
         /// signal the timeline semaphore
         /// @param vk the vulkan instance
@@ -34,6 +36,10 @@ namespace vk {
         /// @throws ls::vulkan_error on failure
         [[nodiscard]] bool wait(const vk::Vulkan& vk,
             uint64_t value, uint64_t timeout = UINT64_MAX) const;
+
+        /// get the underlying VkSemaphore handle
+        /// @return the VkSemaphore handle
+        [[nodiscard]] const auto& handle() const { return *this->semaphore; }
     private:
         ls::owned_ptr<VkSemaphore> semaphore;
     };

@@ -13,7 +13,7 @@ using namespace vk;
 namespace {
     /// create a timeline semaphore
     ls::owned_ptr<VkSemaphore> createTimelineSemaphore(const vk::Vulkan& vk, uint32_t initial,
-            std::optional<int> fd) {
+            std::optional<int> importFd, std::optional<int*> exportFd) {
         VkSemaphore handle{};
 
         const VkExportSemaphoreCreateInfo exportInfo{
@@ -22,7 +22,7 @@ namespace {
         };
         const VkSemaphoreTypeCreateInfo typeInfo{
             .sType = VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO,
-            .pNext = fd.has_value() ? &exportInfo : nullptr,
+            .pNext = ( importFd.has_value() || exportFd.has_value() ) ? &exportInfo : nullptr,
             .semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE,
             .initialValue = initial
         };
@@ -34,7 +34,7 @@ namespace {
         if (res != VK_SUCCESS)
             throw ls::vulkan_error(res, "vkCreateSemaphore() failed");
 
-        if (fd.has_value()) {
+        if (importFd.has_value()) {
             // import semaphore from fd
             auto vkImportSemaphoreFdKHR = reinterpret_cast<PFN_vkImportSemaphoreFdKHR>(
                 vkGetDeviceProcAddr(vk.dev(), "vkImportSemaphoreFdKHR")); // TODO: cache
@@ -43,11 +43,29 @@ namespace {
                 .sType = VK_STRUCTURE_TYPE_IMPORT_SEMAPHORE_FD_INFO_KHR,
                 .semaphore = handle,
                 .handleType = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_FD_BIT,
-                .fd = *fd // closes the fd
+                .fd = *importFd // closes the fd
             };
             res = vkImportSemaphoreFdKHR(vk.dev(), &importInfo);
             if (res != VK_SUCCESS)
                 throw ls::vulkan_error(res, "vkImportSemaphoreFdKHR() failed");
+        }
+
+        if (exportFd.has_value()) {
+            // export semaphore to fd
+            auto vkGetSemaphoreFdKHR = reinterpret_cast<PFN_vkGetSemaphoreFdKHR>(
+                vkGetDeviceProcAddr(vk.dev(), "vkGetSemaphoreFdKHR")); // TODO: cache
+
+            const VkSemaphoreGetFdInfoKHR getFdInfo{
+                .sType = VK_STRUCTURE_TYPE_SEMAPHORE_GET_FD_INFO_KHR,
+                .semaphore = handle,
+                .handleType = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_FD_BIT
+            };
+            int fd{};
+            res = vkGetSemaphoreFdKHR(vk.dev(), &getFdInfo, &fd);
+            if (res != VK_SUCCESS)
+                throw ls::vulkan_error(res, "vkGetSemaphoreFdKHR() failed");
+
+            **exportFd = fd;
         }
 
         return ls::owned_ptr<VkSemaphore>(
@@ -59,8 +77,9 @@ namespace {
     }
 }
 
-TimelineSemaphore::TimelineSemaphore(const vk::Vulkan& vk, uint32_t initial, std::optional<int> fd)
-    : semaphore(createTimelineSemaphore(vk, initial, fd)) {}
+TimelineSemaphore::TimelineSemaphore(const vk::Vulkan& vk, uint32_t initial,
+        std::optional<int> importFd, std::optional<int*> exportFd)
+    : semaphore(createTimelineSemaphore(vk, initial, importFd, exportFd)) {}
 
 void TimelineSemaphore::signal(const vk::Vulkan& vk, uint64_t value) const {
     const VkSemaphoreSignalInfo signalInfo{
