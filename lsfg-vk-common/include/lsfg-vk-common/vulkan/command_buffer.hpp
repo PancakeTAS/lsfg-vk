@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../helpers/pointers.hpp"
+#include "buffer.hpp"
 #include "descriptor_set.hpp"
 #include "image.hpp"
 #include "shader.hpp"
@@ -57,6 +58,11 @@ namespace vk {
         /// @param vk the vulkan instance
         /// @throws ls::vulkan_error on failure
         void submit(const vk::Vulkan& vk) const;
+
+        /// copy buffer to image
+        /// @param buffer the source buffer
+        /// @param image the destination image
+        void copyBufferToImage(const vk::Buffer& buffer, const vk::Image& image) const;
     private:
         ls::owned_ptr<VkCommandBuffer> commandBuffer;
     };
