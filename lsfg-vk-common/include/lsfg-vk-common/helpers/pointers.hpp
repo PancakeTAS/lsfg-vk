@@ -34,13 +34,16 @@ namespace ls {
         T* operator->() const { return &this->get(); }
 
         // moveable
-        owned_ptr(owned_ptr&& other) noexcept : ptr(other.ptr) {
+        owned_ptr(owned_ptr&& other) noexcept :
+                ptr(other.ptr),
+                deleter(std::move(other.deleter)) {
             other.ptr = nullptr;
         }
         owned_ptr& operator=(owned_ptr&& other) noexcept {
             if (this != &other) {
                 ptr = other.ptr;
                 other.ptr = nullptr;
+                deleter = std::move(other.deleter);
             }
 
             return *this;
