@@ -1,6 +1,7 @@
 #include "lsfg-vk-common/vulkan/command_buffer.hpp"
 #include "lsfg-vk-common/helpers/errors.hpp"
 #include "lsfg-vk-common/helpers/pointers.hpp"
+#include "lsfg-vk-common/vulkan/buffer.hpp"
 #include "lsfg-vk-common/vulkan/descriptor_set.hpp"
 #include "lsfg-vk-common/vulkan/fence.hpp"
 #include "lsfg-vk-common/vulkan/image.hpp"
@@ -159,4 +160,44 @@ void CommandBuffer::submit(const vk::Vulkan& vk) const {
 
     if (!fence.wait(vk))
         throw ls::vulkan_error(VK_TIMEOUT, "Fence::wait() timed out");
+}
+
+void CommandBuffer::copyBufferToImage(const vk::Buffer& buffer, const vk::Image& image) const {
+    const VkImageMemoryBarrier barrier{
+        .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
+        .srcAccessMask = VK_ACCESS_NONE,
+        .dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT,
+        .oldLayout = VK_IMAGE_LAYOUT_GENERAL,
+        .newLayout = VK_IMAGE_LAYOUT_GENERAL,
+        .image = image.handle(),
+        .subresourceRange = {
+            .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+            .levelCount = 1,
+            .layerCount = 1
+        }
+    };
+    vkCmdPipelineBarrier(*this->commandBuffer,
+        VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
+        0,
+        0, nullptr,
+        0, nullptr,
+        1, &barrier
+    );
+
+    const VkBufferImageCopy region{
+        .bufferImageHeight = 0,
+        .imageSubresource = {
+            .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+            .layerCount = 1
+        },
+        .imageExtent = {
+            .width = image.getExtent().width,
+            .height = image.getExtent().height,
+            .depth = 1
+        }
+    };
+    vkCmdCopyBufferToImage(*this->commandBuffer,
+        buffer.handle(), image.handle(),
+        VK_IMAGE_LAYOUT_GENERAL, 1, &region
+    );
 }
