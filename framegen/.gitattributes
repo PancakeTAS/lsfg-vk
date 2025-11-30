@@ -1,3 +1,0 @@
-*.cpp diff=cpp eol=lf
-*.hpp diff=cpp eol=lf
-*.md diff=markdown eol=lf
