@@ -27,6 +27,10 @@ namespace vk {
         /// @returns true if the fence signaled, false if it timed out
         /// @throws ls::vulkan_error on failure
         [[nodiscard]] bool wait(const vk::Vulkan& vk, uint64_t timeout = UINT64_MAX) const;
+
+        /// get the fence handle
+        /// @return the fence handle
+        [[nodiscard]] VkFence handle() const { return *this->fence; }
     private:
         ls::owned_ptr<VkFence> fence;
     };

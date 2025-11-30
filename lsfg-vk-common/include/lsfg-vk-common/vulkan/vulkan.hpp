@@ -54,6 +54,9 @@ namespace vk {
         [[nodiscard]] std::optional<uint32_t> findMemoryTypeIndex(
             std::bitset<32> validTypes, bool hostVisibility) const;
 
+        /// get the vulkan instance
+        /// @return the instance handle
+        [[nodiscard]] const auto& inst() const { return this->instance.get(); }
         /// get the vulkan device
         /// @return the device handle
         [[nodiscard]] const auto& dev() const { return this->device.get(); }
@@ -63,6 +66,9 @@ namespace vk {
         /// get the descriptor pool
         /// @return the descriptor pool handle
         [[nodiscard]] const auto& descpool() const { return this->descPool.get(); }
+        /// get the compute queue
+        /// @return the compute queue handle
+        [[nodiscard]] const auto& queue() const { return this->computeQueue; }
 
         /// check if fp16 is supported
         /// @return true if fp16 is supported

@@ -32,9 +32,15 @@ namespace vk {
         /// get the image view handle
         /// @return the image view handle
         [[nodiscard]] const auto& imageview() const { return this->view.get(); }
+
+        /// get the extent of the image
+        /// @return the extent of the image
+        [[nodiscard]] VkExtent2D getExtent() const { return this->extent; }
     private:
         ls::owned_ptr<VkImage> image;
         ls::owned_ptr<VkDeviceMemory> memory;
         ls::owned_ptr<VkImageView> view;
+
+        VkExtent2D extent{};
     };
 }

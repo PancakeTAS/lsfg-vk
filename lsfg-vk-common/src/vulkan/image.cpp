@@ -58,7 +58,7 @@ namespace {
 
         auto mti = vk.findMemoryTypeIndex(
             reqs.memoryTypeBits,
-            true
+            false
         );
         if (!mti.has_value())
             throw ls::vulkan_error("no suitable memory type found for image");
@@ -168,5 +168,6 @@ Image::Image(const vk::Vulkan& vk,
         view(createImageView(vk,
             *this->image,
             format
-        )) {
+        )),
+        extent(extent) {
 }

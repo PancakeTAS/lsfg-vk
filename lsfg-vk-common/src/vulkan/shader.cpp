@@ -158,7 +158,7 @@ Shader::Shader(const vk::Vulkan& vk, const std::vector<uint8_t>& code,
     pipelineLayout(createPipelineLayout(vk,
         *this->descriptorLayout
     )),
-    pipeline(createComputePipeline(vk,
+    pipeline_(createComputePipeline(vk,
         *this->shaderModule,
         *this->pipelineLayout
     )) {

@@ -10,6 +10,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <vector>
+
 #include <vulkan/vulkan_core.h>
 
 using namespace vk;

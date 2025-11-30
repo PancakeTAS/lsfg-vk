@@ -27,11 +27,18 @@ namespace vk {
         /// get the descriptor set layout
         /// @returns the descriptor set layout
         [[nodiscard]] const auto& descriptorlayout() const { return *this->descriptorLayout; }
+
+        /// get the pipeline layout
+        /// @returns the pipeline layout
+        [[nodiscard]] const auto& pipelinelayout() const { return *this->pipelineLayout; }
+        /// get the pipeline
+        /// @returns the pipeline
+        [[nodiscard]] const auto& pipeline() const { return *this->pipeline_; }
     private:
         ls::owned_ptr<VkShaderModule> shaderModule;
         ls::owned_ptr<VkDescriptorSetLayout> descriptorLayout;
 
         ls::owned_ptr<VkPipelineLayout> pipelineLayout;
-        ls::owned_ptr<VkPipeline> pipeline;
+        ls::owned_ptr<VkPipeline> pipeline_;
     };
 }

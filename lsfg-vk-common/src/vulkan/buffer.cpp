@@ -15,13 +15,14 @@ using namespace vk;
 
 namespace {
     /// create a buffer
-    ls::owned_ptr<VkBuffer> createBuffer(const vk::Vulkan& vk, size_t size) {
+    ls::owned_ptr<VkBuffer> createBuffer(const vk::Vulkan& vk, size_t size,
+            VkBufferUsageFlags usage) {
         VkBuffer handle{};
 
         const VkBufferCreateInfo bufferInfo{
             .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
             .size = size,
-            .usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+            .usage = usage,
             .sharingMode = VK_SHARING_MODE_EXCLUSIVE
         };
         auto res = vkCreateBuffer(vk.dev(), &bufferInfo, nullptr, &handle);
@@ -88,8 +89,8 @@ namespace {
     }
 }
 
-Buffer::Buffer(const vk::Vulkan& vk, const void* data, size_t size) :
-        buffer(createBuffer(vk, size)),
+Buffer::Buffer(const vk::Vulkan& vk, const void* data, size_t size, VkBufferUsageFlags usage) :
+        buffer(createBuffer(vk, size, usage)),
         memory(allocateMemory(vk, *this->buffer)),
         size(size) {
     copyDataToBuffer(vk, *this->memory, data, size);

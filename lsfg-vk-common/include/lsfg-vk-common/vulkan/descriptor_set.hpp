@@ -29,6 +29,10 @@ namespace vk {
             const std::vector<ls::R<const vk::Image>>& storageImages,
             const std::vector<ls::R<const vk::Sampler>>& samplers,
             const std::vector<ls::R<const vk::Buffer>>& buffers);
+
+        /// get the underlying descriptor set handle
+        /// @return the handle
+        [[nodiscard]] const auto& handle() const { return *this->descriptorSet; }
     private:
         ls::owned_ptr<VkDescriptorSet> descriptorSet;
     };
