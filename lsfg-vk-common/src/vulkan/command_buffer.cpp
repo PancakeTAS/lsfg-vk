@@ -2,10 +2,14 @@
 #include "lsfg-vk-common/helpers/errors.hpp"
 #include "lsfg-vk-common/helpers/pointers.hpp"
 #include "lsfg-vk-common/vulkan/descriptor_set.hpp"
+#include "lsfg-vk-common/vulkan/fence.hpp"
+#include "lsfg-vk-common/vulkan/image.hpp"
 #include "lsfg-vk-common/vulkan/shader.hpp"
+#include "lsfg-vk-common/vulkan/timeline_semaphore.hpp"
 #include "lsfg-vk-common/vulkan/vulkan.hpp"
 
 #include <cstdint>
+#include <optional>
 #include <vector>
 
 #include <vulkan/vulkan_core.h>
@@ -48,6 +52,39 @@ CommandBuffer::CommandBuffer(const vk::Vulkan& vk)
         throw ls::vulkan_error(res, "vkBeginCommandBuffer() failed");
 }
 
+void CommandBuffer::prepareImage(const vk::Image& image,
+        const std::optional<VkClearColorValue>& clearColor) const {
+    const VkImageMemoryBarrier barrier{
+        .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
+        .srcAccessMask = VK_ACCESS_NONE,
+        .dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT,
+        .oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+        .newLayout = VK_IMAGE_LAYOUT_GENERAL,
+        .image = image.handle(),
+        .subresourceRange = {
+            .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+            .levelCount = 1,
+            .layerCount = 1
+        }
+    };
+    vkCmdPipelineBarrier(*this->commandBuffer,
+        VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
+        0,
+        0, nullptr,
+        0, nullptr,
+        1, &barrier
+    );
+
+    if (clearColor.has_value()) {
+        vkCmdClearColorImage(*this->commandBuffer,
+            image.handle(),
+            VK_IMAGE_LAYOUT_GENERAL,
+            &clearColor.value(),
+            1, &barrier.subresourceRange
+        );
+    }
+}
+
 void CommandBuffer::dispatch(const vk::Shader& shader,
         const vk::DescriptorSet& set,
         const std::vector<vk::Barrier>& barriers,
@@ -73,8 +110,53 @@ void CommandBuffer::dispatch(const vk::Shader& shader,
     vkCmdDispatch(*this->commandBuffer, x, y, z);
 }
 
-void CommandBuffer::submit() {
+void CommandBuffer::submit(const vk::Vulkan& vk,
+        const vk::TimelineSemaphore& waitSemaphore, uint64_t waitValue,
+        const vk::TimelineSemaphore& signalSemaphore, uint64_t signalValue) const {
     auto res = vkEndCommandBuffer(*this->commandBuffer);
     if (res != VK_SUCCESS)
         throw ls::vulkan_error(res, "vkEndCommandBuffer() failed");
+
+
+    const VkTimelineSemaphoreSubmitInfo timelineInfo{
+        .sType = VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO,
+        .waitSemaphoreValueCount = 1,
+        .pWaitSemaphoreValues = &waitValue,
+        .signalSemaphoreValueCount = 1,
+        .pSignalSemaphoreValues = &signalValue
+    };
+    const VkPipelineStageFlags stage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+    const VkSubmitInfo submitInfo{
+        .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
+        .pNext = &timelineInfo,
+        .waitSemaphoreCount = 1,
+        .pWaitSemaphores = &waitSemaphore.handle(),
+        .pWaitDstStageMask = &stage,
+        .commandBufferCount = 1,
+        .pCommandBuffers = &*this->commandBuffer,
+        .signalSemaphoreCount = 1,
+        .pSignalSemaphores = &signalSemaphore.handle()
+    };
+    res = vkQueueSubmit(vk.queue(), 1, &submitInfo, VK_NULL_HANDLE);
+    if (res != VK_SUCCESS)
+        throw ls::vulkan_error(res, "vkQueueSubmit() failed");
+}
+
+void CommandBuffer::submit(const vk::Vulkan& vk) const {
+    auto res = vkEndCommandBuffer(*this->commandBuffer);
+    if (res != VK_SUCCESS)
+        throw ls::vulkan_error(res, "vkEndCommandBuffer() failed");
+
+    const VkSubmitInfo submitInfo{
+        .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
+        .commandBufferCount = 1,
+        .pCommandBuffers = &*this->commandBuffer
+    };
+    const vk::Fence fence{vk};
+    res = vkQueueSubmit(vk.queue(), 1, &submitInfo, fence.handle());
+    if (res != VK_SUCCESS)
+        throw ls::vulkan_error(res, "vkQueueSubmit() failed");
+
+    if (!fence.wait(vk))
+        throw ls::vulkan_error(VK_TIMEOUT, "Fence::wait() timed out");
 }
