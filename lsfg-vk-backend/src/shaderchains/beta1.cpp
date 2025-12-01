@@ -1,0 +1,78 @@
+#include "beta1.hpp"
+#include "../helpers/utils.hpp"
+#include "lsfg-vk-common/helpers/pointers.hpp"
+#include "lsfg-vk-common/vulkan/command_buffer.hpp"
+#include "lsfg-vk-common/vulkan/image.hpp"
+
+#include <cstddef>
+#include <cstdint>
+#include <vector>
+
+#include <vulkan/vulkan_core.h>
+
+using namespace chains;
+
+Beta1::Beta1(const ls::Ctx& ctx,
+        const std::vector<vk::Image>& sourceImages) {
+    const VkExtent2D extent = sourceImages.at(0).getExtent();
+
+    // create temporary & output images
+    this->tempImages0.reserve(2);
+    this->tempImages1.reserve(2);
+    for(uint32_t i = 0; i < 2; i++) {
+        this->tempImages0.emplace_back(ctx.vk, extent);
+        this->tempImages1.emplace_back(ctx.vk, extent);
+    }
+
+    this->images.reserve(6);
+    for (uint32_t i = 0; i < 6; i++)
+        this->images.emplace_back(ctx.vk,
+            ls::shift_extent(extent, i),
+            VK_FORMAT_R8_UNORM);
+
+    // create descriptor sets
+    const auto& shaders = (ctx.perf ?
+        ctx.shaders.get().performance : ctx.shaders.get().quality).beta;
+    this->sets.reserve(4);
+    this->sets.emplace_back(ls::ManagedShaderBuilder()
+        .sampleds(sourceImages)
+        .storages(this->tempImages0)
+        .sampler(ctx.bnbSampler)
+        .build(ctx.vk, shaders.at(1)));
+    this->sets.emplace_back(ls::ManagedShaderBuilder()
+        .sampleds(this->tempImages0)
+        .storages(this->tempImages1)
+        .sampler(ctx.bnbSampler)
+        .build(ctx.vk, shaders.at(2)));
+    this->sets.emplace_back(ls::ManagedShaderBuilder()
+        .sampleds(this->tempImages1)
+        .storages(this->tempImages0)
+        .sampler(ctx.bnbSampler)
+        .build(ctx.vk, shaders.at(3)));
+    this->sets.emplace_back(ls::ManagedShaderBuilder()
+        .sampleds(this->tempImages0)
+        .storages(this->images)
+        .sampler(ctx.bnbSampler)
+        .buffer(ctx.constantBuffer)
+        .build(ctx.vk, shaders.at(4)));
+
+    // store dispatch extents
+    this->dispatchExtent0 = ls::add_shift_extent(extent, 7, 3);
+    this->dispatchExtent1 = ls::add_shift_extent(extent, 31, 5);
+}
+
+void Beta1::prepare(const vk::CommandBuffer& cmd) const {
+    for (size_t i = 0; i < 2; i++) {
+        cmd.prepareImage(this->tempImages0.at(i));
+        cmd.prepareImage(this->tempImages1.at(i));
+    }
+    for (const auto& img : this->images)
+        cmd.prepareImage(img);
+}
+
+void Beta1::render(const vk::CommandBuffer& cmd) const {
+    this->sets[0].dispatch(cmd, this->dispatchExtent0);
+    this->sets[1].dispatch(cmd, this->dispatchExtent0);
+    this->sets[2].dispatch(cmd, this->dispatchExtent0);
+    this->sets[3].dispatch(cmd, this->dispatchExtent1);
+}

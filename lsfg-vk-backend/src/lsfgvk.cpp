@@ -7,6 +7,11 @@
 #include "lsfg-vk-common/vulkan/image.hpp"
 #include "lsfg-vk-common/vulkan/timeline_semaphore.hpp"
 #include "lsfg-vk-common/vulkan/vulkan.hpp"
+#include "shaderchains/alpha0.hpp"
+#include "shaderchains/alpha1.hpp"
+#include "shaderchains/beta0.hpp"
+#include "shaderchains/beta1.hpp"
+#include "shaderchains/mipmaps.hpp"
 
 #include <algorithm>
 #include <array>
@@ -81,11 +86,18 @@ namespace lsfgvk {
         vk::TimelineSemaphore syncSemaphore; // imported
         vk::TimelineSemaphore prepassSemaphore;
         size_t idx{1};
+        size_t fidx{0}; // real frame index
 
         std::vector<vk::CommandBuffer> cmdbufs; // TODO: ponder reuse
         size_t cmdbuf_idx{0};
 
         ls::Ctx ctx;
+
+        chains::Mipmaps mipmaps;
+        std::array<chains::Alpha0, 7> alpha0;
+        std::array<chains::Alpha1, 7> alpha1;
+        chains::Beta0 beta0;
+        chains::Beta1 beta1;
     };
 }
 
@@ -296,10 +308,37 @@ ContextImpl::ContextImpl(const InstanceImpl& instance,
         syncSemaphore(importTimelineSemaphore(instance.getVulkan(), syncFd)),
         prepassSemaphore(createPrepassSemaphore(instance.getVulkan())),
         cmdbufs(createCommandBuffers(instance.getVulkan(), 16)),
-        ctx(createCtx(instance, extent, hdr, flow, perf, destFds.size())) {
+        ctx(createCtx(instance, extent, hdr, flow, perf, destFds.size())),
+        mipmaps(ctx, sourceImages),
+        alpha0{
+            chains::Alpha0(ctx, mipmaps.getImages().at(0)),
+            chains::Alpha0(ctx, mipmaps.getImages().at(1)),
+            chains::Alpha0(ctx, mipmaps.getImages().at(2)),
+            chains::Alpha0(ctx, mipmaps.getImages().at(3)),
+            chains::Alpha0(ctx, mipmaps.getImages().at(4)),
+            chains::Alpha0(ctx, mipmaps.getImages().at(5)),
+            chains::Alpha0(ctx, mipmaps.getImages().at(6))
+        },
+        alpha1{
+            chains::Alpha1(ctx, alpha0.at(0).getImages()),
+            chains::Alpha1(ctx, alpha0.at(1).getImages()),
+            chains::Alpha1(ctx, alpha0.at(2).getImages()),
+            chains::Alpha1(ctx, alpha0.at(3).getImages()),
+            chains::Alpha1(ctx, alpha0.at(4).getImages()),
+            chains::Alpha1(ctx, alpha0.at(5).getImages()),
+            chains::Alpha1(ctx, alpha0.at(6).getImages())
+        },
+        beta0(ctx, alpha1.at(0).getImages()),
+        beta1(ctx, beta0.getImages()) {
     // initialize all images
     const vk::CommandBuffer cmdbuf{ctx.vk};
-    // (...)
+    mipmaps.prepare(cmdbuf);
+    for (size_t i = 0; i < 7; ++i) {
+        alpha0.at(i).prepare(cmdbuf);
+        alpha1.at(i).prepare(cmdbuf);
+    }
+    beta0.prepare(cmdbuf);
+    beta1.prepare(cmdbuf);
     cmdbuf.submit(ctx.vk); // wait for completion
 }
 
@@ -332,7 +371,13 @@ void Context::scheduleFrames() {
     vk::CommandBuffer& cmdbuf = this->cmdbufs.at(this->cmdbuf_idx++ % this->cmdbufs.size());
     cmdbuf = vk::CommandBuffer(this->ctx.vk);
 
-    // (...)
+    this->mipmaps.render(cmdbuf, this->fidx);
+    for (size_t i = 0; i < 7; ++i) {
+        this->alpha0.at(6 - i).render(cmdbuf);
+        this->alpha1.at(6 - i).render(cmdbuf, this->fidx);
+    }
+    this->beta0.render(cmdbuf, this->fidx);
+    this->beta1.render(cmdbuf);
 
     cmdbuf.submit(this->ctx.vk,
         this->syncSemaphore, this->idx,
@@ -355,6 +400,7 @@ void Context::scheduleFrames() {
     }
 
     this->idx += this->destImages.size();
+    this->fidx++;
 }
 
 void Instance::closeContext(const Context& context) {

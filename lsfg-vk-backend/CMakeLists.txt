@@ -3,6 +3,11 @@ set(BACKEND_SOURCES
     "src/extraction/shader_registry.cpp"
     "src/helpers/managed_shader.cpp"
     "src/helpers/utils.cpp"
+    "src/shaderchains/alpha0.cpp"
+    "src/shaderchains/alpha1.cpp"
+    "src/shaderchains/beta0.cpp"
+    "src/shaderchains/beta1.cpp"
+    "src/shaderchains/mipmaps.cpp"
     "src/lsfgvk.cpp")
 
 add_library(lsfg-vk-backend STATIC ${BACKEND_SOURCES})
