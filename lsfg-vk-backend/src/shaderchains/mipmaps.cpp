@@ -3,6 +3,7 @@
 #include "lsfg-vk-common/helpers/pointers.hpp"
 #include "lsfg-vk-common/vulkan/command_buffer.hpp"
 #include "lsfg-vk-common/vulkan/image.hpp"
+#include "lsfg-vk-common/vulkan/vulkan.hpp"
 
 #include <cstddef>
 #include <cstdint>
@@ -40,11 +41,11 @@ Mipmaps::Mipmaps(const ls::Ctx& ctx,
     this->dispatchExtent = ls::add_shift_extent(ctx.flowExtent, 63, 6);
 }
 
-void Mipmaps::prepare(const vk::CommandBuffer& cmd) const {
+void Mipmaps::prepare(const vk::Vulkan& vk, const vk::CommandBuffer& cmd) const {
     for (const auto& img : this->images)
-        cmd.prepareImage(img);
+        cmd.prepareImage(vk, img);
 }
 
-void Mipmaps::render(const vk::CommandBuffer& cmd, size_t idx) const {
-    this->sets[idx % 2].dispatch(cmd, this->dispatchExtent);
+void Mipmaps::render(const vk::Vulkan& vk, const vk::CommandBuffer& cmd, size_t idx) const {
+    this->sets[idx % 2].dispatch(vk, cmd, this->dispatchExtent);
 }

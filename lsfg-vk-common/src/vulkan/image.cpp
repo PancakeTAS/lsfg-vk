@@ -37,14 +37,14 @@ namespace {
             .usage = usage,
             .sharingMode = VK_SHARING_MODE_EXCLUSIVE
         };
-        auto res = vkCreateImage(vk.dev(), &imageInfo, nullptr, &handle);
+        auto res = vk.df().CreateImage(vk.dev(), &imageInfo, nullptr, &handle);
         if (res != VK_SUCCESS)
             throw ls::vulkan_error(res, "vkCreateImage() failed");
 
         return ls::owned_ptr<VkImage>(
             new VkImage(handle),
-            [dev = vk.dev()](VkImage& image) {
-                vkDestroyImage(dev, image, nullptr);
+            [dev = vk.dev(), defunc = vk.df().DestroyImage](VkImage& image) {
+                defunc(dev, image, nullptr);
             }
         );
     }
@@ -54,7 +54,7 @@ namespace {
         VkDeviceMemory handle{};
 
         VkMemoryRequirements reqs{};
-        vkGetImageMemoryRequirements(vk.dev(), image, &reqs);
+        vk.df().GetImageMemoryRequirements(vk.dev(), image, &reqs);
 
         auto mti = vk.findMemoryTypeIndex(
             reqs.memoryTypeBits,
@@ -89,25 +89,22 @@ namespace {
             .allocationSize = reqs.size,
             .memoryTypeIndex = *mti
         };
-        auto res = vkAllocateMemory(vk.dev(), &memoryInfo, nullptr, &handle);
+        auto res = vk.df().AllocateMemory(vk.dev(), &memoryInfo, nullptr, &handle);
         if (res != VK_SUCCESS)
             throw ls::vulkan_error(res, "vkAllocateMemory() failed");
 
-        res = vkBindImageMemory(vk.dev(), image, handle, 0);
+        res = vk.df().BindImageMemory(vk.dev(), image, handle, 0);
         if (res != VK_SUCCESS)
             throw ls::vulkan_error(res, "vkBindImageMemory() failed");
 
         if (exportFd.has_value()) {
-            auto vkGetMemoryFdKHR = reinterpret_cast<PFN_vkGetMemoryFdKHR>(
-                vkGetDeviceProcAddr(vk.dev(), "vkGetMemoryFdKHR")); // TODO: cache
-
             const VkMemoryGetFdInfoKHR fdInfo{
                 .sType = VK_STRUCTURE_TYPE_MEMORY_GET_FD_INFO_KHR,
                 .memory = handle,
                 .handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT_KHR
             };
             int fd{};
-            res = vkGetMemoryFdKHR(vk.dev(), &fdInfo, &fd);
+            res = vk.df().GetMemoryFdKHR(vk.dev(), &fdInfo, &fd);
             if (res != VK_SUCCESS)
                 throw ls::vulkan_error(res, "vkGetMemoryFdKHR() failed");
             **exportFd = fd;
@@ -115,8 +112,8 @@ namespace {
 
         return ls::owned_ptr<VkDeviceMemory>(
             new VkDeviceMemory(handle),
-            [dev = vk.dev()](VkDeviceMemory& memory) {
-                vkFreeMemory(dev, memory, nullptr);
+            [dev = vk.dev(), defunc = vk.df().FreeMemory](VkDeviceMemory& memory) {
+                defunc(dev, memory, nullptr);
             }
         );
     }
@@ -138,14 +135,14 @@ namespace {
                 .layerCount = 1
             }
         };
-        auto res = vkCreateImageView(vk.dev(), &viewInfo, nullptr, &handle);
+        auto res = vk.df().CreateImageView(vk.dev(), &viewInfo, nullptr, &handle);
         if (res != VK_SUCCESS)
             throw ls::vulkan_error(res, "vkCreateImageView() failed");
 
         return ls::owned_ptr<VkImageView>(
             new VkImageView(handle),
-            [dev = vk.dev()](VkImageView& view) {
-                vkDestroyImageView(dev, view, nullptr);
+            [dev = vk.dev(), defunc = vk.df().DestroyImageView](VkImageView& view) {
+                defunc(dev, view, nullptr);
             }
         );
     }

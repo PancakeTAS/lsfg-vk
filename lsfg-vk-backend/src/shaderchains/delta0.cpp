@@ -3,6 +3,7 @@
 #include "lsfg-vk-common/helpers/pointers.hpp"
 #include "lsfg-vk-common/vulkan/command_buffer.hpp"
 #include "lsfg-vk-common/vulkan/image.hpp"
+#include "lsfg-vk-common/vulkan/vulkan.hpp"
 
 #include <cstddef>
 #include <vector>
@@ -59,14 +60,14 @@ Delta0::Delta0(const ls::Ctx& ctx, size_t idx,
     this->dispatchExtent = ls::add_shift_extent(extent, 7, 3);
 }
 
-void Delta0::prepare(const vk::CommandBuffer& cmd) const {
+void Delta0::prepare(const vk::Vulkan& vk, const vk::CommandBuffer& cmd) const {
     for (const auto& img : this->images0)
-        cmd.prepareImage(img);
+        cmd.prepareImage(vk, img);
     for (const auto& img : this->images1)
-        cmd.prepareImage(img);
+        cmd.prepareImage(vk, img);
 }
 
-void Delta0::render(const vk::CommandBuffer& cmd, size_t idx) const {
-    this->sets0[idx % 3].dispatch(cmd, dispatchExtent);
-    this->sets1[idx % 3].dispatch(cmd, dispatchExtent);
+void Delta0::render(const vk::Vulkan& vk, const vk::CommandBuffer& cmd, size_t idx) const {
+    this->sets0[idx % 3].dispatch(vk, cmd, dispatchExtent);
+    this->sets1[idx % 3].dispatch(vk, cmd, dispatchExtent);
 }

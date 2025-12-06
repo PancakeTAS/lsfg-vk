@@ -3,6 +3,7 @@
 #include "lsfg-vk-common/helpers/pointers.hpp"
 #include "lsfg-vk-common/vulkan/command_buffer.hpp"
 #include "lsfg-vk-common/vulkan/image.hpp"
+#include "lsfg-vk-common/vulkan/vulkan.hpp"
 
 #include <cstddef>
 #include <cstdint>
@@ -61,18 +62,18 @@ Beta1::Beta1(const ls::Ctx& ctx,
     this->dispatchExtent1 = ls::add_shift_extent(extent, 31, 5);
 }
 
-void Beta1::prepare(const vk::CommandBuffer& cmd) const {
+void Beta1::prepare(const vk::Vulkan& vk, const vk::CommandBuffer& cmd) const {
     for (size_t i = 0; i < 2; i++) {
-        cmd.prepareImage(this->tempImages0.at(i));
-        cmd.prepareImage(this->tempImages1.at(i));
+        cmd.prepareImage(vk, this->tempImages0.at(i));
+        cmd.prepareImage(vk, this->tempImages1.at(i));
     }
     for (const auto& img : this->images)
-        cmd.prepareImage(img);
+        cmd.prepareImage(vk, img);
 }
 
-void Beta1::render(const vk::CommandBuffer& cmd) const {
-    this->sets[0].dispatch(cmd, this->dispatchExtent0);
-    this->sets[1].dispatch(cmd, this->dispatchExtent0);
-    this->sets[2].dispatch(cmd, this->dispatchExtent0);
-    this->sets[3].dispatch(cmd, this->dispatchExtent1);
+void Beta1::render(const vk::Vulkan& vk, const vk::CommandBuffer& cmd) const {
+    this->sets[0].dispatch(vk, cmd, this->dispatchExtent0);
+    this->sets[1].dispatch(vk, cmd, this->dispatchExtent0);
+    this->sets[2].dispatch(vk, cmd, this->dispatchExtent0);
+    this->sets[3].dispatch(vk, cmd, this->dispatchExtent1);
 }

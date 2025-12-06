@@ -17,14 +17,14 @@ namespace {
         const VkFenceCreateInfo fenceInfo{
             .sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO
         };
-        auto res = vkCreateFence(vk.dev(), &fenceInfo, nullptr, &handle);
+        auto res = vk.df().CreateFence(vk.dev(), &fenceInfo, nullptr, &handle);
         if (res != VK_SUCCESS)
             throw ls::vulkan_error(res, "vkCreateFence() failed");
 
         return ls::owned_ptr<VkFence>(
             new VkFence(handle),
-            [dev = vk.dev()](VkFence& fence) {
-                vkDestroyFence(dev, fence, nullptr);
+            [dev = vk.dev(), defunc = vk.df().DestroyFence](VkFence& fence) {
+                defunc(dev, fence, nullptr);
             }
         );
     }
@@ -35,14 +35,14 @@ Fence::Fence(const vk::Vulkan& vk)
 
 void Fence::reset(const vk::Vulkan& vk) const {
     VkFence fence = *this->fence;
-    auto res = vkResetFences(vk.dev(), 1, &fence);
+    auto res = vk.df().ResetFences(vk.dev(), 1, &fence);
     if (res != VK_SUCCESS)
         throw ls::vulkan_error(res, "vkResetFences() failed");
 }
 
 bool Fence::wait(const vk::Vulkan& vk, uint64_t timeout) const {
     VkFence fence = *this->fence;
-    auto res = vkWaitForFences(vk.dev(), 1, &fence, VK_TRUE, timeout);
+    auto res = vk.df().WaitForFences(vk.dev(), 1, &fence, VK_TRUE, timeout);
     if (res != VK_SUCCESS && res != VK_TIMEOUT)
         throw ls::vulkan_error(res, "vkWaitForFences() failed");
 

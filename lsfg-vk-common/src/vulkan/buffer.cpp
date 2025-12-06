@@ -25,14 +25,14 @@ namespace {
             .usage = usage,
             .sharingMode = VK_SHARING_MODE_EXCLUSIVE
         };
-        auto res = vkCreateBuffer(vk.dev(), &bufferInfo, nullptr, &handle);
+        auto res = vk.df().CreateBuffer(vk.dev(), &bufferInfo, nullptr, &handle);
         if (res != VK_SUCCESS)
             throw ls::vulkan_error(res, "vkCreateBuffer() failed");
 
         return ls::owned_ptr<VkBuffer>(
             new VkBuffer(handle),
-            [dev = vk.dev()](VkBuffer& buffer) {
-                vkDestroyBuffer(dev, buffer, nullptr);
+            [dev = vk.dev(), defunc = vk.df().DestroyBuffer](VkBuffer& buffer) {
+                defunc(dev, buffer, nullptr);
             }
         );
     }
@@ -41,7 +41,7 @@ namespace {
         VkDeviceMemory handle{};
 
         VkMemoryRequirements reqs{};
-        vkGetBufferMemoryRequirements(vk.dev(), buffer, &reqs);
+        vk.df().GetBufferMemoryRequirements(vk.dev(), buffer, &reqs);
 
         auto mti = vk.findMemoryTypeIndex(
             reqs.memoryTypeBits,
@@ -55,18 +55,18 @@ namespace {
             .allocationSize = reqs.size,
             .memoryTypeIndex = *mti
         };
-        auto res = vkAllocateMemory(vk.dev(), &memoryInfo, nullptr, &handle);
+        auto res = vk.df().AllocateMemory(vk.dev(), &memoryInfo, nullptr, &handle);
         if (res != VK_SUCCESS)
             throw ls::vulkan_error(res, "vkAllocateMemory() failed");
 
-        res = vkBindBufferMemory(vk.dev(), buffer, handle, 0);
+        res = vk.df().BindBufferMemory(vk.dev(), buffer, handle, 0);
         if (res != VK_SUCCESS)
             throw ls::vulkan_error(res, "vkBindBufferMemory() failed");
 
         return ls::owned_ptr<VkDeviceMemory>(
             new VkDeviceMemory(handle),
-            [dev = vk.dev()](VkDeviceMemory& memory) {
-                vkFreeMemory(dev, memory, nullptr);
+            [dev = vk.dev(), defunc = vk.df().FreeMemory](VkDeviceMemory& memory) {
+                defunc(dev, memory, nullptr);
             }
         );
     }
@@ -75,7 +75,7 @@ namespace {
             VkDeviceMemory memory, const void* data, size_t size) {
         void* buf{};
 
-        auto res = vkMapMemory(vk.dev(), memory, 0, size, 0, &buf);
+        auto res = vk.df().MapMemory(vk.dev(), memory, 0, size, 0, &buf);
         if (res != VK_SUCCESS)
             throw ls::vulkan_error(res, "vkMapMemory() failed");
 
@@ -85,7 +85,7 @@ namespace {
             reinterpret_cast<uint8_t*>(buf)
         );
 
-        vkUnmapMemory(vk.dev(), memory);
+        vk.df().UnmapMemory(vk.dev(), memory);
     }
 }
 

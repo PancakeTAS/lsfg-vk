@@ -15,5 +15,3 @@ add_library(lsfg-vk-common STATIC ${COMMON_SOURCES})
 
 target_include_directories(lsfg-vk-common
     PUBLIC include)
-target_link_libraries(lsfg-vk-common
-    vulkan)

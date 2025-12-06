@@ -122,10 +122,11 @@ Instance::Instance(
         const std::function<bool(const std::string&)>& devicePicker,
         const std::filesystem::path& shaderDllPath,
         bool allowLowPrecision) {
-    const auto selectFunc = [&devicePicker](const std::vector<VkPhysicalDevice>& devices) {
+    const auto selectFunc = [&devicePicker](const vk::VulkanInstanceFuncs funcs,
+            const std::vector<VkPhysicalDevice>& devices) {
         for (const auto& device : devices) {
             VkPhysicalDeviceProperties props;
-            vkGetPhysicalDeviceProperties(device, &props);
+            funcs.GetPhysicalDeviceProperties(device, &props);
 
             std::array<char, 256> devname = std::to_array(props.deviceName);
             devname[255] = '\0'; // ensure null-termination
@@ -440,22 +441,22 @@ ContextImpl::ContextImpl(const InstanceImpl& instance,
 
     // initialize all images
     const vk::CommandBuffer cmdbuf{ctx.vk};
-    cmdbuf.prepareImage(this->blackImage);
-    mipmaps.prepare(cmdbuf);
+    cmdbuf.prepareImage(ctx.vk, this->blackImage);
+    mipmaps.prepare(ctx.vk, cmdbuf);
     for (size_t i = 0; i < 7; ++i) {
-        alpha0.at(i).prepare(cmdbuf);
-        alpha1.at(i).prepare(cmdbuf);
+        alpha0.at(i).prepare(ctx.vk, cmdbuf);
+        alpha1.at(i).prepare(ctx.vk, cmdbuf);
     }
-    beta0.prepare(cmdbuf);
-    beta1.prepare(cmdbuf);
+    beta0.prepare(ctx.vk, cmdbuf);
+    beta1.prepare(ctx.vk, cmdbuf);
     for (const auto& pass : this->passes) {
         for (size_t i = 0; i < 7; ++i) {
-            pass.gamma0.at(i).prepare(cmdbuf);
-            pass.gamma1.at(i).prepare(cmdbuf);
+            pass.gamma0.at(i).prepare(ctx.vk, cmdbuf);
+            pass.gamma1.at(i).prepare(ctx.vk, cmdbuf);
 
             if (i < 4) continue;
-            pass.delta0.at(i - 4).prepare(cmdbuf);
-            pass.delta1.at(i - 4).prepare(cmdbuf);
+            pass.delta0.at(i - 4).prepare(ctx.vk, cmdbuf);
+            pass.delta1.at(i - 4).prepare(ctx.vk, cmdbuf);
         }
     }
     cmdbuf.submit(ctx.vk); // wait for completion
@@ -477,7 +478,7 @@ void Instance::scheduleFrames(Context& context) {
     }
 #ifdef LSFGVK__RENDERDOC_INTEGRATION
     if (impl->getRenderDocAPI()) {
-        vkDeviceWaitIdle(impl->getVulkan().dev());
+        impl->getVulkan().df().DeviceWaitIdle(impl->getVulkan().dev());
         impl->getRenderDocAPI()->EndFrameCapture(
             RENDERDOC_DEVICEPOINTER_FROM_VKINSTANCE(impl->getVulkan().inst()),
             nullptr);
@@ -490,13 +491,13 @@ void Context::scheduleFrames() {
     vk::CommandBuffer& cmdbuf = this->cmdbufs.at(this->cmdbuf_idx++ % this->cmdbufs.size());
     cmdbuf = vk::CommandBuffer(this->ctx.vk);
 
-    this->mipmaps.render(cmdbuf, this->fidx);
+    this->mipmaps.render(ctx.vk, cmdbuf, this->fidx);
     for (size_t i = 0; i < 7; ++i) {
-        this->alpha0.at(6 - i).render(cmdbuf);
-        this->alpha1.at(6 - i).render(cmdbuf, this->fidx);
+        this->alpha0.at(6 - i).render(ctx.vk, cmdbuf);
+        this->alpha1.at(6 - i).render(ctx.vk, cmdbuf, this->fidx);
     }
-    this->beta0.render(cmdbuf, this->fidx);
-    this->beta1.render(cmdbuf);
+    this->beta0.render(ctx.vk, cmdbuf, this->fidx);
+    this->beta1.render(ctx.vk, cmdbuf);
 
     cmdbuf.submit(this->ctx.vk,
         this->syncSemaphore, this->idx,
@@ -512,14 +513,14 @@ void Context::scheduleFrames() {
 
         const auto& pass = this->passes.at(i);
         for (size_t j = 0; j < 7; j++) {
-            pass.gamma0.at(j).render(cmdbuf, this->fidx);
-            pass.gamma1.at(j).render(cmdbuf);
+            pass.gamma0.at(j).render(ctx.vk, cmdbuf, this->fidx);
+            pass.gamma1.at(j).render(ctx.vk, cmdbuf);
 
             if (j < 4) continue;
-            pass.delta0.at(j - 4).render(cmdbuf, this->fidx);
-            pass.delta1.at(j - 4).render(cmdbuf);
+            pass.delta0.at(j - 4).render(ctx.vk, cmdbuf, this->fidx);
+            pass.delta1.at(j - 4).render(ctx.vk, cmdbuf);
         }
-        pass.generate->render(cmdbuf, this->fidx);
+        pass.generate->render(ctx.vk, cmdbuf, this->fidx);
 
         cmdbuf.submit(this->ctx.vk,
             this->prepassSemaphore, this->idx - 1,
@@ -540,7 +541,9 @@ void Instance::closeContext(const Context& context) {
         throw lsfgvk::error("attempted to close unknown context",
             std::runtime_error("no such context"));
 
-    vkDeviceWaitIdle(this->m_impl->getVulkan().dev());
+    const auto& vk = this->m_impl->getVulkan();
+    vk.df().DeviceWaitIdle(vk.dev());
+
     this->m_contexts.erase(it);
 }
 

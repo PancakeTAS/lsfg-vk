@@ -28,14 +28,16 @@ namespace {
             .descriptorSetCount = 1,
             .pSetLayouts = &layout
         };
-        auto res = vkAllocateDescriptorSets(vk.dev(), &setInfo, &handle);
+        auto res = vk.df().AllocateDescriptorSets(vk.dev(), &setInfo, &handle);
         if (res != VK_SUCCESS)
             throw ls::vulkan_error(res, "vkAllocateDescriptorSets() failed");
 
         return ls::owned_ptr<VkDescriptorSet>(
             new VkDescriptorSet(handle),
-            [dev = vk.dev(), pool = vk.descpool()](VkDescriptorSet& commandBufferModule) {
-                vkFreeDescriptorSets(dev, pool, 1, &commandBufferModule);
+            [dev = vk.dev(), pool = vk.descpool(), defunc = vk.df().FreeDescriptorSets](
+                VkDescriptorSet& commandBufferModule
+            ) {
+                defunc(dev, pool, 1, &commandBufferModule);
             }
         );
     }
@@ -120,6 +122,6 @@ DescriptorSet::DescriptorSet(const vk::Vulkan& vk,
             }))
         });
 
-    vkUpdateDescriptorSets(vk.dev(),
+    vk.df().UpdateDescriptorSets(vk.dev(),
         static_cast<uint32_t>(entries.size()), entries.data(), 0, nullptr);
 }

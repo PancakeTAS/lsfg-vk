@@ -3,6 +3,7 @@
 #include "lsfg-vk-common/helpers/pointers.hpp"
 #include "lsfg-vk-common/vulkan/command_buffer.hpp"
 #include "lsfg-vk-common/vulkan/image.hpp"
+#include "lsfg-vk-common/vulkan/vulkan.hpp"
 
 #include <cstddef>
 #include <vector>
@@ -40,13 +41,13 @@ Alpha1::Alpha1(const ls::Ctx& ctx,
     this->dispatchExtent = ls::add_shift_extent(quarterExtent, 7, 3);
 }
 
-void Alpha1::prepare(const vk::CommandBuffer& cmd) const {
+void Alpha1::prepare(const vk::Vulkan& vk, const vk::CommandBuffer& cmd) const {
     for (const auto& vec : this->images)
         for (const auto& img : vec)
-            cmd.prepareImage(img);
+            cmd.prepareImage(vk, img);
 }
 
-void Alpha1::render(const vk::CommandBuffer& cmd, size_t idx) const {
+void Alpha1::render(const vk::Vulkan& vk, const vk::CommandBuffer& cmd, size_t idx) const {
     // FIXME: iirc only one of the 7 instances of alpha1 requires 3 temporal images
-    this->sets[idx % 3].dispatch(cmd, dispatchExtent);
+    this->sets[idx % 3].dispatch(vk, cmd, dispatchExtent);
 }

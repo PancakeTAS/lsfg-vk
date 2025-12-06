@@ -5,6 +5,7 @@
 #include "lsfg-vk-common/helpers/pointers.hpp"
 #include "lsfg-vk-common/vulkan/command_buffer.hpp"
 #include "lsfg-vk-common/vulkan/image.hpp"
+#include "lsfg-vk-common/vulkan/vulkan.hpp"
 
 #include <vector>
 
@@ -32,12 +33,14 @@ namespace chains {
             const vk::Image& additionalInput2);
 
         /// prepare the shaderchain initially
+        /// @param vk the vulkan instance
         /// @param cmd command buffer
-        void prepare(const vk::CommandBuffer& cmd) const;
+        void prepare(const vk::Vulkan& vk, const vk::CommandBuffer& cmd) const;
 
         /// render the gamma shaderchain
+        /// @param vk the vulkan instance
         /// @param cmd command buffer
-        void render(const vk::CommandBuffer& cmd) const;
+        void render(const vk::Vulkan& vk, const vk::CommandBuffer& cmd) const;
 
         /// get the first generated image
         /// @return image

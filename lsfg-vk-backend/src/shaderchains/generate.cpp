@@ -3,6 +3,7 @@
 #include "lsfg-vk-common/helpers/pointers.hpp"
 #include "lsfg-vk-common/vulkan/command_buffer.hpp"
 #include "lsfg-vk-common/vulkan/image.hpp"
+#include "lsfg-vk-common/vulkan/vulkan.hpp"
 
 #include <cstddef>
 #include <utility>
@@ -47,6 +48,6 @@ Generate::Generate(const ls::Ctx& ctx, size_t idx,
     this->dispatchExtent = ls::add_shift_extent(ctx.sourceExtent, 15, 4);
 }
 
-void Generate::render(const vk::CommandBuffer& cmd, size_t idx) const {
-    this->sets[idx % 2].dispatch(cmd, this->dispatchExtent);
+void Generate::render(const vk::Vulkan& vk, const vk::CommandBuffer& cmd, size_t idx) const {
+    this->sets[idx % 2].dispatch(vk, cmd, this->dispatchExtent);
 }

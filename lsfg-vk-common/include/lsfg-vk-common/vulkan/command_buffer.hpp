@@ -27,21 +27,31 @@ namespace vk {
         CommandBuffer(const vk::Vulkan& vk);
 
         /// initialize an image
+        /// @param vk the vulkan instance
         /// @param image the image to initialize
         /// @param clearColor optional clear color
-        void prepareImage(const vk::Image& image,
+        void prepareImage(const vk::Vulkan& vk,
+            const vk::Image& image,
             const std::optional<VkClearColorValue>& clearColor = std::nullopt) const;
 
         /// dispatch a compute shader
+        /// @param vk the vulkan instance
         /// @param shader the compute shader
         /// @param set the descriptor set
         /// @param barriers image memory barriers to apply
         /// @param x dispatch size in X
         /// @param y dispatch size in Y
         /// @param z dispatch size in Z
-        void dispatch(const vk::Shader& shader, const vk::DescriptorSet& set,
+        void dispatch(const vk::Vulkan& vk, const vk::Shader& shader, const vk::DescriptorSet& set,
             const std::vector<vk::Barrier>& barriers,
                 uint32_t x, uint32_t y, uint32_t z) const;
+
+        /// copy buffer to image
+        /// @param vk the vulkan instance
+        /// @param buffer the source buffer
+        /// @param image the destination image
+        void copyBufferToImage(const vk::Vulkan& vk,
+            const vk::Buffer& buffer, const vk::Image& image) const;
 
         /// submit the command buffer
         /// @param vk the vulkan instance
@@ -58,11 +68,6 @@ namespace vk {
         /// @param vk the vulkan instance
         /// @throws ls::vulkan_error on failure
         void submit(const vk::Vulkan& vk) const;
-
-        /// copy buffer to image
-        /// @param buffer the source buffer
-        /// @param image the destination image
-        void copyBufferToImage(const vk::Buffer& buffer, const vk::Image& image) const;
     private:
         ls::owned_ptr<VkCommandBuffer> commandBuffer;
     };

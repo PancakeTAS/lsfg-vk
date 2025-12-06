@@ -4,6 +4,7 @@
 #include "../helpers/utils.hpp"
 #include "lsfg-vk-common/vulkan/command_buffer.hpp"
 #include "lsfg-vk-common/vulkan/image.hpp"
+#include "lsfg-vk-common/vulkan/vulkan.hpp"
 
 #include <vector>
 
@@ -27,13 +28,15 @@ namespace chains {
             const vk::Image& additionalInput1);
 
         /// prepare the shaderchain initially
+        /// @param vk the vulkan instance
         /// @param cmd command buffer
-        void prepare(const vk::CommandBuffer& cmd) const;
+        void prepare(const vk::Vulkan& vk, const vk::CommandBuffer& cmd) const;
 
         /// render the delta shaderchain
+        /// @param vk the vulkan instance
         /// @param cmd command buffer
         /// @param idx frame index
-        void render(const vk::CommandBuffer& cmd, size_t idx) const;
+        void render(const vk::Vulkan& vk, const vk::CommandBuffer& cmd, size_t idx) const;
 
         /// get the generated images
         /// @return vector of images

@@ -27,14 +27,14 @@ namespace {
                 white ? VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE
                     : VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK
         };
-        auto res = vkCreateSampler(vk.dev(), &samplerInfo, nullptr, &handle);
+        auto res = vk.df().CreateSampler(vk.dev(), &samplerInfo, nullptr, &handle);
         if (res != VK_SUCCESS)
             throw ls::vulkan_error(res, "vkCreateSampler() failed");
 
         return ls::owned_ptr<VkSampler>(
             new VkSampler(handle),
-            [dev = vk.dev()](VkSampler& sampler) {
-                vkDestroySampler(dev, sampler, nullptr);
+            [dev = vk.dev(), defunc = vk.df().DestroySampler](VkSampler& sampler) {
+                defunc(dev, sampler, nullptr);
             }
         );
     }

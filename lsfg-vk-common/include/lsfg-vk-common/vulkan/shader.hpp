@@ -4,6 +4,7 @@
 #include "vulkan.hpp"
 
 #include <cstddef>
+#include <cstdint>
 #include <vector>
 
 #include <vulkan/vulkan_core.h>

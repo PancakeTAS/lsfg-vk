@@ -60,7 +60,7 @@ namespace {
             VK_BUFFER_USAGE_TRANSFER_SRC_BIT};
 
         const vk::CommandBuffer cmdbuf{vk};
-        cmdbuf.copyBufferToImage(stagingbuf, image);
+        cmdbuf.copyBufferToImage(vk, stagingbuf, image);
 
         const vk::TimelineSemaphore sema{vk, 0};
         cmdbuf.submit(vk, sema, 1, sema, 2);
@@ -77,7 +77,8 @@ int main() {
     const vk::Vulkan vk{
         "lsfg-vk-debug", vk::version{1, 1, 0},
         "lsfg-vk-debug-engine", vk::version{1, 0, 0},
-        [](const std::vector<VkPhysicalDevice>& devices) {
+        [](const vk::VulkanInstanceFuncs,
+                const std::vector<VkPhysicalDevice>& devices) {
             return devices.front();
         }
     };

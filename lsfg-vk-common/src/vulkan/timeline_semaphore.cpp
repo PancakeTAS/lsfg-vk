@@ -30,38 +30,32 @@ namespace {
             .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
             .pNext = &typeInfo,
         };
-        auto res = vkCreateSemaphore(vk.dev(), &semaphoreInfo, nullptr, &handle);
+        auto res = vk.df().CreateSemaphore(vk.dev(), &semaphoreInfo, nullptr, &handle);
         if (res != VK_SUCCESS)
             throw ls::vulkan_error(res, "vkCreateSemaphore() failed");
 
         if (importFd.has_value()) {
             // import semaphore from fd
-            auto vkImportSemaphoreFdKHR = reinterpret_cast<PFN_vkImportSemaphoreFdKHR>(
-                vkGetDeviceProcAddr(vk.dev(), "vkImportSemaphoreFdKHR")); // TODO: cache
-
             const VkImportSemaphoreFdInfoKHR importInfo{
                 .sType = VK_STRUCTURE_TYPE_IMPORT_SEMAPHORE_FD_INFO_KHR,
                 .semaphore = handle,
                 .handleType = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_FD_BIT,
                 .fd = *importFd // closes the fd
             };
-            res = vkImportSemaphoreFdKHR(vk.dev(), &importInfo);
+            res = vk.df().ImportSemaphoreFdKHR(vk.dev(), &importInfo);
             if (res != VK_SUCCESS)
                 throw ls::vulkan_error(res, "vkImportSemaphoreFdKHR() failed");
         }
 
         if (exportFd.has_value()) {
             // export semaphore to fd
-            auto vkGetSemaphoreFdKHR = reinterpret_cast<PFN_vkGetSemaphoreFdKHR>(
-                vkGetDeviceProcAddr(vk.dev(), "vkGetSemaphoreFdKHR")); // TODO: cache
-
             const VkSemaphoreGetFdInfoKHR getFdInfo{
                 .sType = VK_STRUCTURE_TYPE_SEMAPHORE_GET_FD_INFO_KHR,
                 .semaphore = handle,
                 .handleType = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_FD_BIT
             };
             int fd{};
-            res = vkGetSemaphoreFdKHR(vk.dev(), &getFdInfo, &fd);
+            res = vk.df().GetSemaphoreFdKHR(vk.dev(), &getFdInfo, &fd);
             if (res != VK_SUCCESS)
                 throw ls::vulkan_error(res, "vkGetSemaphoreFdKHR() failed");
 
@@ -70,8 +64,8 @@ namespace {
 
         return ls::owned_ptr<VkSemaphore>(
             new VkSemaphore(handle),
-            [dev = vk.dev()](VkSemaphore& semaphore) {
-                vkDestroySemaphore(dev, semaphore, nullptr);
+            [dev = vk.dev(), defunc = vk.df().DestroySemaphore](VkSemaphore& semaphore) {
+                defunc(dev, semaphore, nullptr);
             }
         );
     }
@@ -87,7 +81,7 @@ void TimelineSemaphore::signal(const vk::Vulkan& vk, uint64_t value) const {
         .semaphore = *this->semaphore,
         .value = value
     };
-    auto res = vkSignalSemaphore(vk.dev(), &signalInfo);
+    auto res = vk.df().SignalSemaphore(vk.dev(), &signalInfo);
     if (res != VK_SUCCESS)
         throw ls::vulkan_error(res, "vkSignalSemaphore() failed");
 }
@@ -100,7 +94,7 @@ bool TimelineSemaphore::wait(const vk::Vulkan& vk, uint64_t value, uint64_t time
         .pSemaphores = &semaphore,
         .pValues = &value
     };
-    auto res = vkWaitSemaphores(vk.dev(), &waitInfo, timeout);
+    auto res = vk.df().WaitSemaphores(vk.dev(), &waitInfo, timeout);
     if (res != VK_SUCCESS && res != VK_TIMEOUT)
         throw ls::vulkan_error(res, "vkWaitSemaphores() failed");
 

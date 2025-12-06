@@ -110,9 +110,9 @@ ManagedShader ManagedShaderBuilder::build(const vk::Vulkan& vk,
     };
 }
 
-void ManagedShader::dispatch(const vk::CommandBuffer& cmd,
+void ManagedShader::dispatch(const vk::Vulkan& vk, const vk::CommandBuffer& cmd,
         VkExtent2D extent) const {
-    cmd.dispatch(this->shader,
+    cmd.dispatch(vk, this->shader,
         this->descriptorSet,
         this->barriers,
         extent.width, extent.height, 1

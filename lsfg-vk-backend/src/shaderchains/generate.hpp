@@ -4,6 +4,7 @@
 #include "../helpers/utils.hpp"
 #include "lsfg-vk-common/vulkan/command_buffer.hpp"
 #include "lsfg-vk-common/vulkan/image.hpp"
+#include "lsfg-vk-common/vulkan/vulkan.hpp"
 
 #include <cstddef>
 #include <vector>
@@ -31,9 +32,10 @@ namespace chains {
             const vk::Image& outputImage);
 
         /// render the generate shaderchain
+        /// @param vk the vulkan instance
         /// @param cmd command buffer
         /// @param idx frame index
-        void render(const vk::CommandBuffer& cmd, size_t idx) const;
+        void render(const vk::Vulkan& vk, const vk::CommandBuffer& cmd, size_t idx) const;
     private:
         std::vector<ls::ManagedShader> sets;
         VkExtent2D dispatchExtent{};

@@ -3,6 +3,7 @@
 #include "lsfg-vk-common/helpers/pointers.hpp"
 #include "lsfg-vk-common/vulkan/command_buffer.hpp"
 #include "lsfg-vk-common/vulkan/image.hpp"
+#include "lsfg-vk-common/vulkan/vulkan.hpp"
 
 #include <cstddef>
 #include <vector>
@@ -40,11 +41,11 @@ Gamma0::Gamma0(const ls::Ctx& ctx, size_t idx,
     this->dispatchExtent = ls::add_shift_extent(extent, 7, 3);
 }
 
-void Gamma0::prepare(const vk::CommandBuffer& cmd) const {
+void Gamma0::prepare(const vk::Vulkan& vk, const vk::CommandBuffer& cmd) const {
     for (const auto& img : this->images)
-        cmd.prepareImage(img);
+        cmd.prepareImage(vk, img);
 }
 
-void Gamma0::render(const vk::CommandBuffer& cmd, size_t idx) const {
-    this->sets[idx % 3].dispatch(cmd, dispatchExtent);
+void Gamma0::render(const vk::Vulkan& vk, const vk::CommandBuffer& cmd, size_t idx) const {
+    this->sets[idx % 3].dispatch(vk, cmd, dispatchExtent);
 }

@@ -18,10 +18,12 @@ namespace ls {
         friend class ManagedShaderBuilder;
     public:
         /// dispatch the managed shader
+        /// @param vk the vulkan instance
         /// @param cmd command buffer to use
         /// @param extent dispatch size
         /// @throws ls::vulkan_error on failure
-        void dispatch(const vk::CommandBuffer& cmd, VkExtent2D extent) const;
+        void dispatch(const vk::Vulkan& vk,
+            const vk::CommandBuffer& cmd, VkExtent2D extent) const;
     private:
         ls::R<const vk::Shader> shader;
 
