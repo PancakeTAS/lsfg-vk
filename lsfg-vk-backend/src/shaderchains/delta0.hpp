@@ -21,12 +21,10 @@ namespace chains {
         /// @param sourceImages source images
         /// @param additionalInput0 additional input image
         /// @param additionalInput1 additional input image
-        /// @param additionalInput2 additional input image
         Delta0(const ls::Ctx& ctx, size_t idx,
             const std::vector<std::vector<vk::Image>>& sourceImages,
             const vk::Image& additionalInput0,
-            const vk::Image& additionalInput1,
-            const vk::Image& additionalInput2);
+            const vk::Image& additionalInput1);
 
         /// prepare the shaderchain initially
         /// @param cmd command buffer

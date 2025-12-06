@@ -14,8 +14,7 @@ using namespace chains;
 Delta0::Delta0(const ls::Ctx& ctx, size_t idx,
         const std::vector<std::vector<vk::Image>>& sourceImages,
         const vk::Image& additionalInput0,
-        const vk::Image& additionalInput1,
-        const vk::Image& additionalInput2) {
+        const vk::Image& additionalInput1) {
     const size_t m = ctx.perf ? 1 : 2; // multiplier
     const VkExtent2D extent = sourceImages.at(0).at(0).getExtent();
 
@@ -49,7 +48,7 @@ Delta0::Delta0(const ls::Ctx& ctx, size_t idx,
             .sampleds(sourceImages.at((i + 2) % 3))
             .sampleds(sourceImages.at(i % 3))
             .sampled(additionalInput1)
-            .sampled(additionalInput2)
+            .sampled(additionalInput0)
             .storages(this->images1)
             .sampler(ctx.bnwSampler)
             .sampler(ctx.eabSampler)

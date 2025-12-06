@@ -404,8 +404,7 @@ ContextImpl::ContextImpl(const InstanceImpl& instance,
                 pass.delta0.emplace_back(ctx, i,
                     this->alpha1.at(6 - j).getImages(),
                     this->blackImage,
-                    pass.gamma1.at(j - 1).getImage(),
-                    this->blackImage
+                    pass.gamma1.at(j - 1).getImage()
                 );
                 pass.delta1.emplace_back(ctx, i,
                     pass.delta0.at(j - 4).getImages0(),
@@ -418,8 +417,7 @@ ContextImpl::ContextImpl(const InstanceImpl& instance,
                 pass.delta0.emplace_back(ctx, i,
                     this->alpha1.at(6 - j).getImages(),
                     pass.delta1.at(j - 5).getImage0(),
-                    pass.gamma1.at(j - 1).getImage(),
-                    this->beta1.getImages().at(6 - j)
+                    pass.gamma1.at(j - 1).getImage()
                 );
                 pass.delta1.emplace_back(ctx, i,
                     pass.delta0.at(j - 4).getImages0(),
