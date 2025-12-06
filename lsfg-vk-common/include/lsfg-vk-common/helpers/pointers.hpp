@@ -1,12 +1,54 @@
 #pragma once
 
 #include <functional>
+#include <optional>
 #include <stdexcept>
 
 namespace ls {
     /// helper alias for std::reference_wrapper
     template<typename T>
     using R = std::reference_wrapper<T>;
+
+    /// helper (eyecandy) alias for std::optional
+    template<typename T>
+    class lazy {
+    public:
+        /// default constructor
+        lazy() = default;
+
+        /// emplace value
+        /// @param args constructor arguments
+        /// @return reference to constructed value
+        /// @throws std::logic_error if value already present
+        template<typename... Args>
+        T& emplace(Args&&... args) {
+            if (this->opt.has_value())
+                throw std::logic_error("lazy: value already present");
+
+            this->opt.emplace(std::forward<Args>(args)...);
+            return *this->opt;
+        }
+
+        /// get reference to value
+        /// @return reference to value
+        /// @throws std::logic_error if no value present
+        const T& operator*() const {
+            if (!this->opt.has_value())
+                throw std::logic_error("lazy: no value present");
+            return *this->opt;
+        }
+
+        /// get pointer to value
+        /// @return pointer to value
+        /// @throws std::logic_error if no value present
+        const T* operator->() const {
+            if (!this->opt.has_value())
+                throw std::logic_error("lazy: no value present");
+            return &(*this->opt);
+        }
+    private:
+        std::optional<T> opt{};
+    };
 
     /// simplified alternative to std::optional<std::unique_ptr>
     template<typename T>

@@ -9,11 +9,8 @@ using namespace ls;
 
 ConstantBuffer ls::getDefaultConstantBuffer(
         size_t index, size_t total,
-        bool hdr, float invFlow,
-        bool isFirst, bool isFirst2) {
+        bool hdr, float invFlow) {
     return ConstantBuffer {
-        .firstIter = isFirst ? 1U : 0U,
-        .firstIterS = isFirst2 ? 1U : 0U,
         .advancedColorKind = hdr ? 2U : 0U,
         .hdrSupport = hdr ? 1U : 0U,
         .resolutionInvScale = invFlow,

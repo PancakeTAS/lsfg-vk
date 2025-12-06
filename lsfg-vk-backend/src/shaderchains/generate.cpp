@@ -1,0 +1,52 @@
+#include "generate.hpp"
+#include "../helpers/utils.hpp"
+#include "lsfg-vk-common/helpers/pointers.hpp"
+#include "lsfg-vk-common/vulkan/command_buffer.hpp"
+#include "lsfg-vk-common/vulkan/image.hpp"
+
+#include <cstddef>
+#include <utility>
+#include <vector>
+
+#include <vulkan/vulkan_core.h>
+
+using namespace chains;
+
+Generate::Generate(const ls::Ctx& ctx, size_t idx,
+        const std::pair<vk::Image, vk::Image>& sourceImages,
+        const vk::Image& inputImage1,
+        const vk::Image& inputImage2,
+        const vk::Image& inputImage3,
+        const vk::Image& outputImage) {
+    // create descriptor sets
+    this->sets.reserve(2);
+    this->sets.emplace_back(ls::ManagedShaderBuilder()
+        .sampled(sourceImages.second)
+        .sampled(sourceImages.first)
+        .sampled(inputImage1)
+        .sampled(inputImage2)
+        .sampled(inputImage3)
+        .storage(outputImage)
+        .sampler(ctx.bnbSampler)
+        .sampler(ctx.eabSampler)
+        .buffer(ctx.constantBuffers.at(idx))
+        .build(ctx.vk, ctx.shaders.get().generate));
+    this->sets.emplace_back(ls::ManagedShaderBuilder()
+        .sampled(sourceImages.first)
+        .sampled(sourceImages.second)
+        .sampled(inputImage1)
+        .sampled(inputImage2)
+        .sampled(inputImage3)
+        .storage(outputImage)
+        .sampler(ctx.bnbSampler)
+        .sampler(ctx.eabSampler)
+        .buffer(ctx.constantBuffers.at(idx))
+        .build(ctx.vk, ctx.shaders.get().generate));
+
+    // store dispatch extent
+    this->dispatchExtent = ls::add_shift_extent(ctx.sourceExtent, 15, 4);
+}
+
+void Generate::render(const vk::CommandBuffer& cmd, size_t idx) const {
+    this->sets[idx % 2].dispatch(cmd, this->dispatchExtent);
+}

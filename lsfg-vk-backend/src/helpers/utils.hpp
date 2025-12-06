@@ -9,6 +9,7 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <vector>
 
 #include <vulkan/vulkan_core.h>
 
@@ -19,6 +20,7 @@ namespace ls {
         ls::R<const extr::ShaderRegistry> shaders; // safe back reference
 
         vk::Buffer constantBuffer;
+        std::vector<vk::Buffer> constantBuffers;
         vk::Sampler bnbSampler; //!< border, no compare, black
         vk::Sampler bnwSampler; //!< border, no compare, white
         vk::Sampler eabSampler; //!< edge, always compare, black
@@ -50,13 +52,10 @@ namespace ls {
     /// @param total total amount of images
     /// @param hdr whether HDR is enabled
     /// @param invFlow inverted flow scale value
-    /// @param isFirst whether this is the first iteration
-    /// @param isFirst2 whether this is the first iteration (second flag)
     /// @return prefilled constant buffer
     ConstantBuffer getDefaultConstantBuffer(
         size_t index, size_t total,
-        bool hdr, float invFlow,
-        bool isFirst, bool isFirst2 // TODO: figure out if necessary
+        bool hdr, float invFlow
     );
 
     /// round down a VkExtent2D

@@ -3,6 +3,8 @@
 #include "extraction/shader_registry.hpp"
 #include "helpers/utils.hpp"
 #include "lsfg-vk-common/helpers/errors.hpp"
+#include "lsfg-vk-common/helpers/pointers.hpp"
+#include "lsfg-vk-common/vulkan/buffer.hpp"
 #include "lsfg-vk-common/vulkan/command_buffer.hpp"
 #include "lsfg-vk-common/vulkan/image.hpp"
 #include "lsfg-vk-common/vulkan/timeline_semaphore.hpp"
@@ -11,6 +13,11 @@
 #include "shaderchains/alpha1.hpp"
 #include "shaderchains/beta0.hpp"
 #include "shaderchains/beta1.hpp"
+#include "shaderchains/delta0.hpp"
+#include "shaderchains/delta1.hpp"
+#include "shaderchains/gamma0.hpp"
+#include "shaderchains/gamma1.hpp"
+#include "shaderchains/generate.hpp"
 #include "shaderchains/mipmaps.hpp"
 
 #include <algorithm>
@@ -82,6 +89,7 @@ namespace lsfgvk {
     private:
         std::pair<vk::Image, vk::Image> sourceImages;
         std::vector<vk::Image> destImages;
+        vk::Image blackImage;
 
         vk::TimelineSemaphore syncSemaphore; // imported
         vk::TimelineSemaphore prepassSemaphore;
@@ -98,6 +106,15 @@ namespace lsfgvk {
         std::array<chains::Alpha1, 7> alpha1;
         chains::Beta0 beta0;
         chains::Beta1 beta1;
+        struct Pass {
+            std::vector<chains::Gamma0> gamma0;
+            std::vector<chains::Gamma1> gamma1;
+
+            std::vector<chains::Delta0> delta0;
+            std::vector<chains::Delta1> delta1;
+            ls::lazy<chains::Generate> generate;
+        };
+        std::vector<Pass> passes;
     };
 }
 
@@ -236,6 +253,16 @@ namespace {
             throw lsfgvk::error("Unable to import destination images", e);
         }
     }
+    /// create a black image
+    vk::Image createBlackImage(const vk::Vulkan& vk) {
+        try {
+            return{vk,
+                { .width = 4, .height = 4 }
+            };
+        } catch (const std::exception& e) {
+            throw lsfgvk::error("Unable to create black image", e);
+        }
+    }
     /// import timeline semaphore
     vk::TimelineSemaphore importTimelineSemaphore(const vk::Vulkan& vk, int syncFd) {
         try {
@@ -273,12 +300,23 @@ namespace {
         const auto& shaders = instance.getShaderRegistry();
 
         try {
+            std::vector<vk::Buffer> constantBuffers{};
+            constantBuffers.reserve(count);
+
+            for (size_t i = 0; i < count; ++i)
+                constantBuffers.emplace_back(vk,
+                    ls::getDefaultConstantBuffer(
+                        i, count,
+                        hdr, flow
+                    )
+                );
+
             return {
                 .vk = std::ref(vk),
                 .shaders = std::ref(shaders),
                 .constantBuffer{vk,
-                    ls::getDefaultConstantBuffer(0, 1,
-                        hdr, flow, false, false)},
+                    ls::getDefaultConstantBuffer(0, 1, hdr, flow)},
+                .constantBuffers{std::move(constantBuffers)},
                 .bnbSampler{vk, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER, VK_COMPARE_OP_NEVER, false},
                 .bnwSampler{vk, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER, VK_COMPARE_OP_NEVER, true},
                 .eabSampler{vk, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE, VK_COMPARE_OP_ALWAYS, false},
@@ -305,6 +343,7 @@ ContextImpl::ContextImpl(const InstanceImpl& instance,
             extent, hdr ? VK_FORMAT_R16G16B16A16_SFLOAT : VK_FORMAT_R8G8B8A8_UNORM)),
         destImages(importImages(instance.getVulkan(), destFds,
             extent, hdr ? VK_FORMAT_R16G16B16A16_SFLOAT : VK_FORMAT_R8G8B8A8_UNORM)),
+        blackImage(createBlackImage(instance.getVulkan())),
         syncSemaphore(importTimelineSemaphore(instance.getVulkan(), syncFd)),
         prepassSemaphore(createPrepassSemaphore(instance.getVulkan())),
         cmdbufs(createCommandBuffers(instance.getVulkan(), 16)),
@@ -330,8 +369,80 @@ ContextImpl::ContextImpl(const InstanceImpl& instance,
         },
         beta0(ctx, alpha1.at(0).getImages()),
         beta1(ctx, beta0.getImages()) {
+    // build main passes
+    for (size_t i = 0; i < destImages.size(); ++i) {
+        auto& pass = this->passes.emplace_back();
+
+        pass.gamma0.reserve(7);
+        pass.gamma1.reserve(7);
+        pass.delta0.reserve(3);
+        pass.delta1.reserve(3);
+        for (size_t j = 0; j < 7; j++) {
+            if (j == 0) { // first pass has no prior data
+                pass.gamma0.emplace_back(ctx, i,
+                    this->alpha1.at(6 - j).getImages(),
+                    this->blackImage
+                );
+                pass.gamma1.emplace_back(ctx, i,
+                    pass.gamma0.at(j).getImages(),
+                    this->blackImage,
+                    this->beta1.getImages().at(5)
+                );
+            } else { // other passes use prior data
+                pass.gamma0.emplace_back(ctx, i,
+                    this->alpha1.at(6 - j).getImages(),
+                    pass.gamma1.at(j - 1).getImage()
+                );
+                pass.gamma1.emplace_back(ctx, i,
+                    pass.gamma0.at(j).getImages(),
+                    pass.gamma1.at(j - 1).getImage(),
+                    this->beta1.getImages().at(6 - j)
+                );
+            }
+
+            if (j == 4) { // first special pass has no prior data
+                pass.delta0.emplace_back(ctx, i,
+                    this->alpha1.at(6 - j).getImages(),
+                    this->blackImage,
+                    pass.gamma1.at(j - 1).getImage(),
+                    this->blackImage
+                );
+                pass.delta1.emplace_back(ctx, i,
+                    pass.delta0.at(j - 4).getImages0(),
+                    pass.delta0.at(j - 4).getImages1(),
+                    this->blackImage,
+                    this->beta1.getImages().at(6 - j),
+                    this->blackImage
+                );
+            } else if (j > 4) { // further passes do
+                pass.delta0.emplace_back(ctx, i,
+                    this->alpha1.at(6 - j).getImages(),
+                    pass.delta1.at(j - 5).getImage0(),
+                    pass.gamma1.at(j - 1).getImage(),
+                    this->beta1.getImages().at(6 - j)
+                );
+                pass.delta1.emplace_back(ctx, i,
+                    pass.delta0.at(j - 4).getImages0(),
+                    pass.delta0.at(j - 4).getImages1(),
+                    pass.delta1.at(j - 5).getImage0(),
+                    this->beta1.getImages().at(6 - j),
+                    pass.delta1.at(j - 5).getImage1()
+                );
+            }
+        }
+
+        pass.generate.emplace(ctx, i,
+            this->sourceImages,
+            pass.gamma1.at(6).getImage(),
+            pass.delta1.at(2).getImage0(),
+            pass.delta1.at(2).getImage1(),
+            this->destImages.at(i)
+        );
+    }
+
     // initialize all images
     const vk::CommandBuffer cmdbuf{ctx.vk};
+    cmdbuf.prepareImage(this->blackImage);
     mipmaps.prepare(cmdbuf);
     for (size_t i = 0; i < 7; ++i) {
         alpha0.at(i).prepare(cmdbuf);
@@ -339,6 +450,16 @@ ContextImpl::ContextImpl(const InstanceImpl& instance,
     }
     beta0.prepare(cmdbuf);
     beta1.prepare(cmdbuf);
+    for (const auto& pass : this->passes) {
+        for (size_t i = 0; i < 7; ++i) {
+            pass.gamma0.at(i).prepare(cmdbuf);
+            pass.gamma1.at(i).prepare(cmdbuf);
+
+            if (i < 4) continue;
+            pass.delta0.at(i - 4).prepare(cmdbuf);
+            pass.delta1.at(i - 4).prepare(cmdbuf);
+        }
+    }
     cmdbuf.submit(ctx.vk); // wait for completion
 }
 
@@ -387,11 +508,20 @@ void Context::scheduleFrames() {
     this->idx++;
 
     // schedule main passes
-    for (size_t i = 0; i < this->destImages.size(); ++i) {
+    for (size_t i = 0; i < this->destImages.size(); i++) {
         vk::CommandBuffer& cmdbuf = this->cmdbufs.at(this->cmdbuf_idx++ % this->cmdbufs.size());
         cmdbuf = vk::CommandBuffer(this->ctx.vk);
 
-        // (...)
+        const auto& pass = this->passes.at(i);
+        for (size_t j = 0; j < 7; j++) {
+            pass.gamma0.at(j).render(cmdbuf, this->fidx);
+            pass.gamma1.at(j).render(cmdbuf);
+
+            if (j < 4) continue;
+            pass.delta0.at(j - 4).render(cmdbuf, this->fidx);
+            pass.delta1.at(j - 4).render(cmdbuf);
+        }
+        pass.generate->render(cmdbuf, this->fidx);
 
         cmdbuf.submit(this->ctx.vk,
             this->prepassSemaphore, this->idx - 1,
