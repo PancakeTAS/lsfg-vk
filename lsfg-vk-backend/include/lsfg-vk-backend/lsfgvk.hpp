@@ -28,14 +28,7 @@ namespace lsfgvk {
             ///
             explicit error(const std::string& msg, const std::exception& inner);
 
-            /// Get the exception message
-            [[nodiscard]] const char* what() const noexcept override {
-                return msg.c_str();
-            }
-
             ~error() override;
-        private:
-            std::string msg;
     };
 
     ///
