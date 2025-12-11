@@ -21,6 +21,7 @@ namespace {
         if (handle) return handle;
 
         handle = dlopen("libvulkan.so.1", RTLD_NOW | RTLD_LOCAL);
+        if (!handle) handle = dlopen("libvulkan.so", RTLD_NOW | RTLD_LOCAL);
         if (!handle)
             throw ls::vulkan_error("failed to load libvulkan.so.1");
 
