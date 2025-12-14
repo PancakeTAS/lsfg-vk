@@ -28,6 +28,13 @@ namespace lsfgvk {
             ///
             explicit error(const std::string& msg, const std::exception& inner);
 
+            ///
+            /// Construct an error
+            ///
+            /// @param msg Error message.
+            ///
+            explicit error(const std::string& msg);
+
             ~error() override;
     };
 
