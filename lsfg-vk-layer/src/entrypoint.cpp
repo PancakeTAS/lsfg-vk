@@ -5,12 +5,15 @@
 #include <cstdint>
 #include <exception>
 #include <iostream>
+#include <optional>
 #include <string>
 #include <unordered_map>
 #include <vector>
 
 #include <vulkan/vk_layer.h>
 #include <vulkan/vulkan_core.h>
+
+using namespace lsfgvk;
 
 namespace {
     /// reinterpret cast helper with const_cast
@@ -42,6 +45,11 @@ namespace {
     PFN_vkGetInstanceProcAddr nxvkGetInstanceProcAddr{nullptr};
     PFN_vkGetDeviceProcAddr nxvkGetDeviceProcAddr = nullptr;
 
+    auto& layer() {
+        static std::optional<layer::Layer> instance; // NOLINT
+        return instance;
+    }
+
     VkInstance gInstance{VK_NULL_HANDLE}; // if there are multiple instances, we scream out loud, oke?
 
     // create instance
@@ -49,6 +57,15 @@ namespace {
             const VkInstanceCreateInfo* info,
             const VkAllocationCallbacks* alloc,
             VkInstance* instance) {
+        // try to load lsfg-vk layer
+        try {
+            if (!layer().has_value())
+                layer().emplace();
+        } catch (const std::exception& e) {
+            std::cerr << "lsfg-vk: something went wrong during lsfg-vk layer initialization:\n";
+            std::cerr << "- " << e.what() << '\n';
+        }
+
         // apply layer chaining
         auto* layerInfo = vcast<VkLayerInstanceCreateInfo*>(info->pNext);
         while (layerInfo && (layerInfo->sType != VK_STRUCTURE_TYPE_LOADER_INSTANCE_CREATE_INFO
@@ -86,11 +103,14 @@ namespace {
             return VK_ERROR_INITIALIZATION_FAILED;
         }
 
-        auto requiredExtensions = lsfgvk::requiredInstanceExtensions();
+        const auto& l = layer();
+        if (!l.has_value() || !l->active()) // skip inactive
+            return vkCreateInstance(info, alloc, instance);
+
         auto extensions = add_extensions(
             info->ppEnabledExtensionNames,
             info->enabledExtensionCount,
-            requiredExtensions);
+            l->instanceExtensions());
 
         VkInstanceCreateInfo newInfo = *info;
         newInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
@@ -109,8 +129,8 @@ namespace {
     }
 
     // map of devices to layer instances
-    std::unordered_map<VkDevice, lsfgvk::LayerInstance>& device2InstanceMap() {
-        static std::unordered_map<VkDevice, lsfgvk::LayerInstance> map; // NOLINT
+    std::unordered_map<VkDevice, layer::LayerInstance>& device2InstanceMap() {
+        static std::unordered_map<VkDevice, layer::LayerInstance> map; // NOLINT
         return map;
     }
 
@@ -174,11 +194,14 @@ namespace {
             return VK_ERROR_INITIALIZATION_FAILED;
         }
 
-        auto requiredExtensions = lsfgvk::requiredDeviceExtensions();
+        const auto& l = layer();
+        if (!l.has_value() || !l->active()) // skip inactive
+            return vkCreateDevice(physicalDevice, info, alloc, device);
+
         auto extensions = add_extensions(
             info->ppEnabledExtensionNames,
             info->enabledExtensionCount,
-            requiredExtensions);
+            l->deviceExtensions());
 
         VkDeviceCreateInfo newInfo = *info;
         newInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
@@ -195,7 +218,7 @@ namespace {
         // create layer instance
         try {
             device2InstanceMap().emplace(*device,
-                lsfgvk::LayerInstance(gInstance, *device, setLoaderData));
+                layer::LayerInstance(*l, gInstance, *device, setLoaderData));
         } catch (const std::exception& e) {
             std::cerr << "lsfg-vk: something went wrong during lsfg-vk initialization:\n";
             std::cerr << "- " << e.what() << '\n';
