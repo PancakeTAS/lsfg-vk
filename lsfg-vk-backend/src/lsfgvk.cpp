@@ -552,4 +552,7 @@ Instance::~Instance() = default;
 error::error(const std::string& msg, const std::exception& inner)
     : std::runtime_error(msg + "\n- " + inner.what()) {}
 
+error::error(const std::string& msg)
+    : std::runtime_error(msg) {}
+
 error::~error() = default;
