@@ -99,8 +99,10 @@ namespace {
             .DestroyInstance = ipa<PFN_vkDestroyInstance>(mpa, i, "vkDestroyInstance"),
             .EnumeratePhysicalDevices = ipa<PFN_vkEnumeratePhysicalDevices>(mpa, i,
                 "vkEnumeratePhysicalDevices"),
-            .GetPhysicalDeviceProperties = ipa<PFN_vkGetPhysicalDeviceProperties>(mpa, i,
-                "vkGetPhysicalDeviceProperties"),
+            .EnumerateDeviceExtensionProperties = ipa<PFN_vkEnumerateDeviceExtensionProperties>(mpa, i,
+                "vkEnumerateDeviceExtensionProperties"),
+            .GetPhysicalDeviceProperties2 = ipa<PFN_vkGetPhysicalDeviceProperties2>(mpa, i,
+                "vkGetPhysicalDeviceProperties2"),
             .GetPhysicalDeviceQueueFamilyProperties =
                 ipa<PFN_vkGetPhysicalDeviceQueueFamilyProperties>(mpa, i,
                     "vkGetPhysicalDeviceQueueFamilyProperties"),

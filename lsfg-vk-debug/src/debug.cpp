@@ -119,7 +119,11 @@ int main() {
 
     // initialize lsfg-vk
     lsfgvk::Instance lsfgvk{
-        [](const std::string&) {
+        [](
+            const std::string&,
+            std::pair<const std::string&, const std::string&>,
+            const std::optional<std::string>&
+        ) {
             return true;
         },
         "/home/pancake/.steam/steam/steamapps/common/Lossless Scaling/Lossless.dll",

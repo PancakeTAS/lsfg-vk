@@ -9,6 +9,7 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <string>
 #include <vector>
 
 #include <vulkan/vulkan_core.h>
@@ -70,4 +71,7 @@ namespace ls {
     /// @param i the amount to shift by
     /// @return the shifted extent
     VkExtent2D add_shift_extent(VkExtent2D extent, uint32_t a, uint32_t i);
+
+    /// convert a device/vendor id into a hex string
+    std::string to_hex_id(uint32_t id);
 }

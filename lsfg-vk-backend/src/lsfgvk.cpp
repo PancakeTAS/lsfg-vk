@@ -119,20 +119,48 @@ namespace lsfgvk {
 }
 
 Instance::Instance(
-        const std::function<bool(const std::string&)>& devicePicker,
+        const DevicePicker& devicePicker,
         const std::filesystem::path& shaderDllPath,
         bool allowLowPrecision) {
     const auto selectFunc = [&devicePicker](const vk::VulkanInstanceFuncs funcs,
             const std::vector<VkPhysicalDevice>& devices) {
         for (const auto& device : devices) {
-            VkPhysicalDeviceProperties props;
-            funcs.GetPhysicalDeviceProperties(device, &props);
+            // check if the physical device supports VK_EXT_pci_bus_info
+            uint32_t ext_count{};
+            funcs.EnumerateDeviceExtensionProperties(device, nullptr, &ext_count, nullptr);
 
-            std::array<char, 256> devname = std::to_array(props.deviceName);
+            std::vector<VkExtensionProperties> extensions(ext_count);
+            funcs.EnumerateDeviceExtensionProperties(device, nullptr, &ext_count, extensions.data());
+
+            const bool has_pci_ext = std::ranges::find_if(extensions,
+                [](const VkExtensionProperties& ext) {
+                    return std::string(std::to_array(ext.extensionName).data())
+                        == VK_EXT_PCI_BUS_INFO_EXTENSION_NAME;
+                }) != extensions.end();
+
+            // then fetch all available properties
+            VkPhysicalDevicePCIBusInfoPropertiesEXT pciInfo{
+                .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PCI_BUS_INFO_PROPERTIES_EXT
+            };
+            VkPhysicalDeviceProperties2 props{
+                .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2,
+                .pNext = has_pci_ext ? &pciInfo : nullptr
+            };
+            funcs.GetPhysicalDeviceProperties2(device, &props);
+
+            std::array<char, 256> devname = std::to_array(props.properties.deviceName);
             devname[255] = '\0'; // ensure null-termination
 
-            const std::string& deviceName{devname.data()};
-            if (devicePicker(deviceName))
+            if (devicePicker(
+                std::string(devname.data()),
+                { ls::to_hex_id(props.properties.vendorID),
+                  ls::to_hex_id(props.properties.deviceID) },
+                has_pci_ext ? std::optional<std::string>{
+                    std::to_string(pciInfo.pciBus) + ":" +
+                    std::to_string(pciInfo.pciDevice) + "." +
+                    std::to_string(pciInfo.pciFunction)
+                } : std::nullopt
+            ))
                 return device;
         }
 

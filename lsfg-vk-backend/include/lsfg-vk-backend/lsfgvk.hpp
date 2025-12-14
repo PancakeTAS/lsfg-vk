@@ -4,6 +4,7 @@
 #include <filesystem>
 #include <functional>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -38,6 +39,13 @@ namespace lsfgvk {
             ~error() override;
     };
 
+    /// Function type for picking a device based on its name and IDs
+    using DevicePicker = std::function<bool(
+        const std::string& deviceName,
+        std::pair<const std::string&, const std::string&> ids, // (vendor ID, device ID) in 0xXXXX format
+        const std::optional<std::string>& pci // (bus:slot.func) if available, no padded zeros
+    )>;
+
     ///
     /// Main entry point of the library
     ///
@@ -46,14 +54,14 @@ namespace lsfgvk {
         ///
         /// Create a lsfg-vk instance
         ///
-        /// @param devicePicker Function that picks a physical device based on its name.
+        /// @param devicePicker Function that picks a physical device based on its name or other identifiers.
         /// @param shaderDllPath Path to the Lossless.dll file to load shaders from.
         /// @param allowLowPrecision Whether to load low-precision (FP16) shaders if supported by the device.
         ///
         /// @throws lsfgvk::error on failure
         ///
         Instance(
-            const std::function<bool(const std::string&)>& devicePicker,
+            const DevicePicker& devicePicker,
             const std::filesystem::path& shaderDllPath,
             bool allowLowPrecision
         );
