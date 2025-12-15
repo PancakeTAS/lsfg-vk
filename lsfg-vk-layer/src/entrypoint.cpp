@@ -8,6 +8,7 @@
 #include <iostream>
 #include <string>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
 #include <vulkan/vk_layer.h>
@@ -33,41 +34,38 @@ namespace {
 
         return extensions;
     }
-
-    /// struct containing various helper globals
-    struct Globals {
-        layer::Layer layer;
-
-        VkInstance instance{VK_NULL_HANDLE}; // if there are multiple instances, we scream
-        vk::VulkanInstanceFuncs fi{};
-
-        std::unordered_map<std::string, PFN_vkVoidFunction> procAddrMap; // all overriden pointers
-
-        std::unordered_map<VkDevice, layer::LayerInstance> device2InstanceMap;
-    };
 }
 
 namespace {
-    Globals* global{nullptr};
-    void populateProcAddrMap();
+    // device-wide info initialized at device creation
+    struct DeviceInfo {
+        VkDevice handle;
+        vk::VulkanDeviceFuncs funcs;
+
+        layer::Instance layer;
+    };
+
+    // instance-wide info initialized at instance creation
+    struct InstanceInfo {
+        VkInstance handle;
+        vk::VulkanInstanceFuncs funcs;
+
+        std::unordered_map<VkDevice, DeviceInfo*> devices;
+    }* instance_info;
+
+    // global layer info initialized at layer negotiation
+    struct LayerInfo {
+        layer::Layer layer; //!< basic layer info
+        std::unordered_map<std::string, PFN_vkVoidFunction> map; //!< function pointer override map
+
+        PFN_vkGetInstanceProcAddr GetInstanceProcAddr;
+    }* layer_info;
 
     // create instance
-    PFN_vkGetInstanceProcAddr nxvkGetInstanceProcAddr{nullptr};
     VkResult myvkCreateInstance(
             const VkInstanceCreateInfo* info,
             const VkAllocationCallbacks* alloc,
             VkInstance* instance) {
-        // try to load lsfg-vk layer
-        try {
-            if (!global) { // cleanup in vkDestroyInstance
-                global = new Globals();
-                populateProcAddrMap();
-            }
-        } catch (const std::exception& e) {
-            std::cerr << "lsfg-vk: something went wrong during lsfg-vk layer initialization:\n";
-            std::cerr << "- " << e.what() << '\n';
-        }
-
         // apply layer chaining
         auto* layerInfo = reinterpret_cast<VkLayerInstanceCreateInfo*>(const_cast<void*>(info->pNext));
         while (layerInfo && (layerInfo->sType != VK_STRUCTURE_TYPE_LOADER_INSTANCE_CREATE_INFO
@@ -87,8 +85,8 @@ namespace {
             return VK_ERROR_INITIALIZATION_FAILED;
         }
 
-        nxvkGetInstanceProcAddr = linkInfo->pfnNextGetInstanceProcAddr;
-        if (!nxvkGetInstanceProcAddr) {
+        layer_info->GetInstanceProcAddr = linkInfo->pfnNextGetInstanceProcAddr;
+        if (!layer_info->GetInstanceProcAddr) {
             std::cerr << "lsfg-vk: next layer's vkGetInstanceProcAddr is null, "
                 "the previous layer does not follow spec\n";
             return VK_ERROR_INITIALIZATION_FAILED;
@@ -98,21 +96,17 @@ namespace {
 
         // create instance
         auto* vkCreateInstance = reinterpret_cast<PFN_vkCreateInstance>(
-            nxvkGetInstanceProcAddr(nullptr, "vkCreateInstance"));
+            layer_info->GetInstanceProcAddr(nullptr, "vkCreateInstance"));
         if (!vkCreateInstance) {
             std::cerr << "lsfg-vk: failed to get next layer's vkCreateInstance, "
                 "the previous layer does not follow spec\n";
             return VK_ERROR_INITIALIZATION_FAILED;
         }
 
-        const auto& l = global;
-        if (!l || !l->layer.active()) // skip inactive
-            return vkCreateInstance(info, alloc, instance);
-
         auto extensions = add_extensions(
             info->ppEnabledExtensionNames,
             info->enabledExtensionCount,
-            l->layer.instanceExtensions());
+            layer_info->layer.instanceExtensions());
 
         VkInstanceCreateInfo newInfo = *info;
         newInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
@@ -126,13 +120,15 @@ namespace {
         if (res != VK_SUCCESS)
             return res;
 
-        l->instance = *instance;
-        l->fi = vk::initVulkanInstanceFuncs(l->instance, nxvkGetInstanceProcAddr);
+        instance_info = new InstanceInfo{
+            .handle = *instance,
+            .funcs = vk::initVulkanInstanceFuncs(*instance, layer_info->GetInstanceProcAddr),
+            .devices = {}
+        };
         return VK_SUCCESS;
     }
 
     // create device
-    PFN_vkGetDeviceProcAddr nxvkGetDeviceProcAddr{nullptr};
     VkResult myvkCreateDevice(
             VkPhysicalDevice physdev,
             const VkDeviceCreateInfo* info,
@@ -157,8 +153,7 @@ namespace {
             return VK_ERROR_INITIALIZATION_FAILED;
         }
 
-        global->fi.GetDeviceProcAddr = linkInfo->pfnNextGetDeviceProcAddr;
-        nxvkGetDeviceProcAddr = linkInfo->pfnNextGetDeviceProcAddr;
+        instance_info->funcs.GetDeviceProcAddr = linkInfo->pfnNextGetDeviceProcAddr;
         if (!linkInfo->pfnNextGetDeviceProcAddr) {
             std::cerr << "lsfg-vk: next layer's vkGetDeviceProcAddr is null, "
                 "the previous layer does not follow spec\n";
@@ -188,13 +183,13 @@ namespace {
         auto extensions = add_extensions(
             info->ppEnabledExtensionNames,
             info->enabledExtensionCount,
-            global->layer.deviceExtensions());
+            layer_info->layer.deviceExtensions());
 
         VkDeviceCreateInfo newInfo = *info;
         newInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
         newInfo.ppEnabledExtensionNames = extensions.data();
 
-        auto res = global->fi.CreateDevice(physdev, &newInfo, alloc, device);
+        auto res = instance_info->funcs.CreateDevice(physdev, &newInfo, alloc, device);
         if (res == VK_ERROR_EXTENSION_NOT_PRESENT)
             std::cerr << "lsfg-vk: required Vulkan device extensions are not present. "
                 "Your GPU driver is not supported.\n";
@@ -204,18 +199,21 @@ namespace {
 
         // create layer instance
         try {
-            global->device2InstanceMap.emplace(
+            instance_info->devices.emplace(
                 *device,
-                layer::LayerInstance(
-                    global->layer,
-                    vk::Vulkan(
-                        global->instance, *device,
-                        physdev,
-                        global->fi,
-                        vk::initVulkanDeviceFuncs(global->fi, *device),
-                        setLoaderData
+                new DeviceInfo{
+                    .handle = *device,
+                    .funcs = vk::initVulkanDeviceFuncs(instance_info->funcs, *device),
+                    .layer = layer::Instance(
+                        layer_info->layer,
+                        vk::Vulkan(
+                            instance_info->handle, *device, physdev,
+                            instance_info->funcs,
+                            vk::initVulkanDeviceFuncs(instance_info->funcs, *device),
+                            true, setLoaderData
+                        )
                     )
-                )
+                }
             );
         } catch (const std::exception& e) {
             std::cerr << "lsfg-vk: something went wrong during lsfg-vk initialization:\n";
@@ -225,21 +223,57 @@ namespace {
         return VK_SUCCESS;
     }
 
-    // populate function pointer override map
-    void populateProcAddrMap() {
-#define VKPTR(name) reinterpret_cast<PFN_vkVoidFunction>(name)
-        global->procAddrMap = {
-            { "vkCreateInstance", VKPTR(myvkCreateInstance) },
-            { "vkCreateDevice", VKPTR(myvkCreateDevice) },
-        };
-#undef VKPTR
+    // destroy device
+    void myvkDestroyDevice(VkDevice device, const VkAllocationCallbacks* alloc) {
+        // destroy layer instance
+        auto it = instance_info->devices.find(device);
+        if (it != instance_info->devices.end()) {
+            delete it->second;
+            instance_info->devices.erase(it);
+        }
+
+        // destroy device
+        auto vkDestroyDevice = reinterpret_cast<PFN_vkDestroyDevice>(
+            instance_info->funcs.GetDeviceProcAddr(device, "vkDestroyDevice"));
+        if (!vkDestroyDevice) {
+            std::cerr << "lsfg-vk: failed to get next layer's vkDestroyDevice, "
+                "the previous layer does not follow spec\n";
+            return;
+        }
+
+        vkDestroyDevice(device, alloc);
+    }
+
+    // destroy instance
+    void myvkDestroyInstance(VkInstance instance, const VkAllocationCallbacks* alloc) {
+        // destroy instance info
+        delete instance_info;
+        instance_info = nullptr;
+
+        // destroy instance
+        auto vkDestroyInstance = reinterpret_cast<PFN_vkDestroyInstance>(
+            layer_info->GetInstanceProcAddr(instance, "vkDestroyInstance"));
+        if (!vkDestroyInstance) {
+            std::cerr << "lsfg-vk: failed to get next layer's vkDestroyInstance, "
+                "the previous layer does not follow spec\n";
+            return;
+        }
+
+        vkDestroyInstance(instance, alloc);
+
+        // destroy layer info
+        // NOTE: there's no real way of unloading the layer without a deconstructor.
+        // multiple instances just aren't common enough to worry about it.
+        // NOTE2: it doesn't really matter anyways, because the myvkDestroyDevice code
+        // freezes the entire thing anyways.
+        delete layer_info;
+        layer_info = nullptr;
     }
 
     // get optional function pointer override
     PFN_vkVoidFunction getProcAddr(const std::string& name) {
-        if (!global) return nullptr;
-        auto it = global->procAddrMap.find(name);
-        if (it != global->procAddrMap.end())
+        auto it = layer_info->map.find(name);
+        if (it != layer_info->map.end())
             return it->second;
         return nullptr;
     }
@@ -254,8 +288,8 @@ namespace {
         auto func = getProcAddr(pName);
         if (func) return func;
 
-        if (!nxvkGetInstanceProcAddr) return nullptr;
-        return nxvkGetInstanceProcAddr(instance, pName);
+        if (!layer_info->GetInstanceProcAddr) return nullptr;
+        return layer_info->GetInstanceProcAddr(instance, pName);
     }
 
     // get device-level function pointers
@@ -265,8 +299,8 @@ namespace {
         auto func = getProcAddr(pName);
         if (func) return func;
 
-        if (!nxvkGetDeviceProcAddr) return nullptr;
-        return nxvkGetDeviceProcAddr(device, pName);
+        if (!instance_info->funcs.GetDeviceProcAddr) return nullptr;
+        return instance_info->funcs.GetDeviceProcAddr(device, pName);
     }
 
 }
@@ -279,6 +313,28 @@ VkResult vkNegotiateLoaderLayerInterfaceVersion(VkNegotiateLayerInterface* pVers
         || pVersionStruct->sType != LAYER_NEGOTIATE_INTERFACE_STRUCT
         || pVersionStruct->loaderLayerInterfaceVersion < 2)
         return VK_ERROR_INITIALIZATION_FAILED;
+
+    // load the layer configuration
+    try {
+        layer::Layer layer{};
+        if (!layer.active()) // skip inactive
+            return VK_ERROR_INITIALIZATION_FAILED;
+
+        layer_info = new LayerInfo{
+            .layer = std::move(layer),
+            .map = {
+#define VKPTR(name) reinterpret_cast<PFN_vkVoidFunction>(name)
+                { "vkCreateInstance", VKPTR(myvkCreateInstance) },
+                { "vkCreateDevice", VKPTR(myvkCreateDevice) },
+                { "vkDestroyDevice", VKPTR(myvkDestroyDevice) },
+                { "vkDestroyInstance", VKPTR(myvkDestroyInstance) }
+#undef VKPTR
+            }
+        };
+    } catch (const std::exception& e) {
+        std::cerr << "lsfg-vk: something went wrong during lsfg-vk layer initialization:\n";
+        std::cerr << "- " << e.what() << '\n';
+    }
 
     // emplace function pointers/version
     pVersionStruct->loaderLayerInterfaceVersion = 2;
