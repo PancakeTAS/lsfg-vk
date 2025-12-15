@@ -8,7 +8,6 @@
 #include <iostream>
 #include <string>
 #include <unordered_map>
-#include <utility>
 #include <vector>
 
 #include <vulkan/vk_layer.h>
@@ -37,22 +36,6 @@ namespace {
 }
 
 namespace {
-    // device-wide info initialized at device creation
-    struct DeviceInfo {
-        VkDevice handle;
-        vk::VulkanDeviceFuncs funcs;
-
-        layer::Instance layer;
-    };
-
-    // instance-wide info initialized at instance creation
-    struct InstanceInfo {
-        VkInstance handle;
-        vk::VulkanInstanceFuncs funcs;
-
-        std::unordered_map<VkDevice, DeviceInfo*> devices;
-    }* instance_info;
-
     // global layer info initialized at layer negotiation
     struct LayerInfo {
         std::unordered_map<std::string, PFN_vkVoidFunction> map; //!< function pointer override map
@@ -60,6 +43,14 @@ namespace {
 
         layer::Root root;
     }* layer_info;
+
+    // instance-wide info initialized at instance creation
+    struct InstanceInfo {
+        VkInstance handle;
+        vk::VulkanInstanceFuncs funcs;
+
+        std::unordered_map<VkDevice, vk::Vulkan> devices;
+    }* instance_info;
 
     // create instance
     VkResult myvkCreateInstance(
@@ -201,19 +192,11 @@ namespace {
         try {
             instance_info->devices.emplace(
                 *device,
-                new DeviceInfo{
-                    .handle = *device,
-                    .funcs = vk::initVulkanDeviceFuncs(instance_info->funcs, *device),
-                    .layer = layer::Instance(
-                        layer_info->root,
-                        vk::Vulkan(
-                            instance_info->handle, *device, physdev,
-                            instance_info->funcs,
-                            vk::initVulkanDeviceFuncs(instance_info->funcs, *device),
-                            true, setLoaderData
-                        )
-                    )
-                }
+                vk::Vulkan(
+                    instance_info->handle, *device, physdev,
+                    instance_info->funcs, vk::initVulkanDeviceFuncs(instance_info->funcs, *device),
+                    true, setLoaderData
+                )
             );
         } catch (const std::exception& e) {
             std::cerr << "lsfg-vk: something went wrong during lsfg-vk initialization:\n";
@@ -227,10 +210,8 @@ namespace {
     void myvkDestroyDevice(VkDevice device, const VkAllocationCallbacks* alloc) {
         // destroy layer instance
         auto it = instance_info->devices.find(device);
-        if (it != instance_info->devices.end()) {
-            delete it->second;
+        if (it != instance_info->devices.end())
             instance_info->devices.erase(it);
-        }
 
         // destroy device
         auto vkDestroyDevice = reinterpret_cast<PFN_vkDestroyDevice>(
@@ -316,11 +297,7 @@ VkResult vkNegotiateLoaderLayerInterfaceVersion(VkNegotiateLayerInterface* pVers
 
     // load the layer configuration
     try {
-        layer::Root root{};
-        if (!root.active()) // skip inactive
-            return VK_ERROR_INITIALIZATION_FAILED;
-
-        layer_info = new LayerInfo{
+        layer_info = new LayerInfo {
             .map = {
 #define VKPTR(name) reinterpret_cast<PFN_vkVoidFunction>(name)
                 { "vkCreateInstance", VKPTR(myvkCreateInstance) },
@@ -329,11 +306,20 @@ VkResult vkNegotiateLoaderLayerInterfaceVersion(VkNegotiateLayerInterface* pVers
                 { "vkDestroyInstance", VKPTR(myvkDestroyInstance) }
 #undef VKPTR
             },
-            .root = std::move(root)
+            .root = layer::Root()
         };
+
+        if (!layer_info->root.active()) { // skip inactive
+            delete layer_info;
+            layer_info = nullptr;
+
+            return VK_ERROR_INITIALIZATION_FAILED;
+        }
     } catch (const std::exception& e) {
         std::cerr << "lsfg-vk: something went wrong during lsfg-vk layer initialization:\n";
         std::cerr << "- " << e.what() << '\n';
+
+        return VK_ERROR_INITIALIZATION_FAILED;
     }
 
     // emplace function pointers/version

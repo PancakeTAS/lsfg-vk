@@ -47,10 +47,14 @@ namespace lsfgvk::layer {
         /// @throws lsfgvk::error on failure
         Configuration();
 
-        /// reload the configuration from disk if the file has changed
+        /// check if the configuration is out of date
         /// @throws lsfgvk::error on failure
-        /// @return true if the configuration was reloaded
-        bool tick();
+        /// @return true if the configuration is out of date
+        bool isUpToDate();
+
+        /// reload the configuration from disk
+        /// @throws lsfgvk::error on failure
+        void reload();
 
         /// get the global configuration
         /// @return global configuration

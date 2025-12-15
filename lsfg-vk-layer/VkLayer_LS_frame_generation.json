@@ -8,7 +8,7 @@
     "type": "GLOBAL",
     "api_version": "1.4.328",
     "disable_environment": {
-      "DISABLE_LSFG": "1"
+      "DISABLE_LSFGVK": "1"
     }
   }
 }

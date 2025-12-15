@@ -171,7 +171,13 @@ multiplier = 2
 Configuration::Configuration() :
         path(findPath()),
         from_env(std::getenv("LSFGVK_ENV") != nullptr) {
-    if (std::filesystem::exists(this->path) || this->from_env)
+    if (this->from_env) {
+        this->global = parseGlobalConfFromEnv();
+        this->profiles.push_back(parseGameConfFromEnv());
+        return;
+    }
+
+    if (std::filesystem::exists(this->path))
         return;
 
     try {
@@ -190,29 +196,24 @@ Configuration::Configuration() :
     }
 }
 
-bool Configuration::tick() {
-    if (this->from_env) {
-        if (this->profiles.empty()) {
-            this->global = parseGlobalConfFromEnv();
-            this->profiles.push_back(parseGameConfFromEnv());
-            return true;
-        }
+bool Configuration::isUpToDate() {
+    if (this->from_env)
+        return true;
 
-        return false; // no need to tick if from env
-    }
-
-    // check for updates
     try {
-        auto time = std::filesystem::last_write_time(this->path);
-        if (time == this->timestamp)
-            return false;
+        return std::filesystem::last_write_time(this->path) == this->timestamp;
+    } catch (const std::filesystem::filesystem_error& e) {
+        throw lsfgvk::error("unable to access configuration file", e);
+    }
+}
 
-        this->timestamp = time;
+void Configuration::reload() {
+    try {
+        this->timestamp = std::filesystem::last_write_time(this->path);
     } catch (const std::filesystem::filesystem_error& e) {
         throw lsfgvk::error("unable to access configuration file", e);
     }
 
-    // parse configuration
     GlobalConf global{};
     std::vector<GameConf> profiles{};
 
@@ -240,5 +241,4 @@ bool Configuration::tick() {
 
     this->global = std::move(global);
     this->profiles = std::move(profiles);
-    return true;
 }
