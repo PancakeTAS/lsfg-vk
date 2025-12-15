@@ -7,9 +7,6 @@
 #include <optional>
 #include <vector>
 
-#include <vulkan/vk_layer.h>
-#include <vulkan/vulkan_core.h>
-
 namespace lsfgvk::layer {
 
     /// lsfg-vk layer
@@ -48,15 +45,10 @@ namespace lsfgvk::layer {
     public:
         /// create a new layer instance
         /// @param layer parent layer
-        /// @param df Vulkan device function pointers
-        /// @param instance Vulkan instance
-        /// @param device Vulkan device
-        /// @param setLoaderData function to set device loader data
-        LayerInstance(const Layer& layer, vk::VulkanDeviceFuncs df,
-            VkInstance instance, VkDevice device,
-            PFN_vkSetDeviceLoaderData setLoaderData);
+        /// @param vk vulkan instance
+        LayerInstance(const Layer& layer, vk::Vulkan vk);
     private:
-        Configuration config;
+        vk::Vulkan vk;
     };
 
 }

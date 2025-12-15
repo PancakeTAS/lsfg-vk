@@ -90,10 +90,11 @@ namespace vk {
         PFN_vkDestroyPipelineLayout DestroyPipelineLayout;
         PFN_vkCreateComputePipelines CreateComputePipelines;
         PFN_vkDestroyPipeline DestroyPipeline;
-        PFN_vkSignalSemaphore SignalSemaphore;
-        PFN_vkWaitSemaphores WaitSemaphores;
+
 
         // extension functions
+        PFN_vkSignalSemaphoreKHR SignalSemaphoreKHR;
+        PFN_vkWaitSemaphoresKHR WaitSemaphoresKHR;
         PFN_vkGetMemoryFdKHR GetMemoryFdKHR;
         PFN_vkImportSemaphoreFdKHR ImportSemaphoreFdKHR;
         PFN_vkGetSemaphoreFdKHR GetSemaphoreFdKHR;
@@ -130,10 +131,26 @@ namespace vk {
         /// @param engineName name of the engine
         /// @param engineVersion version of the engine
         /// @param selectPhysicalDevice function to select the physical device
+        /// @param isGraphical whether the device is graphical (rather than compute)
         /// @throws ls::vulkan_error on failure
         Vulkan(const std::string& appName, version appVersion,
             const std::string& engineName, version engineVersion,
-            PhysicalDeviceSelector selectPhysicalDevice);
+            PhysicalDeviceSelector selectPhysicalDevice,
+            bool isGraphical = false);
+
+        /// create based on an existing externally managed vulkan instance.
+        /// @param instance vulkan instance handle
+        /// @param device logical device handle
+        /// @param physdev physical device handle
+        /// @param instanceFuncs instance function pointers
+        /// @param deviceFuncs device function pointers
+        /// @param isGraphical whether the device is graphical (rather than compute)
+        /// @throws ls::vulkan_error on failure
+        Vulkan(VkInstance instance, VkDevice device,
+            VkPhysicalDevice physdev,
+            VulkanInstanceFuncs instanceFuncs,
+            VulkanDeviceFuncs deviceFuncs,
+            bool isGraphical = true);
 
         /// find a memory type index
         /// @param validTypes bitset of valid memory types
@@ -170,7 +187,7 @@ namespace vk {
         VulkanInstanceFuncs instance_funcs;
 
         VkPhysicalDevice physdev;
-        uint32_t computeFamilyIdx;
+        uint32_t queueFamilyIdx;
         bool fp16;
 
         ls::owned_ptr<VkDevice> device;

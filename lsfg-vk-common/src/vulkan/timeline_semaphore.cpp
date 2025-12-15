@@ -81,7 +81,7 @@ void TimelineSemaphore::signal(const vk::Vulkan& vk, uint64_t value) const {
         .semaphore = *this->semaphore,
         .value = value
     };
-    auto res = vk.df().SignalSemaphore(vk.dev(), &signalInfo);
+    auto res = vk.df().SignalSemaphoreKHR(vk.dev(), &signalInfo);
     if (res != VK_SUCCESS)
         throw ls::vulkan_error(res, "vkSignalSemaphore() failed");
 }
@@ -94,7 +94,7 @@ bool TimelineSemaphore::wait(const vk::Vulkan& vk, uint64_t value, uint64_t time
         .pSemaphores = &semaphore,
         .pValues = &value
     };
-    auto res = vk.df().WaitSemaphores(vk.dev(), &waitInfo, timeout);
+    auto res = vk.df().WaitSemaphoresKHR(vk.dev(), &waitInfo, timeout);
     if (res != VK_SUCCESS && res != VK_TIMEOUT)
         throw ls::vulkan_error(res, "vkWaitSemaphores() failed");
 

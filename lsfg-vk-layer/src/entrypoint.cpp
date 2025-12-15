@@ -134,7 +134,7 @@ namespace {
     // create device
     PFN_vkGetDeviceProcAddr nxvkGetDeviceProcAddr{nullptr};
     VkResult myvkCreateDevice(
-            VkPhysicalDevice physicalDevice,
+            VkPhysicalDevice physdev,
             const VkDeviceCreateInfo* info,
             const VkAllocationCallbacks* alloc,
             VkDevice* device) {
@@ -194,7 +194,7 @@ namespace {
         newInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
         newInfo.ppEnabledExtensionNames = extensions.data();
 
-        auto res = global->fi.CreateDevice(physicalDevice, &newInfo, alloc, device);
+        auto res = global->fi.CreateDevice(physdev, &newInfo, alloc, device);
         if (res == VK_ERROR_EXTENSION_NOT_PRESENT)
             std::cerr << "lsfg-vk: required Vulkan device extensions are not present. "
                 "Your GPU driver is not supported.\n";
@@ -207,9 +207,13 @@ namespace {
             global->device2InstanceMap.emplace(
                 *device,
                 layer::LayerInstance(
-                    global->layer,  vk::initVulkanDeviceFuncs(global->fi, *device),
-                    global->instance, *device,
-                    setLoaderData
+                    global->layer,
+                    vk::Vulkan(
+                        global->instance, *device,
+                        physdev,
+                        global->fi,
+                        vk::initVulkanDeviceFuncs(global->fi, *device)
+                    )
                 )
             );
         } catch (const std::exception& e) {

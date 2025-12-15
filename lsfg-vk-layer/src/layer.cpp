@@ -3,11 +3,8 @@
 #include "lsfg-vk-common/vulkan/vulkan.hpp"
 
 #include <iostream>
-#include <string>
+#include <utility>
 #include <vector>
-
-#include <vulkan/vk_layer.h>
-#include <vulkan/vulkan_core.h>
 
 using namespace lsfgvk;
 using namespace lsfgvk::layer;
@@ -69,14 +66,12 @@ std::vector<const char*> Layer::deviceExtensions() const {
         "VK_KHR_external_memory",
         "VK_KHR_external_memory_fd",
         "VK_KHR_external_semaphore",
-        "VK_KHR_external_semaphore_fd"
+        "VK_KHR_external_semaphore_fd",
+        "VK_KHR_timeline_semaphore"
     };
 }
 
-layer::LayerInstance::LayerInstance(const Layer& layer, vk::VulkanDeviceFuncs df,
-        VkInstance instance, VkDevice device,
-        PFN_vkSetDeviceLoaderData setLoaderData) {
-    std::cerr << "lsfg-vk: Hello, world!\n";
-    std::cerr << "lsfg-vk: instance=" << instance << ", device=" << device << '\n';
-    std::cerr << "lsfg-vk: setLoaderData=" << reinterpret_cast<void*>(setLoaderData) << '\n';
+layer::LayerInstance::LayerInstance(const Layer& layer, vk::Vulkan vk)
+        : vk(std::move(vk)) {
+
 }

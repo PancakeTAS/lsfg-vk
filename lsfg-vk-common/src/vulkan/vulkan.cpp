@@ -341,9 +341,9 @@ VulkanDeviceFuncs vk::initVulkanDeviceFuncs(const VulkanInstanceFuncs& f, VkDevi
         .CreateComputePipelines = dpa<PFN_vkCreateComputePipelines>(f, d,
             "vkCreateComputePipelines"),
         .DestroyPipeline = dpa<PFN_vkDestroyPipeline>(f, d, "vkDestroyPipeline"),
-        .SignalSemaphore = dpa<PFN_vkSignalSemaphore>(f, d, "vkSignalSemaphore"),
-        .WaitSemaphores = dpa<PFN_vkWaitSemaphores>(f, d, "vkWaitSemaphores"),
 
+        .SignalSemaphoreKHR = dpa<PFN_vkSignalSemaphoreKHR>(f, d, "vkSignalSemaphoreKHR"),
+        .WaitSemaphoresKHR = dpa<PFN_vkWaitSemaphoresKHR>(f, d, "vkWaitSemaphoresKHR"),
         .GetMemoryFdKHR = dpa<PFN_vkGetMemoryFdKHR>(f, d, "vkGetMemoryFdKHR"),
         .ImportSemaphoreFdKHR = dpa<PFN_vkImportSemaphoreFdKHR>(f, d, "vkImportSemaphoreFdKHR"),
         .GetSemaphoreFdKHR = dpa<PFN_vkGetSemaphoreFdKHR>(f, d, "vkGetSemaphoreFdKHR"),
@@ -352,7 +352,8 @@ VulkanDeviceFuncs vk::initVulkanDeviceFuncs(const VulkanInstanceFuncs& f, VkDevi
 
 Vulkan::Vulkan(const std::string& appName, version appVersion,
         const std::string& engineName, version engineVersion,
-        PhysicalDeviceSelector selectPhysicalDevice) :
+        PhysicalDeviceSelector selectPhysicalDevice,
+        bool isGraphical) :
     instance(createInstance(
         appName, appVersion,
         engineName, engineVersion
@@ -362,21 +363,45 @@ Vulkan::Vulkan(const std::string& appName, version appVersion,
         *this->instance,
         selectPhysicalDevice
     )),
-    computeFamilyIdx(findQFI(this->instance_funcs, this->physdev, VK_QUEUE_COMPUTE_BIT)),
+    queueFamilyIdx(findQFI(this->instance_funcs, this->physdev,
+        isGraphical ? VK_QUEUE_GRAPHICS_BIT : VK_QUEUE_COMPUTE_BIT)),
     fp16(checkFP16(this->instance_funcs, this->physdev)),
     device(createLogicalDevice(this->instance_funcs,
         this->physdev,
-        this->computeFamilyIdx,
+        this->queueFamilyIdx,
         this->fp16
     )),
     device_funcs(initVulkanDeviceFuncs(
         this->instance_funcs,
         *this->device
     )),
-    computeQueue(getQueue(this->device_funcs, *this->device, this->computeFamilyIdx)),
+    computeQueue(getQueue(this->device_funcs, *this->device, this->queueFamilyIdx)),
     cmdPool(createCommandPool(this->device_funcs,
         *this->device,
-        this->computeFamilyIdx
+        this->queueFamilyIdx
+    )),
+    descPool(createDescriptorPool(this->device_funcs,
+        *this->device
+    )) {
+}
+
+Vulkan::Vulkan(VkInstance instance, VkDevice device,
+        VkPhysicalDevice physdev,
+        VulkanInstanceFuncs instanceFuncs,
+        VulkanDeviceFuncs deviceFuncs,
+        bool isGraphical) :
+    instance(new VkInstance(instance)),
+    instance_funcs(instanceFuncs),
+    physdev(physdev),
+    queueFamilyIdx(findQFI(this->instance_funcs, this->physdev,
+        isGraphical ? VK_QUEUE_GRAPHICS_BIT : VK_QUEUE_COMPUTE_BIT)),
+    fp16(false),
+    device(new VkDevice(device)),
+    device_funcs(deviceFuncs),
+    computeQueue(getQueue(this->device_funcs, *this->device, this->queueFamilyIdx)),
+    cmdPool(createCommandPool(this->device_funcs,
+        *this->device,
+        this->queueFamilyIdx
     )),
     descPool(createDescriptorPool(this->device_funcs,
         *this->device

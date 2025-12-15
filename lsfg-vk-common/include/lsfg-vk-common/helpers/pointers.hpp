@@ -57,6 +57,11 @@ namespace ls {
         /// default constructor
         owned_ptr() = default;
 
+        /// construct from raw pointer without deleter
+        /// @param ptr raw pointer to own, must be valid for object lifetime
+        explicit owned_ptr(T* ptr)
+            : ptr(ptr) {}
+
         /// construct from raw pointer
         /// @param ptr raw pointer to own, must be valid for object lifetime
         /// @param deleter custom deleter function, called only on owned instances
@@ -97,8 +102,8 @@ namespace ls {
 
         // destructor
         ~owned_ptr() {
-            if (ptr && deleter) {
-                deleter(*ptr);
+            if (ptr) {
+                if (deleter) deleter(*ptr);
                 delete ptr;
             }
         }
