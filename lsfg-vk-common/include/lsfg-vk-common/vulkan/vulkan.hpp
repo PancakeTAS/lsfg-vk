@@ -26,6 +26,11 @@ namespace vk {
         PFN_vkGetDeviceProcAddr GetDeviceProcAddr;
     };
 
+    /// initialize vulkan instance function pointers
+    /// @param instance vulkan instance handle
+    /// @param mpa function to get instance proc addresses
+    VulkanInstanceFuncs initVulkanInstanceFuncs(VkInstance instance, PFN_vkGetInstanceProcAddr mpa);
+
     using PhysicalDeviceSelector = const std::function<
         VkPhysicalDevice(
             const VulkanInstanceFuncs&,
@@ -93,6 +98,11 @@ namespace vk {
         PFN_vkImportSemaphoreFdKHR ImportSemaphoreFdKHR;
         PFN_vkGetSemaphoreFdKHR GetSemaphoreFdKHR;
     };
+
+    /// initialize vulkan device function pointers
+    /// @param fi instance function pointers
+    /// @param device logical device handle
+    VulkanDeviceFuncs initVulkanDeviceFuncs(const VulkanInstanceFuncs& fi, VkDevice device);
 
     /// vulkan version wrapper
     class version {

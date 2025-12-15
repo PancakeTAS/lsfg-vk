@@ -1,5 +1,6 @@
 #include "layer.hpp"
 #include "detection.hpp"
+#include "lsfg-vk-common/vulkan/vulkan.hpp"
 
 #include <iostream>
 #include <string>
@@ -72,7 +73,7 @@ std::vector<const char*> Layer::deviceExtensions() const {
     };
 }
 
-layer::LayerInstance::LayerInstance(const Layer& layer,
+layer::LayerInstance::LayerInstance(const Layer& layer, vk::VulkanDeviceFuncs df,
         VkInstance instance, VkDevice device,
         PFN_vkSetDeviceLoaderData setLoaderData) {
     std::cerr << "lsfg-vk: Hello, world!\n";

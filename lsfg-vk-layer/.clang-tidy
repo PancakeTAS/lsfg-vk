@@ -26,6 +26,7 @@ Checks:
 - "-cppcoreguidelines-macro-usage"
 - "-cppcoreguidelines-pro-type-union-access"
 - "-cppcoreguidelines-avoid-non-const-global-variables"
+- "-cppcoreguidelines-pro-type-const-cast"
 # disable slow and pointless checks
 - "-modernize-use-std-numbers"
 - "-modernize-type-traits"
