@@ -10,6 +10,7 @@
 #include <vector>
 
 #include <vulkan/vulkan_core.h>
+#include <vulkan/vk_layer.h>
 
 namespace vk {
 
@@ -91,7 +92,6 @@ namespace vk {
         PFN_vkCreateComputePipelines CreateComputePipelines;
         PFN_vkDestroyPipeline DestroyPipeline;
 
-
         // extension functions
         PFN_vkSignalSemaphoreKHR SignalSemaphoreKHR;
         PFN_vkWaitSemaphoresKHR WaitSemaphoresKHR;
@@ -136,7 +136,8 @@ namespace vk {
         Vulkan(const std::string& appName, version appVersion,
             const std::string& engineName, version engineVersion,
             PhysicalDeviceSelector selectPhysicalDevice,
-            bool isGraphical = false);
+            bool isGraphical = false,
+            std::optional<PFN_vkSetDeviceLoaderData> setLoaderData = std::nullopt);
 
         /// create based on an existing externally managed vulkan instance.
         /// @param instance vulkan instance handle
@@ -150,7 +151,8 @@ namespace vk {
             VkPhysicalDevice physdev,
             VulkanInstanceFuncs instanceFuncs,
             VulkanDeviceFuncs deviceFuncs,
-            bool isGraphical = true);
+            bool isGraphical = true,
+            std::optional<PFN_vkSetDeviceLoaderData> setLoaderData = std::nullopt);
 
         /// find a memory type index
         /// @param validTypes bitset of valid memory types
@@ -182,6 +184,9 @@ namespace vk {
         /// get device-level function pointers
         /// @return the device function pointers
         [[nodiscard]] const auto& df() const { return this->device_funcs; }
+        /// get optional setLoaderData function
+        /// @return the setLoaderData function
+        [[nodiscard]] const auto& loaderdatafunc() const { return this->setLoaderData; }
     private:
         ls::owned_ptr<VkInstance> instance;
         VulkanInstanceFuncs instance_funcs;
@@ -191,6 +196,7 @@ namespace vk {
         bool fp16;
 
         ls::owned_ptr<VkDevice> device;
+        std::optional<PFN_vkSetDeviceLoaderData> setLoaderData;
         VulkanDeviceFuncs device_funcs;
 
         VkQueue computeQueue;

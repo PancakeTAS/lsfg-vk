@@ -32,6 +32,13 @@ namespace {
         if (res != VK_SUCCESS)
             throw ls::vulkan_error(res, "vkAllocateCommandBuffers() failed");
 
+        auto setLoaderData = vk.loaderdatafunc();
+        if (setLoaderData) {
+            res = (*setLoaderData)(vk.dev(), handle);
+            if (res != VK_SUCCESS)
+                throw ls::vulkan_error(res, "vkSetDeviceLoaderData() failed");
+        }
+
         return ls::owned_ptr<VkCommandBuffer>(
             new VkCommandBuffer(handle),
             [dev = vk.dev(), pool = vk.cmdpool(), defunc = vk.df().FreeCommandBuffers](

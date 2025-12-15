@@ -212,7 +212,8 @@ namespace {
                         global->instance, *device,
                         physdev,
                         global->fi,
-                        vk::initVulkanDeviceFuncs(global->fi, *device)
+                        vk::initVulkanDeviceFuncs(global->fi, *device),
+                        setLoaderData
                     )
                 )
             );

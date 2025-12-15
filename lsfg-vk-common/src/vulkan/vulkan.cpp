@@ -10,6 +10,7 @@
 #include <vector>
 
 #include <dlfcn.h>
+#include <vulkan/vk_layer.h>
 #include <vulkan/vulkan_core.h>
 
 using namespace vk;
@@ -199,11 +200,18 @@ namespace {
     }
 
     /// get a queue from the logical device
-    VkQueue getQueue(const VulkanDeviceFuncs& fd,
-            VkDevice device, uint32_t cfi) {
+    VkQueue getQueue(const VulkanDeviceFuncs& fd, VkDevice device,
+            std::optional<PFN_vkSetDeviceLoaderData> setLoaderData,
+            uint32_t cfi) {
         VkQueue queue{};
 
         fd.GetDeviceQueue(device, cfi, 0, &queue);
+
+        if (setLoaderData) { // optionally set loader data
+            auto res = (*setLoaderData)(device, queue);
+            if (res != VK_SUCCESS)
+                throw ls::vulkan_error(res, "vkSetDeviceLoaderData() failed");
+        }
         return queue;
     }
 
@@ -353,7 +361,8 @@ VulkanDeviceFuncs vk::initVulkanDeviceFuncs(const VulkanInstanceFuncs& f, VkDevi
 Vulkan::Vulkan(const std::string& appName, version appVersion,
         const std::string& engineName, version engineVersion,
         PhysicalDeviceSelector selectPhysicalDevice,
-        bool isGraphical) :
+        bool isGraphical,
+        std::optional<PFN_vkSetDeviceLoaderData> setLoaderData) :
     instance(createInstance(
         appName, appVersion,
         engineName, engineVersion
@@ -371,11 +380,14 @@ Vulkan::Vulkan(const std::string& appName, version appVersion,
         this->queueFamilyIdx,
         this->fp16
     )),
+    setLoaderData(setLoaderData),
     device_funcs(initVulkanDeviceFuncs(
         this->instance_funcs,
         *this->device
     )),
-    computeQueue(getQueue(this->device_funcs, *this->device, this->queueFamilyIdx)),
+    computeQueue(getQueue(this->device_funcs, *this->device,
+        this->setLoaderData,
+        this->queueFamilyIdx)),
     cmdPool(createCommandPool(this->device_funcs,
         *this->device,
         this->queueFamilyIdx
@@ -389,7 +401,8 @@ Vulkan::Vulkan(VkInstance instance, VkDevice device,
         VkPhysicalDevice physdev,
         VulkanInstanceFuncs instanceFuncs,
         VulkanDeviceFuncs deviceFuncs,
-        bool isGraphical) :
+        bool isGraphical,
+        std::optional<PFN_vkSetDeviceLoaderData> setLoaderData) :
     instance(new VkInstance(instance)),
     instance_funcs(instanceFuncs),
     physdev(physdev),
@@ -397,8 +410,11 @@ Vulkan::Vulkan(VkInstance instance, VkDevice device,
         isGraphical ? VK_QUEUE_GRAPHICS_BIT : VK_QUEUE_COMPUTE_BIT)),
     fp16(false),
     device(new VkDevice(device)),
+    setLoaderData(setLoaderData),
     device_funcs(deviceFuncs),
-    computeQueue(getQueue(this->device_funcs, *this->device, this->queueFamilyIdx)),
+    computeQueue(getQueue(this->device_funcs, *this->device,
+        this->setLoaderData,
+        this->queueFamilyIdx)),
     cmdPool(createCommandPool(this->device_funcs,
         *this->device,
         this->queueFamilyIdx
