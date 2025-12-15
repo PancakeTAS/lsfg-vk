@@ -1,8 +1,8 @@
 set(LAYER_SOURCES
-    "src/config.cpp"
-    "src/detection.cpp"
-    "src/entrypoint.cpp"
-    "src/layer.cpp")
+    "src/configuration/config.cpp"
+    "src/configuration/detection.cpp"
+    "src/context/instance.cpp"
+    "src/entrypoint.cpp")
 
 add_library(lsfg-vk-layer SHARED ${LAYER_SOURCES})
 

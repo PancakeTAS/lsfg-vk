@@ -1,4 +1,4 @@
-#include "layer.hpp"
+#include "context/instance.hpp"
 #include "lsfg-vk-common/vulkan/vulkan.hpp"
 
 #include <algorithm>
@@ -55,10 +55,10 @@ namespace {
 
     // global layer info initialized at layer negotiation
     struct LayerInfo {
-        layer::Layer layer; //!< basic layer info
         std::unordered_map<std::string, PFN_vkVoidFunction> map; //!< function pointer override map
-
         PFN_vkGetInstanceProcAddr GetInstanceProcAddr;
+
+        layer::Root root;
     }* layer_info;
 
     // create instance
@@ -106,7 +106,7 @@ namespace {
         auto extensions = add_extensions(
             info->ppEnabledExtensionNames,
             info->enabledExtensionCount,
-            layer_info->layer.instanceExtensions());
+            layer_info->root.instanceExtensions());
 
         VkInstanceCreateInfo newInfo = *info;
         newInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
@@ -183,7 +183,7 @@ namespace {
         auto extensions = add_extensions(
             info->ppEnabledExtensionNames,
             info->enabledExtensionCount,
-            layer_info->layer.deviceExtensions());
+            layer_info->root.deviceExtensions());
 
         VkDeviceCreateInfo newInfo = *info;
         newInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
@@ -205,7 +205,7 @@ namespace {
                     .handle = *device,
                     .funcs = vk::initVulkanDeviceFuncs(instance_info->funcs, *device),
                     .layer = layer::Instance(
-                        layer_info->layer,
+                        layer_info->root,
                         vk::Vulkan(
                             instance_info->handle, *device, physdev,
                             instance_info->funcs,
@@ -316,12 +316,11 @@ VkResult vkNegotiateLoaderLayerInterfaceVersion(VkNegotiateLayerInterface* pVers
 
     // load the layer configuration
     try {
-        layer::Layer layer{};
-        if (!layer.active()) // skip inactive
+        layer::Root root{};
+        if (!root.active()) // skip inactive
             return VK_ERROR_INITIALIZATION_FAILED;
 
         layer_info = new LayerInfo{
-            .layer = std::move(layer),
             .map = {
 #define VKPTR(name) reinterpret_cast<PFN_vkVoidFunction>(name)
                 { "vkCreateInstance", VKPTR(myvkCreateInstance) },
@@ -329,7 +328,8 @@ VkResult vkNegotiateLoaderLayerInterfaceVersion(VkNegotiateLayerInterface* pVers
                 { "vkDestroyDevice", VKPTR(myvkDestroyDevice) },
                 { "vkDestroyInstance", VKPTR(myvkDestroyInstance) }
 #undef VKPTR
-            }
+            },
+            .root = std::move(root)
         };
     } catch (const std::exception& e) {
         std::cerr << "lsfg-vk: something went wrong during lsfg-vk layer initialization:\n";
