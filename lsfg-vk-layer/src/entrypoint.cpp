@@ -16,12 +16,6 @@
 using namespace lsfgvk;
 
 namespace {
-    /// reinterpret cast helper with const_cast
-    template<typename T, typename U>
-    T vcast(U ptr) {
-        return reinterpret_cast<T>(const_cast<void*>(ptr)); // NOLINT
-    }
-
     /// helper function to add required extensions
     std::vector<const char*> add_extensions(const char* const* existingExtensions, size_t count,
             const std::vector<const char*>& requiredExtensions) {
@@ -67,10 +61,10 @@ namespace {
         }
 
         // apply layer chaining
-        auto* layerInfo = vcast<VkLayerInstanceCreateInfo*>(info->pNext);
+        auto* layerInfo = reinterpret_cast<VkLayerInstanceCreateInfo*>(const_cast<void*>(info->pNext));
         while (layerInfo && (layerInfo->sType != VK_STRUCTURE_TYPE_LOADER_INSTANCE_CREATE_INFO
                 || layerInfo->function != VK_LAYER_LINK_INFO)) {
-            layerInfo = vcast<VkLayerInstanceCreateInfo*>(layerInfo->pNext);
+            layerInfo = reinterpret_cast<VkLayerInstanceCreateInfo*>(const_cast<void*>(layerInfo->pNext));
         }
         if (!layerInfo) {
             std::cerr << "lsfg-vk: no layer info found in pNext chain, "
@@ -141,10 +135,10 @@ namespace {
             const VkAllocationCallbacks* alloc,
             VkDevice* device) {
         // apply layer chaining
-        auto* layerInfo = vcast<VkLayerDeviceCreateInfo*>(info->pNext);
+        auto* layerInfo = reinterpret_cast<VkLayerDeviceCreateInfo*>(const_cast<void*>(info->pNext));
         while (layerInfo && (layerInfo->sType != VK_STRUCTURE_TYPE_LOADER_DEVICE_CREATE_INFO
                 || layerInfo->function != VK_LAYER_LINK_INFO)) {
-            layerInfo = vcast<VkLayerDeviceCreateInfo*>(layerInfo->pNext);
+            layerInfo = reinterpret_cast<VkLayerDeviceCreateInfo*>(const_cast<void*>(layerInfo->pNext));
         }
         if (!layerInfo) {
             std::cerr << "lsfg-vk: no layer info found in pNext chain, "
@@ -169,10 +163,10 @@ namespace {
         layerInfo->u.pLayerInfo = linkInfo->pNext; // advance for next layer
 
         // fetch device loader functions
-        layerInfo = vcast<VkLayerDeviceCreateInfo*>(info->pNext);
+        layerInfo = reinterpret_cast<VkLayerDeviceCreateInfo*>(const_cast<void*>(info->pNext));
         while (layerInfo && (layerInfo->sType != VK_STRUCTURE_TYPE_LOADER_DEVICE_CREATE_INFO
                 || layerInfo->function != VK_LOADER_DATA_CALLBACK)) {
-            layerInfo = vcast<VkLayerDeviceCreateInfo*>(layerInfo->pNext);
+            layerInfo = reinterpret_cast<VkLayerDeviceCreateInfo*>(const_cast<void*>(layerInfo->pNext));
         }
         if (!layerInfo) {
             std::cerr << "lsfg-vk: no layer loader data found in pNext chain.\n";
