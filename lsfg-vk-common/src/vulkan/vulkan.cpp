@@ -91,30 +91,6 @@ namespace {
         );
     }
 
-    /// initialize vulkan instance function pointers
-    VulkanInstanceFuncs initVulkanInstanceFuncs(VkInstance i) {
-        const auto& mpa = get_mpa();
-
-        return {
-            .DestroyInstance = ipa<PFN_vkDestroyInstance>(mpa, i, "vkDestroyInstance"),
-            .EnumeratePhysicalDevices = ipa<PFN_vkEnumeratePhysicalDevices>(mpa, i,
-                "vkEnumeratePhysicalDevices"),
-            .EnumerateDeviceExtensionProperties = ipa<PFN_vkEnumerateDeviceExtensionProperties>(mpa, i,
-                "vkEnumerateDeviceExtensionProperties"),
-            .GetPhysicalDeviceProperties2 = ipa<PFN_vkGetPhysicalDeviceProperties2>(mpa, i,
-                "vkGetPhysicalDeviceProperties2"),
-            .GetPhysicalDeviceQueueFamilyProperties =
-                ipa<PFN_vkGetPhysicalDeviceQueueFamilyProperties>(mpa, i,
-                    "vkGetPhysicalDeviceQueueFamilyProperties"),
-            .GetPhysicalDeviceFeatures2 = ipa<PFN_vkGetPhysicalDeviceFeatures2>(mpa, i,
-                "vkGetPhysicalDeviceFeatures2"),
-            .GetPhysicalDeviceMemoryProperties = ipa<PFN_vkGetPhysicalDeviceMemoryProperties>(mpa, i,
-                "vkGetPhysicalDeviceMemoryProperties"),
-            .CreateDevice = ipa<PFN_vkCreateDevice>(mpa, i, "vkCreateDevice"),
-            .GetDeviceProcAddr = ipa<PFN_vkGetDeviceProcAddr>(mpa, i, "vkGetDeviceProcAddr"),
-        };
-    }
-
     /// filter for a physical device
     VkPhysicalDevice findPhysicalDevice(const VulkanInstanceFuncs& fi,
             VkInstance instance,
@@ -222,75 +198,6 @@ namespace {
         );
     }
 
-    /// initialize vulkan device function pointers
-    VulkanDeviceFuncs initVulkanDeviceFuncs(const VulkanInstanceFuncs& f, VkDevice d) {
-        return {
-            .GetDeviceQueue = dpa<PFN_vkGetDeviceQueue>(f, d, "vkGetDeviceQueue"),
-            .DeviceWaitIdle = dpa<PFN_vkDeviceWaitIdle>(f, d, "vkDeviceWaitIdle"),
-            .CreateCommandPool = dpa<PFN_vkCreateCommandPool>(f, d, "vkCreateCommandPool"),
-            .DestroyCommandPool = dpa<PFN_vkDestroyCommandPool>(f, d, "vkDestroyCommandPool"),
-            .CreateDescriptorPool = dpa<PFN_vkCreateDescriptorPool>(f, d, "vkCreateDescriptorPool"),
-            .DestroyDescriptorPool = dpa<PFN_vkDestroyDescriptorPool>(f, d, "vkDestroyDescriptorPool"),
-            .CreateBuffer = dpa<PFN_vkCreateBuffer>(f, d, "vkCreateBuffer"),
-            .DestroyBuffer = dpa<PFN_vkDestroyBuffer>(f, d, "vkDestroyBuffer"),
-            .GetBufferMemoryRequirements = dpa<PFN_vkGetBufferMemoryRequirements>(f, d,
-                "vkGetBufferMemoryRequirements"),
-            .AllocateMemory = dpa<PFN_vkAllocateMemory>(f, d, "vkAllocateMemory"),
-            .FreeMemory = dpa<PFN_vkFreeMemory>(f, d, "vkFreeMemory"),
-            .BindBufferMemory = dpa<PFN_vkBindBufferMemory>(f, d, "vkBindBufferMemory"),
-            .MapMemory = dpa<PFN_vkMapMemory>(f, d, "vkMapMemory"),
-            .UnmapMemory = dpa<PFN_vkUnmapMemory>(f, d, "vkUnmapMemory"),
-            .AllocateCommandBuffers = dpa<PFN_vkAllocateCommandBuffers>(f, d,
-                "vkAllocateCommandBuffers"),
-            .FreeCommandBuffers = dpa<PFN_vkFreeCommandBuffers>(f, d, "vkFreeCommandBuffers"),
-            .BeginCommandBuffer = dpa<PFN_vkBeginCommandBuffer>(f, d, "vkBeginCommandBuffer"),
-            .EndCommandBuffer = dpa<PFN_vkEndCommandBuffer>(f, d, "vkEndCommandBuffer"),
-            .CmdPipelineBarrier = dpa<PFN_vkCmdPipelineBarrier>(f, d, "vkCmdPipelineBarrier"),
-            .CmdClearColorImage = dpa<PFN_vkCmdClearColorImage>(f, d, "vkCmdClearColorImage"),
-            .CmdBindPipeline = dpa<PFN_vkCmdBindPipeline>(f, d, "vkCmdBindPipeline"),
-            .CmdBindDescriptorSets = dpa<PFN_vkCmdBindDescriptorSets>(f, d, "vkCmdBindDescriptorSets"),
-            .CmdDispatch = dpa<PFN_vkCmdDispatch>(f, d, "vkCmdDispatch"),
-            .CmdCopyBufferToImage = dpa<PFN_vkCmdCopyBufferToImage>(f, d, "vkCmdCopyBufferToImage"),
-            .QueueSubmit = dpa<PFN_vkQueueSubmit>(f, d, "vkQueueSubmit"),
-            .AllocateDescriptorSets = dpa<PFN_vkAllocateDescriptorSets>(f, d,
-                "vkAllocateDescriptorSets"),
-            .FreeDescriptorSets = dpa<PFN_vkFreeDescriptorSets>(f, d, "vkFreeDescriptorSets"),
-            .UpdateDescriptorSets = dpa<PFN_vkUpdateDescriptorSets>(f, d, "vkUpdateDescriptorSets"),
-            .CreateFence = dpa<PFN_vkCreateFence>(f, d, "vkCreateFence"),
-            .DestroyFence = dpa<PFN_vkDestroyFence>(f, d, "vkDestroyFence"),
-            .ResetFences = dpa<PFN_vkResetFences>(f, d, "vkResetFences"),
-            .WaitForFences = dpa<PFN_vkWaitForFences>(f, d, "vkWaitForFences"),
-            .CreateImage = dpa<PFN_vkCreateImage>(f, d, "vkCreateImage"),
-            .DestroyImage = dpa<PFN_vkDestroyImage>(f, d, "vkDestroyImage"),
-            .GetImageMemoryRequirements = dpa<PFN_vkGetImageMemoryRequirements>(f, d,
-                "vkGetImageMemoryRequirements"),
-            .BindImageMemory = dpa<PFN_vkBindImageMemory>(f, d, "vkBindImageMemory"),
-            .CreateImageView = dpa<PFN_vkCreateImageView>(f, d, "vkCreateImageView"),
-            .DestroyImageView = dpa<PFN_vkDestroyImageView>(f, d, "vkDestroyImageView"),
-            .CreateSampler = dpa<PFN_vkCreateSampler>(f, d, "vkCreateSampler"),
-            .DestroySampler = dpa<PFN_vkDestroySampler>(f, d, "vkDestroySampler"),
-            .CreateSemaphore = dpa<PFN_vkCreateSemaphore>(f, d, "vkCreateSemaphore"),
-            .DestroySemaphore = dpa<PFN_vkDestroySemaphore>(f, d, "vkDestroySemaphore"),
-            .CreateShaderModule = dpa<PFN_vkCreateShaderModule>(f, d, "vkCreateShaderModule"),
-            .DestroyShaderModule = dpa<PFN_vkDestroyShaderModule>(f, d, "vkDestroyShaderModule"),
-            .CreateDescriptorSetLayout = dpa<PFN_vkCreateDescriptorSetLayout>(f, d,
-                "vkCreateDescriptorSetLayout"),
-            .DestroyDescriptorSetLayout = dpa<PFN_vkDestroyDescriptorSetLayout>(f, d,
-                "vkDestroyDescriptorSetLayout"),
-            .CreatePipelineLayout = dpa<PFN_vkCreatePipelineLayout>(f, d, "vkCreatePipelineLayout"),
-            .DestroyPipelineLayout = dpa<PFN_vkDestroyPipelineLayout>(f, d, "vkDestroyPipelineLayout"),
-            .CreateComputePipelines = dpa<PFN_vkCreateComputePipelines>(f, d,
-                "vkCreateComputePipelines"),
-            .DestroyPipeline = dpa<PFN_vkDestroyPipeline>(f, d, "vkDestroyPipeline"),
-            .SignalSemaphore = dpa<PFN_vkSignalSemaphore>(f, d, "vkSignalSemaphore"),
-            .WaitSemaphores = dpa<PFN_vkWaitSemaphores>(f, d, "vkWaitSemaphores"),
-
-            .GetMemoryFdKHR = dpa<PFN_vkGetMemoryFdKHR>(f, d, "vkGetMemoryFdKHR"),
-            .ImportSemaphoreFdKHR = dpa<PFN_vkImportSemaphoreFdKHR>(f, d, "vkImportSemaphoreFdKHR"),
-            .GetSemaphoreFdKHR = dpa<PFN_vkGetSemaphoreFdKHR>(f, d, "vkGetSemaphoreFdKHR"),
-        };
-    }
-
     /// get a queue from the logical device
     VkQueue getQueue(const VulkanDeviceFuncs& fd,
             VkDevice device, uint32_t cfi) {
@@ -352,6 +259,97 @@ namespace {
     }
 }
 
+/// initialize vulkan instance function pointers
+VulkanInstanceFuncs vk::initVulkanInstanceFuncs(VkInstance i, PFN_vkGetInstanceProcAddr mpa) {
+    return {
+        .DestroyInstance = ipa<PFN_vkDestroyInstance>(mpa, i, "vkDestroyInstance"),
+        .EnumeratePhysicalDevices = ipa<PFN_vkEnumeratePhysicalDevices>(mpa, i,
+            "vkEnumeratePhysicalDevices"),
+        .EnumerateDeviceExtensionProperties = ipa<PFN_vkEnumerateDeviceExtensionProperties>(mpa, i,
+            "vkEnumerateDeviceExtensionProperties"),
+        .GetPhysicalDeviceProperties2 = ipa<PFN_vkGetPhysicalDeviceProperties2>(mpa, i,
+            "vkGetPhysicalDeviceProperties2"),
+        .GetPhysicalDeviceQueueFamilyProperties =
+            ipa<PFN_vkGetPhysicalDeviceQueueFamilyProperties>(mpa, i,
+                "vkGetPhysicalDeviceQueueFamilyProperties"),
+        .GetPhysicalDeviceFeatures2 = ipa<PFN_vkGetPhysicalDeviceFeatures2>(mpa, i,
+            "vkGetPhysicalDeviceFeatures2"),
+        .GetPhysicalDeviceMemoryProperties = ipa<PFN_vkGetPhysicalDeviceMemoryProperties>(mpa, i,
+            "vkGetPhysicalDeviceMemoryProperties"),
+        .CreateDevice = ipa<PFN_vkCreateDevice>(mpa, i, "vkCreateDevice"),
+        .GetDeviceProcAddr = ipa<PFN_vkGetDeviceProcAddr>(mpa, i, "vkGetDeviceProcAddr"),
+    };
+}
+
+/// initialize vulkan device function pointers
+VulkanDeviceFuncs vk::initVulkanDeviceFuncs(const VulkanInstanceFuncs& f, VkDevice d) {
+    return {
+        .GetDeviceQueue = dpa<PFN_vkGetDeviceQueue>(f, d, "vkGetDeviceQueue"),
+        .DeviceWaitIdle = dpa<PFN_vkDeviceWaitIdle>(f, d, "vkDeviceWaitIdle"),
+        .CreateCommandPool = dpa<PFN_vkCreateCommandPool>(f, d, "vkCreateCommandPool"),
+        .DestroyCommandPool = dpa<PFN_vkDestroyCommandPool>(f, d, "vkDestroyCommandPool"),
+        .CreateDescriptorPool = dpa<PFN_vkCreateDescriptorPool>(f, d, "vkCreateDescriptorPool"),
+        .DestroyDescriptorPool = dpa<PFN_vkDestroyDescriptorPool>(f, d, "vkDestroyDescriptorPool"),
+        .CreateBuffer = dpa<PFN_vkCreateBuffer>(f, d, "vkCreateBuffer"),
+        .DestroyBuffer = dpa<PFN_vkDestroyBuffer>(f, d, "vkDestroyBuffer"),
+        .GetBufferMemoryRequirements = dpa<PFN_vkGetBufferMemoryRequirements>(f, d,
+            "vkGetBufferMemoryRequirements"),
+        .AllocateMemory = dpa<PFN_vkAllocateMemory>(f, d, "vkAllocateMemory"),
+        .FreeMemory = dpa<PFN_vkFreeMemory>(f, d, "vkFreeMemory"),
+        .BindBufferMemory = dpa<PFN_vkBindBufferMemory>(f, d, "vkBindBufferMemory"),
+        .MapMemory = dpa<PFN_vkMapMemory>(f, d, "vkMapMemory"),
+        .UnmapMemory = dpa<PFN_vkUnmapMemory>(f, d, "vkUnmapMemory"),
+        .AllocateCommandBuffers = dpa<PFN_vkAllocateCommandBuffers>(f, d,
+            "vkAllocateCommandBuffers"),
+        .FreeCommandBuffers = dpa<PFN_vkFreeCommandBuffers>(f, d, "vkFreeCommandBuffers"),
+        .BeginCommandBuffer = dpa<PFN_vkBeginCommandBuffer>(f, d, "vkBeginCommandBuffer"),
+        .EndCommandBuffer = dpa<PFN_vkEndCommandBuffer>(f, d, "vkEndCommandBuffer"),
+        .CmdPipelineBarrier = dpa<PFN_vkCmdPipelineBarrier>(f, d, "vkCmdPipelineBarrier"),
+        .CmdClearColorImage = dpa<PFN_vkCmdClearColorImage>(f, d, "vkCmdClearColorImage"),
+        .CmdBindPipeline = dpa<PFN_vkCmdBindPipeline>(f, d, "vkCmdBindPipeline"),
+        .CmdBindDescriptorSets = dpa<PFN_vkCmdBindDescriptorSets>(f, d, "vkCmdBindDescriptorSets"),
+        .CmdDispatch = dpa<PFN_vkCmdDispatch>(f, d, "vkCmdDispatch"),
+        .CmdCopyBufferToImage = dpa<PFN_vkCmdCopyBufferToImage>(f, d, "vkCmdCopyBufferToImage"),
+        .QueueSubmit = dpa<PFN_vkQueueSubmit>(f, d, "vkQueueSubmit"),
+        .AllocateDescriptorSets = dpa<PFN_vkAllocateDescriptorSets>(f, d,
+            "vkAllocateDescriptorSets"),
+        .FreeDescriptorSets = dpa<PFN_vkFreeDescriptorSets>(f, d, "vkFreeDescriptorSets"),
+        .UpdateDescriptorSets = dpa<PFN_vkUpdateDescriptorSets>(f, d, "vkUpdateDescriptorSets"),
+        .CreateFence = dpa<PFN_vkCreateFence>(f, d, "vkCreateFence"),
+        .DestroyFence = dpa<PFN_vkDestroyFence>(f, d, "vkDestroyFence"),
+        .ResetFences = dpa<PFN_vkResetFences>(f, d, "vkResetFences"),
+        .WaitForFences = dpa<PFN_vkWaitForFences>(f, d, "vkWaitForFences"),
+        .CreateImage = dpa<PFN_vkCreateImage>(f, d, "vkCreateImage"),
+        .DestroyImage = dpa<PFN_vkDestroyImage>(f, d, "vkDestroyImage"),
+        .GetImageMemoryRequirements = dpa<PFN_vkGetImageMemoryRequirements>(f, d,
+            "vkGetImageMemoryRequirements"),
+        .BindImageMemory = dpa<PFN_vkBindImageMemory>(f, d, "vkBindImageMemory"),
+        .CreateImageView = dpa<PFN_vkCreateImageView>(f, d, "vkCreateImageView"),
+        .DestroyImageView = dpa<PFN_vkDestroyImageView>(f, d, "vkDestroyImageView"),
+        .CreateSampler = dpa<PFN_vkCreateSampler>(f, d, "vkCreateSampler"),
+        .DestroySampler = dpa<PFN_vkDestroySampler>(f, d, "vkDestroySampler"),
+        .CreateSemaphore = dpa<PFN_vkCreateSemaphore>(f, d, "vkCreateSemaphore"),
+        .DestroySemaphore = dpa<PFN_vkDestroySemaphore>(f, d, "vkDestroySemaphore"),
+        .CreateShaderModule = dpa<PFN_vkCreateShaderModule>(f, d, "vkCreateShaderModule"),
+        .DestroyShaderModule = dpa<PFN_vkDestroyShaderModule>(f, d, "vkDestroyShaderModule"),
+        .CreateDescriptorSetLayout = dpa<PFN_vkCreateDescriptorSetLayout>(f, d,
+            "vkCreateDescriptorSetLayout"),
+        .DestroyDescriptorSetLayout = dpa<PFN_vkDestroyDescriptorSetLayout>(f, d,
+            "vkDestroyDescriptorSetLayout"),
+        .CreatePipelineLayout = dpa<PFN_vkCreatePipelineLayout>(f, d, "vkCreatePipelineLayout"),
+        .DestroyPipelineLayout = dpa<PFN_vkDestroyPipelineLayout>(f, d, "vkDestroyPipelineLayout"),
+        .CreateComputePipelines = dpa<PFN_vkCreateComputePipelines>(f, d,
+            "vkCreateComputePipelines"),
+        .DestroyPipeline = dpa<PFN_vkDestroyPipeline>(f, d, "vkDestroyPipeline"),
+        .SignalSemaphore = dpa<PFN_vkSignalSemaphore>(f, d, "vkSignalSemaphore"),
+        .WaitSemaphores = dpa<PFN_vkWaitSemaphores>(f, d, "vkWaitSemaphores"),
+
+        .GetMemoryFdKHR = dpa<PFN_vkGetMemoryFdKHR>(f, d, "vkGetMemoryFdKHR"),
+        .ImportSemaphoreFdKHR = dpa<PFN_vkImportSemaphoreFdKHR>(f, d, "vkImportSemaphoreFdKHR"),
+        .GetSemaphoreFdKHR = dpa<PFN_vkGetSemaphoreFdKHR>(f, d, "vkGetSemaphoreFdKHR"),
+    };
+}
+
 Vulkan::Vulkan(const std::string& appName, version appVersion,
         const std::string& engineName, version engineVersion,
         PhysicalDeviceSelector selectPhysicalDevice) :
@@ -359,7 +357,7 @@ Vulkan::Vulkan(const std::string& appName, version appVersion,
         appName, appVersion,
         engineName, engineVersion
     )),
-    instance_funcs(initVulkanInstanceFuncs(*this->instance)),
+    instance_funcs(initVulkanInstanceFuncs(*this->instance, get_mpa())),
     physdev(findPhysicalDevice(this->instance_funcs,
         *this->instance,
         selectPhysicalDevice

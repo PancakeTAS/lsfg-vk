@@ -2,9 +2,9 @@
 
 #include "config.hpp"
 #include "detection.hpp"
+#include "lsfg-vk-common/vulkan/vulkan.hpp"
 
 #include <optional>
-#include <string>
 #include <vector>
 
 #include <vulkan/vk_layer.h>
@@ -48,10 +48,11 @@ namespace lsfgvk::layer {
     public:
         /// create a new layer instance
         /// @param layer parent layer
+        /// @param df Vulkan device function pointers
         /// @param instance Vulkan instance
         /// @param device Vulkan device
         /// @param setLoaderData function to set device loader data
-        LayerInstance(const Layer& layer,
+        LayerInstance(const Layer& layer, vk::VulkanDeviceFuncs df,
             VkInstance instance, VkDevice device,
             PFN_vkSetDeviceLoaderData setLoaderData);
     private:

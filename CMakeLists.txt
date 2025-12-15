@@ -29,8 +29,6 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
             -Wno-c++98-compat-pedantic
             -Wno-switch-default
             -Wno-switch-enum
-            # allow global deconstructors
-            -Wno-exit-time-destructors
             # disable noisy warnings
             -Wno-missing-designated-field-initializers
             -Wno-cast-function-type-strict
