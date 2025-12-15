@@ -25,10 +25,10 @@ namespace lsfgvk::layer {
 
         /// required instance extensions
         /// @return list of extension names
-        [[nodiscard]] std::vector<std::string> instanceExtensions() const;
+        [[nodiscard]] std::vector<const char*> instanceExtensions() const;
         /// required device extensions
         /// @return list of extension names
-        [[nodiscard]] std::vector<std::string> deviceExtensions() const;
+        [[nodiscard]] std::vector<const char*> deviceExtensions() const;
 
         /// tick the layer
         /// @throws lsfgvk::error on failure

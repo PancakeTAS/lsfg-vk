@@ -24,17 +24,17 @@ namespace {
 
     /// helper function to add required extensions
     std::vector<const char*> add_extensions(const char* const* existingExtensions, size_t count,
-            const std::vector<std::string>& requiredExtensions) {
+            const std::vector<const char*>& requiredExtensions) {
         std::vector<const char*> extensions(count);
         std::copy_n(existingExtensions, count, extensions.data());
 
         for (const auto& requiredExtension : requiredExtensions) {
             auto it = std::ranges::find_if(extensions,
                 [requiredExtension](const char* extension) {
-                    return std::string(extension) == requiredExtension;
+                    return std::string(extension) == std::string(requiredExtension);
                 });
             if (it == extensions.end())
-                extensions.push_back(requiredExtension.c_str());
+                extensions.push_back(requiredExtension);
         }
 
         return extensions;

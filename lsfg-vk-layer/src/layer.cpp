@@ -49,7 +49,7 @@ bool Layer::tick() {
     return true;
 }
 
-std::vector<std::string> Layer::instanceExtensions() const {
+std::vector<const char*> Layer::instanceExtensions() const {
     if (!this->profile.has_value())
         return {};
 
@@ -60,7 +60,7 @@ std::vector<std::string> Layer::instanceExtensions() const {
     };
 }
 
-std::vector<std::string> Layer::deviceExtensions() const {
+std::vector<const char*> Layer::deviceExtensions() const {
     if (!this->profile.has_value())
         return {};
 
