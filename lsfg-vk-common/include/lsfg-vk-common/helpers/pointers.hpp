@@ -29,6 +29,10 @@ namespace ls {
             return *this->opt;
         }
 
+        /// check if value is present
+        /// @return true if value is present
+        [[nodiscard]] bool has_value() const { return this->opt.has_value(); }
+
         /// get reference to value
         /// @return reference to value
         /// @throws std::logic_error if no value present
@@ -45,6 +49,15 @@ namespace ls {
             if (!this->opt.has_value())
                 throw std::logic_error("lazy: no value present");
             return &(*this->opt);
+        }
+
+        /// get a mutable reference to value
+        /// @return mutable reference to value
+        /// @throws std::logic_error if no value present
+        T& mut() {
+            if (!this->opt.has_value())
+                throw std::logic_error("lazy: no value present");
+            return *this->opt;
         }
     private:
         std::optional<T> opt{};

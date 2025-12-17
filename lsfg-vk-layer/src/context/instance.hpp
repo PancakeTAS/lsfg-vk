@@ -3,9 +3,13 @@
 #include "../configuration/config.hpp"
 #include "lsfg-vk-backend/lsfgvk.hpp"
 #include "lsfg-vk-common/helpers/pointers.hpp"
+#include "lsfg-vk-common/vulkan/vulkan.hpp"
+#include "swapchain.hpp"
 
 #include <optional>
-#include <vector>
+#include <unordered_map>
+
+#include <vulkan/vulkan_core.h>
 
 namespace lsfgvk::layer {
 
@@ -20,17 +24,59 @@ namespace lsfgvk::layer {
         /// @return true if active
         [[nodiscard]] bool active() const { return this->active_profile.has_value(); }
 
-        /// required instance extensions
-        /// @return list of extension names
-        [[nodiscard]] std::vector<const char*> instanceExtensions() const;
-        /// required device extensions
-        /// @return list of extension names
-        [[nodiscard]] std::vector<const char*> deviceExtensions() const;
+        /// ensure the layer is up-to-date
+        void update();
+
+        // /// required instance extensions
+        // /// @return list of extension names
+        // [[nodiscard]] std::vector<const char*> instanceExtensions() const;
+        // /// required device extensions
+        // /// @return list of extension names
+        // [[nodiscard]] std::vector<const char*> deviceExtensions() const;
+
+        /// modify instance create info
+        /// @param createInfo original create info
+        /// @param finish function to call after modification
+        void modifyInstanceCreateInfo(VkInstanceCreateInfo& createInfo,
+            const std::function<void(void)>& finish) const;
+        /// modify device create info
+        /// @param createInfo original create info
+        /// @param finish function to call after modification
+        void modifyDeviceCreateInfo(VkDeviceCreateInfo& createInfo,
+            const std::function<void(void)>& finish) const;
+
+        /// modify swapchain create info
+        /// @param vk vulkan instance
+        /// @param createInfo original create info
+        /// @param finish function to call after modification
+        void modifySwapchainCreateInfo(const vk::Vulkan& vk, VkSwapchainCreateInfoKHR& createInfo,
+            const std::function<void(void)>& finish) const;
+        /// create swapchain context
+        /// @param vk vulkan instance
+        /// @param swapchain swapchain handle
+        /// @param info swapchain info
+        void createSwapchainContext(const vk::Vulkan& vk, VkSwapchainKHR swapchain,
+            const SwapchainInfo& info);
+        /// get swapchain context
+        /// @param swapchain swapchain handle
+        /// @return swapchain context
+        /// @throws lsfgvk::error if not found
+        [[nodiscard]] Swapchain& getSwapchainContext(VkSwapchainKHR swapchain) {
+            const auto& it = this->swapchains.find(swapchain);
+            if (it == this->swapchains.end())
+                throw lsfgvk::error("swapchain context not found");
+
+            return it->second;
+        }
+        /// remove swapchain context
+        /// @param swapchain swapchain handle
+        void removeSwapchainContext(VkSwapchainKHR swapchain);
     private:
         Configuration config;
         std::optional<GameConf> active_profile;
 
         ls::lazy<lsfgvk::Instance> backend;
+        std::unordered_map<VkSwapchainKHR, Swapchain> swapchains;
     };
 
 }

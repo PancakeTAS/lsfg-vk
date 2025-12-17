@@ -25,12 +25,18 @@ namespace vk {
         PFN_vkGetPhysicalDeviceMemoryProperties GetPhysicalDeviceMemoryProperties;
         PFN_vkCreateDevice CreateDevice;
         PFN_vkGetDeviceProcAddr GetDeviceProcAddr;
+
+        // extension functions
+        PFN_vkGetPhysicalDeviceSurfaceCapabilitiesKHR GetPhysicalDeviceSurfaceCapabilitiesKHR;
     };
 
     /// initialize vulkan instance function pointers
     /// @param instance vulkan instance handle
     /// @param mpa function to get instance proc addresses
-    VulkanInstanceFuncs initVulkanInstanceFuncs(VkInstance instance, PFN_vkGetInstanceProcAddr mpa);
+    /// @param graphical whether the device is graphical (rather than compute)
+    /// @return initialized function pointers
+    VulkanInstanceFuncs initVulkanInstanceFuncs(VkInstance instance, PFN_vkGetInstanceProcAddr mpa,
+        bool graphical);
 
     using PhysicalDeviceSelector = const std::function<
         VkPhysicalDevice(
@@ -98,12 +104,18 @@ namespace vk {
         PFN_vkGetMemoryFdKHR GetMemoryFdKHR;
         PFN_vkImportSemaphoreFdKHR ImportSemaphoreFdKHR;
         PFN_vkGetSemaphoreFdKHR GetSemaphoreFdKHR;
+        PFN_vkCreateSwapchainKHR CreateSwapchainKHR;
+        PFN_vkGetSwapchainImagesKHR GetSwapchainImagesKHR;
+        PFN_vkDestroySwapchainKHR DestroySwapchainKHR;
     };
 
     /// initialize vulkan device function pointers
     /// @param fi instance function pointers
     /// @param device logical device handle
-    VulkanDeviceFuncs initVulkanDeviceFuncs(const VulkanInstanceFuncs& fi, VkDevice device);
+    /// @param graphical whether the device is graphical (rather than compute)
+    /// @return initialized function pointers
+    VulkanDeviceFuncs initVulkanDeviceFuncs(const VulkanInstanceFuncs& fi, VkDevice device,
+        bool graphical);
 
     /// vulkan version wrapper
     class version {
@@ -167,6 +179,9 @@ namespace vk {
         /// get the vulkan device
         /// @return the device handle
         [[nodiscard]] const auto& dev() const { return this->device.get(); }
+        /// get the physical device
+        /// @return the physical device handle
+        [[nodiscard]] VkPhysicalDevice physdev() const { return this->phys_dev; }
         /// get the command pool
         /// @return the command pool handle
         [[nodiscard]] const auto& cmdpool() const { return this->cmdPool.get(); }
@@ -181,6 +196,9 @@ namespace vk {
         /// @return true if fp16 is supported
         [[nodiscard]] bool supportsFP16() const { return this->fp16; }
 
+        /// get instance-level function pointers
+        /// @return the instance function pointers
+        [[nodiscard]] const auto& fi() const { return this->instance_funcs; }
         /// get device-level function pointers
         /// @return the device function pointers
         [[nodiscard]] const auto& df() const { return this->device_funcs; }
@@ -191,7 +209,7 @@ namespace vk {
         ls::owned_ptr<VkInstance> instance;
         VulkanInstanceFuncs instance_funcs;
 
-        VkPhysicalDevice physdev;
+        VkPhysicalDevice phys_dev;
         uint32_t queueFamilyIdx;
         bool fp16;
 

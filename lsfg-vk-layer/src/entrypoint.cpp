@@ -1,39 +1,19 @@
 #include "context/instance.hpp"
+#include "lsfg-vk-common/helpers/errors.hpp"
 #include "lsfg-vk-common/vulkan/vulkan.hpp"
 
-#include <algorithm>
-#include <cstddef>
 #include <cstdint>
 #include <exception>
 #include <iostream>
 #include <string>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
 #include <vulkan/vk_layer.h>
 #include <vulkan/vulkan_core.h>
 
 using namespace lsfgvk;
-
-namespace {
-    /// helper function to add required extensions
-    std::vector<const char*> add_extensions(const char* const* existingExtensions, size_t count,
-            const std::vector<const char*>& requiredExtensions) {
-        std::vector<const char*> extensions(count);
-        std::copy_n(existingExtensions, count, extensions.data());
-
-        for (const auto& requiredExtension : requiredExtensions) {
-            auto it = std::ranges::find_if(extensions,
-                [requiredExtension](const char* extension) {
-                    return std::string(extension) == std::string(requiredExtension);
-                });
-            if (it == extensions.end())
-                extensions.push_back(requiredExtension);
-        }
-
-        return extensions;
-    }
-}
 
 namespace {
     // global layer info initialized at layer negotiation
@@ -94,26 +74,25 @@ namespace {
             return VK_ERROR_INITIALIZATION_FAILED;
         }
 
-        auto extensions = add_extensions(
-            info->ppEnabledExtensionNames,
-            info->enabledExtensionCount,
-            layer_info->root.instanceExtensions());
-
-        VkInstanceCreateInfo newInfo = *info;
-        newInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
-        newInfo.ppEnabledExtensionNames = extensions.data();
-
-        auto res = vkCreateInstance(&newInfo, alloc, instance);
-        if (res == VK_ERROR_EXTENSION_NOT_PRESENT)
-            std::cerr << "lsfg-vk: required Vulkan instance extensions are not present. "
-                "Your GPU driver is not supported.\n";
-
-        if (res != VK_SUCCESS)
-            return res;
+        try {
+            VkInstanceCreateInfo newInfo = *info;
+            layer_info->root.modifyInstanceCreateInfo(newInfo,
+                [=, newInfo = &newInfo]() {
+                    auto res = vkCreateInstance(newInfo, alloc, instance);
+                    if (res != VK_SUCCESS)
+                        throw ls::vulkan_error(res, "vkCreateInstance() failed");
+                }
+            );
+        } catch (const ls::vulkan_error& e) {
+            if (e.error() == VK_ERROR_EXTENSION_NOT_PRESENT)
+                std::cerr << "lsfg-vk: required Vulkan instance extensions are not present. "
+                    "Your GPU driver is not supported.\n";
+            return e.error();
+        }
 
         instance_info = new InstanceInfo{
             .handle = *instance,
-            .funcs = vk::initVulkanInstanceFuncs(*instance, layer_info->GetInstanceProcAddr),
+            .funcs = vk::initVulkanInstanceFuncs(*instance, layer_info->GetInstanceProcAddr, true),
             .devices = {}
         };
         return VK_SUCCESS;
@@ -171,22 +150,21 @@ namespace {
         }
 
         // create device
-        auto extensions = add_extensions(
-            info->ppEnabledExtensionNames,
-            info->enabledExtensionCount,
-            layer_info->root.deviceExtensions());
-
-        VkDeviceCreateInfo newInfo = *info;
-        newInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
-        newInfo.ppEnabledExtensionNames = extensions.data();
-
-        auto res = instance_info->funcs.CreateDevice(physdev, &newInfo, alloc, device);
-        if (res == VK_ERROR_EXTENSION_NOT_PRESENT)
-            std::cerr << "lsfg-vk: required Vulkan device extensions are not present. "
-                "Your GPU driver is not supported.\n";
-
-        if (res != VK_SUCCESS)
-            return res;
+        try {
+            VkDeviceCreateInfo newInfo = *info;
+            layer_info->root.modifyDeviceCreateInfo(newInfo,
+                [=, newInfo = &newInfo]() {
+                    auto res = instance_info->funcs.CreateDevice(physdev, newInfo, alloc, device);
+                    if (res != VK_SUCCESS)
+                        throw ls::vulkan_error(res, "vkCreateDevice() failed");
+                }
+            );
+        } catch (const ls::vulkan_error& e) {
+            if (e.error() == VK_ERROR_EXTENSION_NOT_PRESENT)
+                std::cerr << "lsfg-vk: required Vulkan device extensions are not present. "
+                    "Your GPU driver is not supported.\n";
+            return e.error();
+        }
 
         // create layer instance
         try {
@@ -194,7 +172,8 @@ namespace {
                 *device,
                 vk::Vulkan(
                     instance_info->handle, *device, physdev,
-                    instance_info->funcs, vk::initVulkanDeviceFuncs(instance_info->funcs, *device),
+                    instance_info->funcs, vk::initVulkanDeviceFuncs(instance_info->funcs, *device,
+                        true),
                     true, setLoaderData
                 )
             );
@@ -260,30 +239,107 @@ namespace {
     }
 
     // get instance-level function pointers
-    PFN_vkVoidFunction myvkGetInstanceProcAddr(VkInstance instance, const char* pName) {
-        if (!pName) return nullptr;
+    PFN_vkVoidFunction myvkGetInstanceProcAddr(VkInstance instance, const char* name) {
+        if (!name) return nullptr;
 
-        if (std::string(pName) == "vkCreateInstance") // pre-instance function
+        if (std::string(name) == "vkCreateInstance") // pre-instance function
             return reinterpret_cast<PFN_vkVoidFunction>(myvkCreateInstance);
 
-        auto func = getProcAddr(pName);
+        auto func = getProcAddr(name);
         if (func) return func;
 
         if (!layer_info->GetInstanceProcAddr) return nullptr;
-        return layer_info->GetInstanceProcAddr(instance, pName);
+        return layer_info->GetInstanceProcAddr(instance, name);
     }
 
     // get device-level function pointers
-    PFN_vkVoidFunction myvkGetDeviceProcAddr(VkDevice device, const char* pName) {
-        if (!pName) return nullptr;
+    PFN_vkVoidFunction myvkGetDeviceProcAddr(VkDevice device, const char* name) {
+        if (!name) return nullptr;
 
-        auto func = getProcAddr(pName);
+        auto func = getProcAddr(name);
         if (func) return func;
 
         if (!instance_info->funcs.GetDeviceProcAddr) return nullptr;
-        return instance_info->funcs.GetDeviceProcAddr(device, pName);
+        return instance_info->funcs.GetDeviceProcAddr(device, name);
+    }
+}
+
+namespace {
+    VkResult myvkCreateSwapchainKHR(
+            VkDevice device,
+            const VkSwapchainCreateInfoKHR* info,
+            const VkAllocationCallbacks* alloc,
+            VkSwapchainKHR* swapchain) {
+        const auto& it = instance_info->devices.find(device);
+        if (it == instance_info->devices.end())
+            return VK_ERROR_INITIALIZATION_FAILED;
+
+        try {
+            // retire old swapchain
+            if (info->oldSwapchain)
+                layer_info->root.removeSwapchainContext(info->oldSwapchain);
+
+            layer_info->root.update(); // ensure config is up to date
+
+            // create swapchain
+            VkSwapchainCreateInfoKHR newInfo = *info;
+            layer_info->root.modifySwapchainCreateInfo(it->second, newInfo,
+                [=, newInfo = &newInfo]() {
+                    auto res = it->second.df().CreateSwapchainKHR(
+                        device, newInfo, alloc, swapchain);
+                    if (res != VK_SUCCESS)
+                        throw ls::vulkan_error(res, "vkCreateSwapchainKHR() failed");
+                }
+            );
+
+            // get all swapchain images
+            uint32_t imageCount{};
+            auto res = it->second.df().GetSwapchainImagesKHR(device, *swapchain,
+                &imageCount, nullptr);
+            if (res != VK_SUCCESS || imageCount == 0)
+                throw ls::vulkan_error(res, "vkGetSwapchainImagesKHR() failed");
+
+            std::vector<VkImage> swapchainImages(imageCount);
+            res = it->second.df().GetSwapchainImagesKHR(device, *swapchain,
+                &imageCount, swapchainImages.data());
+            if (res != VK_SUCCESS)
+                throw ls::vulkan_error(res, "vkGetSwapchainImagesKHR() failed");
+
+            // create lsfg-vk swapchain
+            layer_info->root.createSwapchainContext(it->second, *swapchain, {
+                .images = std::move(swapchainImages),
+                .format = newInfo.imageFormat,
+                .colorSpace = newInfo.imageColorSpace,
+                .extent = newInfo.imageExtent,
+                .presentMode = newInfo.presentMode
+            });
+
+            return res;
+        } catch (const ls::vulkan_error& e) {
+            std::cerr << "lsfg-vk: something went wrong during lsfg-vk swapchain creation:\n";
+            std::cerr << "- " << e.what() << '\n';
+            return e.error();
+        } catch (const std::exception& e) {
+            std::cerr << "lsfg-vk: something went wrong during lsfg-vk swapchain creation:\n";
+            std::cerr << "- " << e.what() << '\n';
+            return VK_ERROR_INITIALIZATION_FAILED;
+        }
     }
 
+    void myvkDestroySwapchainKHR(
+            VkDevice device,
+            VkSwapchainKHR swapchain,
+            const VkAllocationCallbacks* alloc) {
+        const auto& it = instance_info->devices.find(device);
+        if (it == instance_info->devices.end())
+            return;
+
+        // destroy lsfg-vk swapchain
+        layer_info->root.removeSwapchainContext(swapchain);
+
+        // destroy swapchain
+        it->second.df().DestroySwapchainKHR(device, swapchain, alloc);
+    }
 }
 
 /// Vulkan layer entrypoint
@@ -303,7 +359,9 @@ VkResult vkNegotiateLoaderLayerInterfaceVersion(VkNegotiateLayerInterface* pVers
                 { "vkCreateInstance", VKPTR(myvkCreateInstance) },
                 { "vkCreateDevice", VKPTR(myvkCreateDevice) },
                 { "vkDestroyDevice", VKPTR(myvkDestroyDevice) },
-                { "vkDestroyInstance", VKPTR(myvkDestroyInstance) }
+                { "vkDestroyInstance", VKPTR(myvkDestroyInstance) },
+                { "vkCreateSwapchainKHR", VKPTR(myvkCreateSwapchainKHR) },
+                { "vkDestroySwapchainKHR", VKPTR(myvkDestroySwapchainKHR) }
 #undef VKPTR
             },
             .root = layer::Root()
