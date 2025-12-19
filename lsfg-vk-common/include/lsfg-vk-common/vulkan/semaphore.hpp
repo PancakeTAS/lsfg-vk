@@ -16,6 +16,10 @@ namespace vk {
         /// @param fd optional file descriptor to import the semaphore from
         /// @throws ls::vulkan_error on failure
         Semaphore(const vk::Vulkan& vk, std::optional<int> fd = std::nullopt);
+
+        /// get the underlying VkSemaphore handle
+        /// @return the VkSemaphore handle
+        [[nodiscard]] const auto& handle() const { return *this->semaphore; }
     private:
         ls::owned_ptr<VkSemaphore> semaphore;
     };

@@ -52,7 +52,7 @@ Identification layer::identify() {
             if (!line.ends_with(".exe"))
                 continue;
 
-            size_t pos = line.find_first_of('/');
+            size_t pos = line.find_last_of('/');
             if (pos == std::string::npos) {
                 pos = line.find_last_of(' ');
                 if (pos == std::string::npos)

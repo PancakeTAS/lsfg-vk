@@ -63,11 +63,7 @@ namespace {
         cmdbuf.copyBufferToImage(vk, stagingbuf, image);
 
         const vk::TimelineSemaphore sema{vk, 0};
-        cmdbuf.submit(vk, sema, 1, sema, 2);
-
-        sema.signal(vk, 1);
-        if (!sema.wait(vk, 2))
-            throw std::runtime_error("image upload failed");
+        cmdbuf.submit(vk);
     }
 }
 

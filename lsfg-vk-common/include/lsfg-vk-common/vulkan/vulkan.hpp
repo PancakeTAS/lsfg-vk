@@ -66,6 +66,7 @@ namespace vk {
         PFN_vkBeginCommandBuffer BeginCommandBuffer;
         PFN_vkEndCommandBuffer EndCommandBuffer;
         PFN_vkCmdPipelineBarrier CmdPipelineBarrier;
+        PFN_vkCmdBlitImage CmdBlitImage;
         PFN_vkCmdClearColorImage CmdClearColorImage;
         PFN_vkCmdBindPipeline CmdBindPipeline;
         PFN_vkCmdBindDescriptorSets CmdBindDescriptorSets;
@@ -106,6 +107,8 @@ namespace vk {
         PFN_vkGetSemaphoreFdKHR GetSemaphoreFdKHR;
         PFN_vkCreateSwapchainKHR CreateSwapchainKHR;
         PFN_vkGetSwapchainImagesKHR GetSwapchainImagesKHR;
+        PFN_vkAcquireNextImageKHR AcquireNextImageKHR;
+        PFN_vkQueuePresentKHR QueuePresentKHR;
         PFN_vkDestroySwapchainKHR DestroySwapchainKHR;
     };
 

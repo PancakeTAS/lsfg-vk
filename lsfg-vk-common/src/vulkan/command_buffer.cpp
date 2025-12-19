@@ -6,11 +6,11 @@
 #include "lsfg-vk-common/vulkan/fence.hpp"
 #include "lsfg-vk-common/vulkan/image.hpp"
 #include "lsfg-vk-common/vulkan/shader.hpp"
-#include "lsfg-vk-common/vulkan/timeline_semaphore.hpp"
 #include "lsfg-vk-common/vulkan/vulkan.hpp"
 
 #include <cstdint>
 #include <optional>
+#include <utility>
 #include <vector>
 
 #include <vulkan/vulkan_core.h>
@@ -122,6 +122,54 @@ void CommandBuffer::dispatch(const vk::Vulkan& vk,
     vk.df().CmdDispatch(*this->commandBuffer, x, y, z);
 }
 
+void CommandBuffer::blitImage(const vk::Vulkan& vk,
+        const std::vector<vk::Barrier>& preBarriers,
+        std::pair<VkImage, VkImage> images, VkExtent2D extent,
+        const std::vector<vk::Barrier>& postBarriers) const {
+    vk.df().CmdPipelineBarrier(*this->commandBuffer,
+        VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
+        0,
+        0, nullptr,
+        0, nullptr,
+        static_cast<uint32_t>(preBarriers.size()), preBarriers.data()
+    );
+
+    const VkImageBlit region{
+        .srcSubresource = {
+            .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+            .layerCount = 1
+        },
+        .srcOffsets = {
+            { 0, 0, 0 },
+            { static_cast<int32_t>(extent.width),
+              static_cast<int32_t>(extent.height), 1 }
+        },
+        .dstSubresource = {
+            .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+            .layerCount = 1
+        },
+        .dstOffsets = {
+            { 0, 0, 0 },
+            { static_cast<int32_t>(extent.width),
+              static_cast<int32_t>(extent.height), 1 }
+        }
+    };
+    vk.df().CmdBlitImage(*this->commandBuffer,
+        images.first, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+        images.second, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+        1, &region,
+        VK_FILTER_NEAREST
+    );
+
+    vk.df().CmdPipelineBarrier(*this->commandBuffer,
+        VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+        0,
+        0, nullptr,
+        0, nullptr,
+        static_cast<uint32_t>(postBarriers.size()), postBarriers.data()
+    );
+}
+
 void CommandBuffer::copyBufferToImage(const vk::Vulkan& vk,
         const vk::Buffer& buffer, const vk::Image& image) const {
     const VkImageMemoryBarrier barrier{
@@ -163,33 +211,48 @@ void CommandBuffer::copyBufferToImage(const vk::Vulkan& vk,
     );
 }
 
-
 void CommandBuffer::submit(const vk::Vulkan& vk,
-        const vk::TimelineSemaphore& waitSemaphore, uint64_t waitValue,
-        const vk::TimelineSemaphore& signalSemaphore, uint64_t signalValue) const {
+        std::vector<VkSemaphore> waitSemaphores,
+        VkSemaphore waitTimelineSemaphore, uint64_t waitValue,
+        std::vector<VkSemaphore> signalSemaphores,
+        VkSemaphore signalTimelineSemaphore, uint64_t signalValue) const {
     auto res = vk.df().EndCommandBuffer(*this->commandBuffer);
     if (res != VK_SUCCESS)
         throw ls::vulkan_error(res, "vkEndCommandBuffer() failed");
 
+    // create arrays of semaphores and values
+    if (waitTimelineSemaphore)
+        waitSemaphores.push_back(waitTimelineSemaphore);
 
+    std::vector<uint64_t> waitValues(waitSemaphores.size(), 0);
+    waitValues.back() = waitValue;
+
+    if (signalTimelineSemaphore)
+        signalSemaphores.push_back(signalTimelineSemaphore);
+
+    std::vector<uint64_t> signalValues(signalSemaphores.size(), 0);
+    signalValues.back() = signalValue;
+
+    // create submit info
     const VkTimelineSemaphoreSubmitInfo timelineInfo{
         .sType = VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO,
-        .waitSemaphoreValueCount = 1,
-        .pWaitSemaphoreValues = &waitValue,
-        .signalSemaphoreValueCount = 1,
-        .pSignalSemaphoreValues = &signalValue
+        .waitSemaphoreValueCount = static_cast<uint32_t>(waitValues.size()),
+        .pWaitSemaphoreValues = waitValues.data(),
+        .signalSemaphoreValueCount = static_cast<uint32_t>(signalValues.size()),
+        .pSignalSemaphoreValues = signalValues.data()
     };
-    const VkPipelineStageFlags stage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+    std::vector<VkPipelineStageFlags> stages(waitSemaphores.size(),
+        VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT);
     const VkSubmitInfo submitInfo{
         .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
         .pNext = &timelineInfo,
-        .waitSemaphoreCount = 1,
-        .pWaitSemaphores = &waitSemaphore.handle(),
-        .pWaitDstStageMask = &stage,
+        .waitSemaphoreCount = static_cast<uint32_t>(waitSemaphores.size()),
+        .pWaitSemaphores = waitSemaphores.data(),
+        .pWaitDstStageMask = stages.data(),
         .commandBufferCount = 1,
         .pCommandBuffers = &*this->commandBuffer,
-        .signalSemaphoreCount = 1,
-        .pSignalSemaphores = &signalSemaphore.handle()
+        .signalSemaphoreCount = static_cast<uint32_t>(signalSemaphores.size()),
+        .pSignalSemaphores = signalSemaphores.data()
     };
     res = vk.df().QueueSubmit(vk.queue(), 1, &submitInfo, VK_NULL_HANDLE);
     if (res != VK_SUCCESS)

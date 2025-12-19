@@ -528,8 +528,8 @@ void Context::scheduleFrames() {
     this->beta1.render(ctx.vk, cmdbuf);
 
     cmdbuf.submit(this->ctx.vk,
-        this->syncSemaphore, this->idx,
-        this->prepassSemaphore, this->idx
+        {}, this->syncSemaphore.handle(), this->idx,
+        {}, this->prepassSemaphore.handle(), this->idx
     );
 
     this->idx++;
@@ -551,8 +551,8 @@ void Context::scheduleFrames() {
         pass.generate->render(ctx.vk, cmdbuf, this->fidx);
 
         cmdbuf.submit(this->ctx.vk,
-            this->prepassSemaphore, this->idx - 1,
-            this->syncSemaphore, this->idx + i
+            {}, this->prepassSemaphore.handle(), this->idx - 1,
+            {}, this->syncSemaphore.handle(), this->idx + i
         );
     }
 

@@ -1,7 +1,9 @@
 #include "context/instance.hpp"
 #include "lsfg-vk-common/helpers/errors.hpp"
+#include "lsfg-vk-common/helpers/pointers.hpp"
 #include "lsfg-vk-common/vulkan/vulkan.hpp"
 
+#include <cstddef>
 #include <cstdint>
 #include <exception>
 #include <iostream>
@@ -30,6 +32,7 @@ namespace {
         vk::VulkanInstanceFuncs funcs;
 
         std::unordered_map<VkDevice, vk::Vulkan> devices;
+        std::unordered_map<VkSwapchainKHR, ls::R<vk::Vulkan>> swapchains;
     }* instance_info;
 
     // create instance
@@ -276,8 +279,13 @@ namespace {
 
         try {
             // retire old swapchain
-            if (info->oldSwapchain)
+            if (info->oldSwapchain) {
+                const auto& mapping = instance_info->swapchains.find(info->oldSwapchain);
+                if (mapping != instance_info->swapchains.end())
+                    instance_info->swapchains.erase(mapping);
+
                 layer_info->root.removeSwapchainContext(info->oldSwapchain);
+            }
 
             layer_info->root.update(); // ensure config is up to date
 
@@ -314,6 +322,9 @@ namespace {
                 .presentMode = newInfo.presentMode
             });
 
+            instance_info->swapchains.emplace(*swapchain,
+                ls::R<vk::Vulkan>(it->second));
+
             return res;
         } catch (const ls::vulkan_error& e) {
             std::cerr << "lsfg-vk: something went wrong during lsfg-vk swapchain creation:\n";
@@ -326,6 +337,51 @@ namespace {
         }
     }
 
+    VkResult myvkQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR* info) {
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunsafe-buffer-usage"
+        VkResult result = VK_SUCCESS;
+
+        // present each swapchain
+        for (size_t i = 0; i < info->swapchainCount; i++) {
+            const auto& swapchain = info->pSwapchains[i]; // NOLINT (array index)
+
+            const auto& it = instance_info->swapchains.find(swapchain);
+            if (it == instance_info->swapchains.end())
+                return VK_ERROR_INITIALIZATION_FAILED;
+
+            try {
+                std::vector<VkSemaphore> waitSemaphores;
+                waitSemaphores.reserve(info->waitSemaphoreCount);
+
+                for (size_t j = 0; j < info->waitSemaphoreCount; j++)
+                    waitSemaphores.push_back(info->pWaitSemaphores[j]); // NOLINT (array index)
+
+                auto& context = layer_info->root.getSwapchainContext(swapchain);
+                result = context.present(it->second,
+                    queue, swapchain,
+                    const_cast<void*>(info->pNext),
+                    info->pImageIndices[i], // NOLINT (array index)
+                    { waitSemaphores.begin(), waitSemaphores.end() }
+                );
+            } catch (const ls::vulkan_error& e) {
+                std::cerr << "lsfg-vk: something went wrong during lsfg-vk swapchain presentation:\n";
+                std::cerr << "- " << e.what() << '\n';
+                result = e.error();
+            } catch (const std::exception& e) {
+                std::cerr << "lsfg-vk: something went wrong during lsfg-vk swapchain presentation:\n";
+                std::cerr << "- " << e.what() << '\n';
+                result = VK_ERROR_UNKNOWN;
+            }
+
+            if (result != VK_SUCCESS && info->pResults)
+                info->pResults[i] = result; // NOLINT (array index)
+        }
+
+        return result;
+#pragma clang diagnostic pop
+    }
+
     void myvkDestroySwapchainKHR(
             VkDevice device,
             VkSwapchainKHR swapchain,
@@ -334,7 +390,10 @@ namespace {
         if (it == instance_info->devices.end())
             return;
 
-        // destroy lsfg-vk swapchain
+        const auto& mapping = instance_info->swapchains.find(swapchain);
+        if (mapping != instance_info->swapchains.end())
+            instance_info->swapchains.erase(mapping);
+
         layer_info->root.removeSwapchainContext(swapchain);
 
         // destroy swapchain
@@ -361,6 +420,7 @@ VkResult vkNegotiateLoaderLayerInterfaceVersion(VkNegotiateLayerInterface* pVers
                 { "vkDestroyDevice", VKPTR(myvkDestroyDevice) },
                 { "vkDestroyInstance", VKPTR(myvkDestroyInstance) },
                 { "vkCreateSwapchainKHR", VKPTR(myvkCreateSwapchainKHR) },
+                { "vkQueuePresentKHR", VKPTR(myvkQueuePresentKHR) },
                 { "vkDestroySwapchainKHR", VKPTR(myvkDestroySwapchainKHR) }
 #undef VKPTR
             },

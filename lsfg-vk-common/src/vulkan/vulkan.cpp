@@ -320,6 +320,7 @@ VulkanDeviceFuncs vk::initVulkanDeviceFuncs(const VulkanInstanceFuncs& f, VkDevi
         .BeginCommandBuffer = dpa<PFN_vkBeginCommandBuffer>(f, d, "vkBeginCommandBuffer"),
         .EndCommandBuffer = dpa<PFN_vkEndCommandBuffer>(f, d, "vkEndCommandBuffer"),
         .CmdPipelineBarrier = dpa<PFN_vkCmdPipelineBarrier>(f, d, "vkCmdPipelineBarrier"),
+        .CmdBlitImage = dpa<PFN_vkCmdBlitImage>(f, d, "vkCmdBlitImage"),
         .CmdClearColorImage = dpa<PFN_vkCmdClearColorImage>(f, d, "vkCmdClearColorImage"),
         .CmdBindPipeline = dpa<PFN_vkCmdBindPipeline>(f, d, "vkCmdBindPipeline"),
         .CmdBindDescriptorSets = dpa<PFN_vkCmdBindDescriptorSets>(f, d, "vkCmdBindDescriptorSets"),
@@ -367,6 +368,10 @@ VulkanDeviceFuncs vk::initVulkanDeviceFuncs(const VulkanInstanceFuncs& f, VkDevi
             dpa<PFN_vkCreateSwapchainKHR>(f, d, "vkCreateSwapchainKHR") : nullptr,
         .GetSwapchainImagesKHR = graphical ?
             dpa<PFN_vkGetSwapchainImagesKHR>(f, d, "vkGetSwapchainImagesKHR") : nullptr,
+        .AcquireNextImageKHR = graphical ?
+            dpa<PFN_vkAcquireNextImageKHR>(f, d, "vkAcquireNextImageKHR") : nullptr,
+        .QueuePresentKHR = graphical ?
+            dpa<PFN_vkQueuePresentKHR>(f, d, "vkQueuePresentKHR") : nullptr,
         .DestroySwapchainKHR = graphical ?
             dpa<PFN_vkDestroySwapchainKHR>(f, d, "vkDestroySwapchainKHR") : nullptr
     };
