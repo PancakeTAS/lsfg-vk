@@ -3,6 +3,7 @@
 #include "../extraction/shader_registry.hpp"
 #include "lsfg-vk-common/helpers/pointers.hpp"
 #include "lsfg-vk-common/vulkan/buffer.hpp"
+#include "lsfg-vk-common/vulkan/descriptor_pool.hpp"
 #include "lsfg-vk-common/vulkan/sampler.hpp"
 #include "lsfg-vk-common/vulkan/vulkan.hpp"
 
@@ -19,6 +20,8 @@ namespace ls {
     struct Ctx {
         ls::R<const vk::Vulkan> vk; // safe back reference
         ls::R<const extr::ShaderRegistry> shaders; // safe back reference
+
+        vk::DescriptorPool pool;
 
         vk::Buffer constantBuffer;
         std::vector<vk::Buffer> constantBuffers;

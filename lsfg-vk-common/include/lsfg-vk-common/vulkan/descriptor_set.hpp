@@ -3,6 +3,7 @@
 #include "../helpers/pointers.hpp"
 #include "buffer.hpp"
 #include "image.hpp"
+#include "descriptor_pool.hpp"
 #include "sampler.hpp"
 #include "shader.hpp"
 #include "vulkan.hpp"
@@ -17,6 +18,7 @@ namespace vk {
     public:
         /// create a descriptor set
         /// @param vk the vulkan instance
+        /// @param pool the descriptor pool to allocate from
         /// @param shader the shader module this descriptor set is for
         /// @param sampledImages the sampled images to bind
         /// @param storageImages the storage images to bind
@@ -24,7 +26,7 @@ namespace vk {
         /// @param buffers the buffers to bind
         /// @throws ls::vulkan_error on failure
         DescriptorSet(const vk::Vulkan& vk,
-            const vk::Shader& shader,
+            const vk::DescriptorPool& pool, const vk::Shader& shader,
             const std::vector<ls::R<const vk::Image>>& sampledImages,
             const std::vector<ls::R<const vk::Image>>& storageImages,
             const std::vector<ls::R<const vk::Sampler>>& samplers,

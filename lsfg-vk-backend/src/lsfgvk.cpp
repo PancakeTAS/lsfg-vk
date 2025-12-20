@@ -1,6 +1,7 @@
 #include "lsfg-vk-backend/lsfgvk.hpp"
 #include "extraction/dll_reader.hpp"
 #include "extraction/shader_registry.hpp"
+#include "helpers/limits.hpp"
 #include "helpers/utils.hpp"
 #include "lsfg-vk-common/helpers/errors.hpp"
 #include "lsfg-vk-common/helpers/pointers.hpp"
@@ -343,6 +344,7 @@ namespace {
             return {
                 .vk = std::ref(vk),
                 .shaders = std::ref(shaders),
+                .pool{vk, ls::calculateDescriptorPoolLimits(count, perf)},
                 .constantBuffer{vk,
                     ls::getDefaultConstantBuffer(0, 1, hdr, flow)},
                 .constantBuffers{std::move(constantBuffers)},

@@ -41,7 +41,7 @@ Delta0::Delta0(const ls::Ctx& ctx, size_t idx,
             .sampler(ctx.bnwSampler)
             .sampler(ctx.eabSampler)
             .buffer(ctx.constantBuffers.at(idx))
-            .build(ctx.vk, shaders.at(0)));
+            .build(ctx.vk, ctx.pool, shaders.at(0)));
 
     this->sets1.reserve(3);
     for (size_t i = 0; i < 3; i++)
@@ -54,7 +54,7 @@ Delta0::Delta0(const ls::Ctx& ctx, size_t idx,
             .sampler(ctx.bnwSampler)
             .sampler(ctx.eabSampler)
             .buffer(ctx.constantBuffers.at(idx))
-            .build(ctx.vk, shaders.at(5)));
+            .build(ctx.vk, ctx.pool, shaders.at(5)));
 
     // store dispatch extents
     this->dispatchExtent = ls::add_shift_extent(extent, 7, 3);

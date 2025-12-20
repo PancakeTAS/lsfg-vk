@@ -35,7 +35,7 @@ Alpha1::Alpha1(const ls::Ctx& ctx,
             .sampleds(sourceImages)
             .storages(this->images.at(i))
             .sampler(ctx.bnbSampler)
-            .build(ctx.vk, shaders.alpha.at(3)));
+            .build(ctx.vk, ctx.pool, shaders.alpha.at(3)));
 
     // store dispatch extents
     this->dispatchExtent = ls::add_shift_extent(quarterExtent, 7, 3);

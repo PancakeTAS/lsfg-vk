@@ -188,9 +188,6 @@ namespace vk {
         /// get the command pool
         /// @return the command pool handle
         [[nodiscard]] const auto& cmdpool() const { return this->cmdPool.get(); }
-        /// get the descriptor pool
-        /// @return the descriptor pool handle
-        [[nodiscard]] const auto& descpool() const { return this->descPool.get(); }
         /// get the compute queue
         /// @return the compute queue handle
         [[nodiscard]] const auto& queue() const { return this->computeQueue; }
@@ -223,6 +220,5 @@ namespace vk {
         VkQueue computeQueue;
 
         ls::owned_ptr<VkCommandPool> cmdPool;
-        ls::owned_ptr<VkDescriptorPool> descPool;
     };
 }

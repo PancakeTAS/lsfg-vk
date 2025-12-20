@@ -27,7 +27,7 @@ active_in = [ # see the wiki for more info
     'vkcube',
     'vkcubepp'
 ]
-gpu = 'NVIDIA GeForce RTX 5080' # see the wiki for more info
+# gpu = 'NVIDIA GeForce RTX 5080' # see the wiki for more info
 multiplier = 4
 flow_scale = 0.85
 performance_mode = true

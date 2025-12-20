@@ -2,6 +2,7 @@
 #include "lsfg-vk-common/helpers/errors.hpp"
 #include "lsfg-vk-common/helpers/pointers.hpp"
 #include "lsfg-vk-common/vulkan/buffer.hpp"
+#include "lsfg-vk-common/vulkan/descriptor_pool.hpp"
 #include "lsfg-vk-common/vulkan/image.hpp"
 #include "lsfg-vk-common/vulkan/sampler.hpp"
 #include "lsfg-vk-common/vulkan/shader.hpp"
@@ -9,6 +10,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <iostream>
 #include <vector>
 
 #include <vulkan/vulkan_core.h>
@@ -18,13 +20,13 @@ using namespace vk;
 namespace {
     /// create a descriptor set
     ls::owned_ptr<VkDescriptorSet> createDescriptorSet(const vk::Vulkan& vk,
-            const vk::Shader& shader) {
+            const vk::DescriptorPool& pool, const vk::Shader& shader) {
         VkDescriptorSet handle{};
 
         auto* layout = shader.descriptorlayout();
         const VkDescriptorSetAllocateInfo setInfo{
             .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
-            .descriptorPool = vk.descpool(),
+            .descriptorPool = pool.handle(),
             .descriptorSetCount = 1,
             .pSetLayouts = &layout
         };
@@ -34,7 +36,7 @@ namespace {
 
         return ls::owned_ptr<VkDescriptorSet>(
             new VkDescriptorSet(handle),
-            [dev = vk.dev(), pool = vk.descpool(), defunc = vk.df().FreeDescriptorSets](
+            [dev = vk.dev(), pool = pool.handle(), defunc = vk.df().FreeDescriptorSets](
                 VkDescriptorSet& commandBufferModule
             ) {
                 defunc(dev, pool, 1, &commandBufferModule);
@@ -44,12 +46,12 @@ namespace {
 }
 
 DescriptorSet::DescriptorSet(const vk::Vulkan& vk,
-            const vk::Shader& shader,
+            const vk::DescriptorPool& pool, const vk::Shader& shader,
             const std::vector<ls::R<const vk::Image>>& sampledImages,
             const std::vector<ls::R<const vk::Image>>& storageImages,
             const std::vector<ls::R<const vk::Sampler>>& samplers,
             const std::vector<ls::R<const vk::Buffer>>& buffers)
-        : descriptorSet(createDescriptorSet(vk, shader)) {
+        : descriptorSet(createDescriptorSet(vk, pool, shader)) {
     // update descriptor set
     const size_t bindingCount =
         samplers.size()

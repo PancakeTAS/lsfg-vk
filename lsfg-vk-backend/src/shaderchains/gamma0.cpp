@@ -35,7 +35,7 @@ Gamma0::Gamma0(const ls::Ctx& ctx, size_t idx,
             .sampler(ctx.bnwSampler)
             .sampler(ctx.eabSampler)
             .buffer(ctx.constantBuffers.at(idx))
-            .build(ctx.vk, shader));
+            .build(ctx.vk, ctx.pool, shader));
 
     // store dispatch extents
     this->dispatchExtent = ls::add_shift_extent(extent, 7, 3);

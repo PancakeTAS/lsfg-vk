@@ -37,17 +37,17 @@ Alpha0::Alpha0(const ls::Ctx& ctx,
         .sampled(sourceImage)
         .storages(this->tempImages0)
         .sampler(ctx.bnbSampler)
-        .build(ctx.vk, shaders.alpha.at(0)));
+        .build(ctx.vk, ctx.pool, shaders.alpha.at(0)));
     this->sets.emplace_back(ls::ManagedShaderBuilder()
         .sampleds(this->tempImages0)
         .storages(this->tempImages1)
         .sampler(ctx.bnbSampler)
-        .build(ctx.vk, shaders.alpha.at(1)));
+        .build(ctx.vk, ctx.pool, shaders.alpha.at(1)));
     this->sets.emplace_back(ls::ManagedShaderBuilder()
         .sampleds(this->tempImages1)
         .storages(this->images)
         .sampler(ctx.bnbSampler)
-        .build(ctx.vk, shaders.alpha.at(2)));
+        .build(ctx.vk, ctx.pool, shaders.alpha.at(2)));
 
     // store dispatch extents
     this->dispatchExtent0 = ls::add_shift_extent(halfExtent, 7, 3);

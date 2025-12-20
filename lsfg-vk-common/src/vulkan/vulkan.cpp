@@ -236,36 +236,6 @@ namespace {
             }
         );
     }
-
-    /// create a descriptor pool
-    ls::owned_ptr<VkDescriptorPool> createDescriptorPool(const VulkanDeviceFuncs& fd,
-            VkDevice device) {
-        VkDescriptorPool handle{};
-
-        const std::array<VkDescriptorPoolSize, 4> poolCounts{{ // FIXME: arbitrary limits
-            { .type = VK_DESCRIPTOR_TYPE_SAMPLER, .descriptorCount = 4096 },
-            { .type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, .descriptorCount = 4096 },
-            { .type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, .descriptorCount = 4096 },
-            { .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, .descriptorCount = 4096 }
-        }};
-        const VkDescriptorPoolCreateInfo descpoolInfo{
-            .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
-            .flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT,
-            .maxSets = 16384,
-            .poolSizeCount = static_cast<uint32_t>(poolCounts.size()),
-            .pPoolSizes = poolCounts.data()
-        };
-        auto res = fd.CreateDescriptorPool(device, &descpoolInfo, nullptr, &handle);
-        if (res != VK_SUCCESS)
-            throw ls::vulkan_error(res, "vkCreateDescriptorPool() failed");
-
-        return ls::owned_ptr<VkDescriptorPool>(
-            new VkDescriptorPool(handle),
-            [dev = device, defunc = fd.DestroyDescriptorPool](VkDescriptorPool& pool) {
-                defunc(dev, pool, nullptr);
-            }
-        );
-    }
 }
 
 /// initialize vulkan instance function pointers
@@ -410,9 +380,6 @@ Vulkan::Vulkan(const std::string& appName, version appVersion,
     cmdPool(createCommandPool(this->device_funcs,
         *this->device,
         this->queueFamilyIdx
-    )),
-    descPool(createDescriptorPool(this->device_funcs,
-        *this->device
     )) {
 }
 
@@ -437,9 +404,6 @@ Vulkan::Vulkan(VkInstance instance, VkDevice device,
     cmdPool(createCommandPool(this->device_funcs,
         *this->device,
         this->queueFamilyIdx
-    )),
-    descPool(createDescriptorPool(this->device_funcs,
-        *this->device
     )) {
 }
 

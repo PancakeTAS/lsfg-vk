@@ -2,6 +2,7 @@
 
 #include "lsfg-vk-common/helpers/pointers.hpp"
 #include "lsfg-vk-common/vulkan/command_buffer.hpp"
+#include "lsfg-vk-common/vulkan/descriptor_pool.hpp"
 #include "lsfg-vk-common/vulkan/descriptor_set.hpp"
 #include "lsfg-vk-common/vulkan/shader.hpp"
 
@@ -80,9 +81,11 @@ namespace ls {
 
         /// build the managed shader
         /// @param vk the vulkan instance
+        /// @param pool the descriptor pool to use
         /// @param shader the shader to use
         /// @returns the built managed shader
-        [[nodiscard]] ManagedShader build(const vk::Vulkan& vk, const vk::Shader& shader) const;
+        [[nodiscard]] ManagedShader build(const vk::Vulkan& vk,
+            const vk::DescriptorPool& pool, const vk::Shader& shader) const;
     private:
         std::vector<ls::R<const vk::Image>> sampledImages;
         std::vector<ls::R<const vk::Image>> storageImages;

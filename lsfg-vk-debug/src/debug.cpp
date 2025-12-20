@@ -95,7 +95,7 @@ int main() {
 
     std::vector<vk::Image> destimgs{};
     std::vector<int> destfds{};
-    for (size_t i = 0; i < 1; i++) {
+    for (size_t i = 0; i < 4; i++) {
         int fd{};
         destimgs.emplace_back(vk,
             EXTENT, VK_FORMAT_R8G8B8A8_UNORM,

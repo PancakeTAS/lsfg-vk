@@ -32,7 +32,7 @@ Beta0::Beta0(const ls::Ctx& ctx,
             .sampleds(sourceImages.at(i % 3))
             .storages(this->images)
             .sampler(ctx.bnwSampler)
-            .build(ctx.vk, shader));
+            .build(ctx.vk, ctx.pool, shader));
 
     // store dispatch extents
     this->dispatchExtent = ls::add_shift_extent(extent, 7, 3);

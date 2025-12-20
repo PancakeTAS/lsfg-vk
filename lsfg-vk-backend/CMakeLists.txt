@@ -1,6 +1,7 @@
 set(BACKEND_SOURCES
     "src/extraction/dll_reader.cpp"
     "src/extraction/shader_registry.cpp"
+    "src/helpers/limits.cpp"
     "src/helpers/managed_shader.cpp"
     "src/helpers/utils.cpp"
     "src/shaderchains/alpha0.cpp"

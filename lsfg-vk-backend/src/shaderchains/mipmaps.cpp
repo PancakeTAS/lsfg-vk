@@ -29,13 +29,13 @@ Mipmaps::Mipmaps(const ls::Ctx& ctx,
         .storages(this->images)
         .sampler(ctx.bnbSampler)
         .buffer(ctx.constantBuffer)
-        .build(ctx.vk, ctx.shaders.get().mipmaps));
+        .build(ctx.vk, ctx.pool, ctx.shaders.get().mipmaps));
     this->sets.emplace_back(ls::ManagedShaderBuilder()
         .sampled(sourceImages.second)
         .storages(this->images)
         .sampler(ctx.bnbSampler)
         .buffer(ctx.constantBuffer)
-        .build(ctx.vk, ctx.shaders.get().mipmaps));
+        .build(ctx.vk, ctx.pool, ctx.shaders.get().mipmaps));
 
     // store dispatch extent
     this->dispatchExtent = ls::add_shift_extent(ctx.flowExtent, 63, 6);

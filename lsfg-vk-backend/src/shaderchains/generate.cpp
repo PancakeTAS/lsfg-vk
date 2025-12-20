@@ -31,7 +31,7 @@ Generate::Generate(const ls::Ctx& ctx, size_t idx,
         .sampler(ctx.bnbSampler)
         .sampler(ctx.eabSampler)
         .buffer(ctx.constantBuffers.at(idx))
-        .build(ctx.vk, ctx.shaders.get().generate));
+        .build(ctx.vk, ctx.pool, ctx.shaders.get().generate));
     this->sets.emplace_back(ls::ManagedShaderBuilder()
         .sampled(sourceImages.first)
         .sampled(sourceImages.second)
@@ -42,7 +42,7 @@ Generate::Generate(const ls::Ctx& ctx, size_t idx,
         .sampler(ctx.bnbSampler)
         .sampler(ctx.eabSampler)
         .buffer(ctx.constantBuffers.at(idx))
-        .build(ctx.vk, ctx.shaders.get().generate));
+        .build(ctx.vk, ctx.pool, ctx.shaders.get().generate));
 
     // store dispatch extent
     this->dispatchExtent = ls::add_shift_extent(ctx.sourceExtent, 15, 4);

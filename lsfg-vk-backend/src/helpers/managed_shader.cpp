@@ -1,6 +1,7 @@
 #include "managed_shader.hpp"
 #include "lsfg-vk-common/vulkan/buffer.hpp"
 #include "lsfg-vk-common/vulkan/command_buffer.hpp"
+#include "lsfg-vk-common/vulkan/descriptor_pool.hpp"
 #include "lsfg-vk-common/vulkan/image.hpp"
 #include "lsfg-vk-common/vulkan/sampler.hpp"
 #include "lsfg-vk-common/vulkan/shader.hpp"
@@ -66,7 +67,7 @@ ManagedShaderBuilder& ManagedShaderBuilder::buffer(const vk::Buffer& buffer) {
 }
 
 ManagedShader ManagedShaderBuilder::build(const vk::Vulkan& vk,
-        const vk::Shader& shader) const {
+        const vk::DescriptorPool& pool, const vk::Shader& shader) const {
     std::vector<vk::Barrier> barriers;
     barriers.reserve(this->storageImages.size() + this->sampledImages.size());
 
@@ -102,7 +103,7 @@ ManagedShader ManagedShaderBuilder::build(const vk::Vulkan& vk,
     return {
         std::ref(shader),
         std::move(barriers),
-        vk::DescriptorSet(vk, shader,
+        vk::DescriptorSet(vk, pool, shader,
             this->sampledImages,
             this->storageImages,
             this->imageSamplers,

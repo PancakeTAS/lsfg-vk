@@ -37,17 +37,17 @@ Gamma1::Gamma1(const ls::Ctx& ctx, size_t idx,
         .sampleds(sourceImages)
         .storages(this->tempImages0)
         .sampler(ctx.bnbSampler)
-        .build(ctx.vk, shaders.at(1)));
+        .build(ctx.vk, ctx.pool, shaders.at(1)));
     this->sets.emplace_back(ls::ManagedShaderBuilder()
         .sampleds(this->tempImages0)
         .storages(this->tempImages1)
         .sampler(ctx.bnbSampler)
-        .build(ctx.vk, shaders.at(2)));
+        .build(ctx.vk, ctx.pool, shaders.at(2)));
     this->sets.emplace_back(ls::ManagedShaderBuilder()
         .sampleds(this->tempImages1)
         .storages(this->tempImages0)
         .sampler(ctx.bnbSampler)
-        .build(ctx.vk, shaders.at(3)));
+        .build(ctx.vk, ctx.pool, shaders.at(3)));
     this->sets.emplace_back(ls::ManagedShaderBuilder()
         .sampleds(this->tempImages0)
         .sampled(additionalInput0)
@@ -56,7 +56,7 @@ Gamma1::Gamma1(const ls::Ctx& ctx, size_t idx,
         .sampler(ctx.bnbSampler)
         .sampler(ctx.eabSampler)
         .buffer(ctx.constantBuffers.at(idx))
-        .build(ctx.vk, shaders.at(4)));
+        .build(ctx.vk, ctx.pool, shaders.at(4)));
 
     // store dispatch extents
     this->dispatchExtent = ls::add_shift_extent(extent, 7, 3);
