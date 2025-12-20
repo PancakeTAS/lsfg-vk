@@ -101,16 +101,18 @@ Swapchain::Swapchain(const vk::Vulkan& vk, lsfgvk::Instance& backend,
     );
 
     this->renderCommandBuffer.emplace(vk);
-    this->renderSemaphore.emplace(vk, 0);
+    this->renderFence.emplace(vk);
     for (size_t i = 0; i < this->destinationImages.size(); i++) {
         this->passes.emplace_back(RenderPass {
             .commandBuffer = vk::CommandBuffer(vk),
-            .acquireSemaphore = vk::Semaphore(vk),
-            .postCopySemaphore = {
-                vk::Semaphore(vk),
-                vk::Semaphore(vk)
-            }
+            .acquireSemaphore = vk::Semaphore(vk)
         });
+    }
+    for (size_t i = 0; i < this->info.images.size(); i++) {
+        this->postCopySemaphores.emplace_back(
+            vk::Semaphore(vk),
+            vk::Semaphore(vk)
+        );
     }
 }
 
@@ -119,7 +121,7 @@ VkResult Swapchain::present(const vk::Vulkan& vk,
         void* next_chain, uint32_t imageIdx,
         const std::vector<VkSemaphore>& semaphores) {
     const auto& swapchainImage = this->info.images.at(imageIdx);
-    const auto& sourceImage = this->sourceImages.at(this->fidx++ % 2);
+    const auto& sourceImage = this->sourceImages.at(this->fidx % 2);
 
     // schedule frame generation
     this->instance.get().scheduleFrames(this->ctx.get());
@@ -142,8 +144,9 @@ VkResult Swapchain::present(const vk::Vulkan& vk,
     }
 
     // wait for completion of previous frame
-    auto no_timeout = this->renderSemaphore->wait(vk, this->idx - 1, 150UL * 1000 * 1000); // 150ms
-    if (!no_timeout) throw ls::vulkan_error(VK_TIMEOUT, "vkWaitSemaphores() failed");
+    if (this->fidx && !this->renderFence->wait(vk, 150UL * 1000 * 1000))
+        throw ls::vulkan_error(VK_TIMEOUT, "vkWaitForFences() failed");
+    this->renderFence->reset(vk);
 
     // copy swapchain image into backend source image
     auto& cmdbuf = this->renderCommandBuffer.emplace(vk);
@@ -180,16 +183,13 @@ VkResult Swapchain::present(const vk::Vulkan& vk,
         {}, this->syncSemaphore->handle(), this->idx++
     );
 
+    uint32_t lastAqImageIdx{};
     for (size_t i = 0; i < this->destinationImages.size(); i++) {
         auto& destinationImage = this->destinationImages.at(i);
         auto& pass = this->passes.at(i);
         pass = RenderPass {
             .commandBuffer = vk::CommandBuffer(vk),
-            .acquireSemaphore = vk::Semaphore(vk),
-            .postCopySemaphore = {
-                vk::Semaphore(vk),
-                vk::Semaphore(vk)
-            }
+            .acquireSemaphore = vk::Semaphore(vk)
         };
 
         // acquire swapchain image
@@ -203,6 +203,13 @@ VkResult Swapchain::present(const vk::Vulkan& vk,
             throw ls::vulkan_error(res, "vkAcquireNextImageKHR() failed");
 
         const auto& aquiredSwapchainImage = this->info.images.at(aqImageIdx);
+
+        // create post-copy semaphores
+        auto& postCopySemaphores = this->postCopySemaphores.at(aqImageIdx);
+        postCopySemaphores = {
+            vk::Semaphore(vk),
+            vk::Semaphore(vk)
+        };
 
         // copy backend destination image into swapchain image
         auto& cmdbuf = pass.commandBuffer;
@@ -236,18 +243,19 @@ VkResult Swapchain::present(const vk::Vulkan& vk,
 
         std::vector<VkSemaphore> waitSemaphores{ pass.acquireSemaphore.handle() };
         if (i) { // non-first pass
-            const auto& prevPass = this->passes.at(i - 1);
-            waitSemaphores.push_back(prevPass.postCopySemaphore.second.handle());
+            const auto& prevPCS = this->postCopySemaphores.at(lastAqImageIdx);
+            waitSemaphores.push_back(prevPCS.second.handle());
         }
 
         const std::vector<VkSemaphore> signalSemaphores{
-            pass.postCopySemaphore.first.handle(),
-            pass.postCopySemaphore.second.handle()
+            postCopySemaphores.first.handle(),
+            postCopySemaphores.second.handle()
         };
 
         cmdbuf.submit(vk,
             waitSemaphores, this->syncSemaphore->handle(), this->idx,
-            signalSemaphores, this->renderSemaphore->handle(), this->idx
+            signalSemaphores, nullptr, 0,
+            i == this->destinationImages.size() - 1 ? this->renderFence->handle() : nullptr
         );
 
         // present swapchain image
@@ -255,7 +263,7 @@ VkResult Swapchain::present(const vk::Vulkan& vk,
             .sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
             .pNext = i ? nullptr : next_chain,
             .waitSemaphoreCount = 1,
-            .pWaitSemaphores = &pass.postCopySemaphore.first.handle(),
+            .pWaitSemaphores = &postCopySemaphores.first.handle(),
             .swapchainCount = 1,
             .pSwapchains = &swapchain,
             .pImageIndices = &aqImageIdx,
@@ -265,15 +273,16 @@ VkResult Swapchain::present(const vk::Vulkan& vk,
         if (res != VK_SUCCESS && res != VK_SUBOPTIMAL_KHR)
             throw ls::vulkan_error(res, "vkQueuePresentKHR() failed");
 
+        lastAqImageIdx = aqImageIdx;
         this->idx++;
     }
 
     // present original swapchain image
-    const auto& lastPass = this->passes.at(this->destinationImages.size() - 1);
+    auto& lastPCS = this->postCopySemaphores.at(lastAqImageIdx);
     const VkPresentInfoKHR presentInfo{
         .sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
         .waitSemaphoreCount = 1,
-        .pWaitSemaphores = &lastPass.postCopySemaphore.second.handle(),
+        .pWaitSemaphores = &lastPCS.second.handle(),
         .swapchainCount = 1,
         .pSwapchains = &swapchain,
         .pImageIndices = &imageIdx,
@@ -282,5 +291,8 @@ VkResult Swapchain::present(const vk::Vulkan& vk,
     if (res != VK_SUCCESS && res != VK_SUBOPTIMAL_KHR)
         throw ls::vulkan_error(res, "vkQueuePresentKHR() failed");
 
+    this->postCopySemaphores.at(imageIdx).second = std::move(lastPCS.second);
+
+    this->fidx++;
     return res;
 }

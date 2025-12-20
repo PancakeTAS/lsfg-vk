@@ -4,6 +4,7 @@
 #include "lsfg-vk-backend/lsfgvk.hpp"
 #include "lsfg-vk-common/helpers/pointers.hpp"
 #include "lsfg-vk-common/vulkan/command_buffer.hpp"
+#include "lsfg-vk-common/vulkan/fence.hpp"
 #include "lsfg-vk-common/vulkan/image.hpp"
 #include "lsfg-vk-common/vulkan/semaphore.hpp"
 #include "lsfg-vk-common/vulkan/timeline_semaphore.hpp"
@@ -11,6 +12,7 @@
 
 #include <cstdint>
 #include <optional>
+#include <utility>
 #include <vector>
 
 #include <vulkan/vulkan_core.h>
@@ -61,13 +63,13 @@ namespace lsfgvk::layer {
         ls::lazy<vk::TimelineSemaphore> syncSemaphore;
 
         std::optional<vk::CommandBuffer> renderCommandBuffer;
-        ls::lazy<vk::TimelineSemaphore> renderSemaphore;
+        ls::lazy<vk::Fence> renderFence;
         struct RenderPass {
             vk::CommandBuffer commandBuffer;
             vk::Semaphore acquireSemaphore;
-            std::pair<vk::Semaphore, vk::Semaphore> postCopySemaphore;
         };
         std::vector<RenderPass> passes;
+        std::vector<std::pair<vk::Semaphore, vk::Semaphore>> postCopySemaphores;
 
         ls::R<lsfgvk::Instance> instance;
         ls::owned_ptr<ls::R<lsfgvk::Context>> ctx;

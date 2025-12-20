@@ -101,6 +101,11 @@ namespace ls {
         }
         owned_ptr& operator=(owned_ptr&& other) noexcept {
             if (this != &other) {
+                if (this->ptr) {
+                    if (deleter) deleter(*this->ptr);
+                    delete this->ptr;
+                }
+
                 ptr = other.ptr;
                 other.ptr = nullptr;
                 deleter = std::move(other.deleter);

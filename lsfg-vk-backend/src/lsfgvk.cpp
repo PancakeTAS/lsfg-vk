@@ -7,6 +7,7 @@
 #include "lsfg-vk-common/helpers/pointers.hpp"
 #include "lsfg-vk-common/vulkan/buffer.hpp"
 #include "lsfg-vk-common/vulkan/command_buffer.hpp"
+#include "lsfg-vk-common/vulkan/fence.hpp"
 #include "lsfg-vk-common/vulkan/image.hpp"
 #include "lsfg-vk-common/vulkan/timeline_semaphore.hpp"
 #include "lsfg-vk-common/vulkan/vulkan.hpp"
@@ -98,7 +99,7 @@ namespace lsfgvk {
         size_t fidx{0}; // real frame index
 
         std::vector<vk::CommandBuffer> cmdbufs; // TODO: ponder reuse
-        size_t cmdbuf_idx{0};
+        vk::Fence cmdbufFence;
 
         ls::Ctx ctx;
 
@@ -377,7 +378,8 @@ ContextImpl::ContextImpl(const InstanceImpl& instance,
         blackImage(createBlackImage(instance.getVulkan())),
         syncSemaphore(importTimelineSemaphore(instance.getVulkan(), syncFd)),
         prepassSemaphore(createPrepassSemaphore(instance.getVulkan())),
-        cmdbufs(createCommandBuffers(instance.getVulkan(), 16)),
+        cmdbufs(createCommandBuffers(instance.getVulkan(), destFds.size() + 1)),
+        cmdbufFence(instance.getVulkan()),
         ctx(createCtx(instance, extent, hdr, flow, perf, destFds.size())),
         mipmaps(ctx, sourceImages),
         alpha0{
@@ -517,8 +519,13 @@ void Instance::scheduleFrames(Context& context) {
 }
 
 void Context::scheduleFrames() {
+    // wait for previous pre-pass to complete
+    if (this->fidx && !this->cmdbufFence.wait(this->ctx.vk))
+        throw lsfgvk::error("Timeout waiting for previous frame to complete");
+    this->cmdbufFence.reset(this->ctx.vk);
+
     // schedule pre-pass
-    vk::CommandBuffer& cmdbuf = this->cmdbufs.at(this->cmdbuf_idx++ % this->cmdbufs.size());
+    vk::CommandBuffer& cmdbuf = this->cmdbufs.at(0);
     cmdbuf = vk::CommandBuffer(this->ctx.vk);
 
     this->mipmaps.render(ctx.vk, cmdbuf, this->fidx);
@@ -538,7 +545,7 @@ void Context::scheduleFrames() {
 
     // schedule main passes
     for (size_t i = 0; i < this->destImages.size(); i++) {
-        vk::CommandBuffer& cmdbuf = this->cmdbufs.at(this->cmdbuf_idx++ % this->cmdbufs.size());
+        vk::CommandBuffer& cmdbuf = this->cmdbufs.at(i + 1);
         cmdbuf = vk::CommandBuffer(this->ctx.vk);
 
         const auto& pass = this->passes.at(i);
@@ -554,7 +561,8 @@ void Context::scheduleFrames() {
 
         cmdbuf.submit(this->ctx.vk,
             {}, this->prepassSemaphore.handle(), this->idx - 1,
-            {}, this->syncSemaphore.handle(), this->idx + i
+            {}, this->syncSemaphore.handle(), this->idx + i,
+            i == this->destImages.size() - 1 ? this->cmdbufFence.handle() : nullptr
         );
     }
 
