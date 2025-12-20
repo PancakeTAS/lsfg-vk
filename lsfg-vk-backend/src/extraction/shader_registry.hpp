@@ -20,7 +20,7 @@ namespace extr {
     /// shader registry struct
     struct ShaderRegistry {
         vk::Shader mipmaps;
-        vk::Shader generate;
+        vk::Shader generate, generate_hdr;
         Shaders quality;
         Shaders performance;
 
