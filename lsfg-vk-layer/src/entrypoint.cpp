@@ -365,8 +365,11 @@ namespace {
                     { waitSemaphores.begin(), waitSemaphores.end() }
                 );
             } catch (const ls::vulkan_error& e) {
-                std::cerr << "lsfg-vk: something went wrong during lsfg-vk swapchain presentation:\n";
-                std::cerr << "- " << e.what() << '\n';
+                if (e.error() != VK_ERROR_OUT_OF_DATE_KHR) {
+                    std::cerr << "lsfg-vk: something went wrong during lsfg-vk swapchain presentation:\n";
+                    std::cerr << "- " << e.what() << '\n';
+                } // silently swallow out-of-date errors
+
                 result = e.error();
             } catch (const std::exception& e) {
                 std::cerr << "lsfg-vk: something went wrong during lsfg-vk swapchain presentation:\n";
