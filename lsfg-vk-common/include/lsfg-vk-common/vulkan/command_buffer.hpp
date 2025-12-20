@@ -25,6 +25,11 @@ namespace vk {
         /// @throws ls::vulkan_error on failure
         CommandBuffer(const vk::Vulkan& vk);
 
+        /// begin recording commands
+        /// @param vk the vulkan instance
+        /// @throws ls::vulkan_error on failure
+        void begin(const vk::Vulkan& vk) const;
+
         /// blit an image
         /// @param vk the vulkan instance
         /// @param preBarriers image memory barriers to apply before blit
@@ -62,6 +67,11 @@ namespace vk {
         /// @param image the destination image
         void copyBufferToImage(const vk::Vulkan& vk,
             const vk::Buffer& buffer, const vk::Image& image) const;
+
+        /// end recording commands
+        /// @param vk the vulkan instance
+        /// @throws ls::vulkan_error on failure
+        void end(const vk::Vulkan& vk) const;
 
         /// submit the command buffer
         /// @param vk the vulkan instance

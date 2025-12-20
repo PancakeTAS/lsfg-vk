@@ -98,7 +98,7 @@ namespace lsfgvk {
         size_t idx{1};
         size_t fidx{0}; // real frame index
 
-        std::vector<vk::CommandBuffer> cmdbufs; // TODO: ponder reuse
+        std::vector<vk::CommandBuffer> cmdbufs;
         vk::Fence cmdbufFence;
 
         ls::Ctx ctx;
@@ -510,7 +510,9 @@ ContextImpl::ContextImpl(const InstanceImpl& instance,
     }
 
     const vk::CommandBuffer cmdbuf{ctx.vk};
+    cmdbuf.begin(ctx.vk);
     cmdbuf.insertBarriers(ctx.vk, barriers);
+    cmdbuf.end(ctx.vk);
     cmdbuf.submit(ctx.vk); // wait for completion
 }
 
@@ -545,8 +547,8 @@ void Context::scheduleFrames() {
     this->cmdbufFence.reset(this->ctx.vk);
 
     // schedule pre-pass
-    vk::CommandBuffer& cmdbuf = this->cmdbufs.at(0);
-    cmdbuf = vk::CommandBuffer(this->ctx.vk);
+    const auto& cmdbuf = this->cmdbufs.at(0);
+    cmdbuf.begin(ctx.vk);
 
     this->mipmaps.render(ctx.vk, cmdbuf, this->fidx);
     for (size_t i = 0; i < 7; ++i) {
@@ -556,6 +558,7 @@ void Context::scheduleFrames() {
     this->beta0.render(ctx.vk, cmdbuf, this->fidx);
     this->beta1.render(ctx.vk, cmdbuf);
 
+    cmdbuf.end(ctx.vk);
     cmdbuf.submit(this->ctx.vk,
         {}, this->syncSemaphore.handle(), this->idx,
         {}, this->prepassSemaphore.handle(), this->idx
@@ -565,8 +568,8 @@ void Context::scheduleFrames() {
 
     // schedule main passes
     for (size_t i = 0; i < this->destImages.size(); i++) {
-        vk::CommandBuffer& cmdbuf = this->cmdbufs.at(i + 1);
-        cmdbuf = vk::CommandBuffer(this->ctx.vk);
+        const auto& cmdbuf = this->cmdbufs.at(i + 1);
+        cmdbuf.begin(ctx.vk);
 
         const auto& pass = this->passes.at(i);
         for (size_t j = 0; j < 7; j++) {
@@ -579,6 +582,7 @@ void Context::scheduleFrames() {
         }
         pass.generate->render(ctx.vk, cmdbuf, this->fidx);
 
+        cmdbuf.end(ctx.vk);
         cmdbuf.submit(this->ctx.vk,
             {}, this->prepassSemaphore.handle(), this->idx - 1,
             {}, this->syncSemaphore.handle(), this->idx + i,

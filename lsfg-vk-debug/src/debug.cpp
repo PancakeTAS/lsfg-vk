@@ -60,7 +60,9 @@ namespace {
             VK_BUFFER_USAGE_TRANSFER_SRC_BIT};
 
         const vk::CommandBuffer cmdbuf{vk};
+        cmdbuf.begin(vk);
         cmdbuf.copyBufferToImage(vk, stagingbuf, image);
+        cmdbuf.end(vk);
 
         const vk::TimelineSemaphore sema{vk, 0};
         cmdbuf.submit(vk);
