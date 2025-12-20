@@ -161,8 +161,7 @@ namespace {
         const VkPhysicalDeviceVulkan12Features requestedFeaturesVulkan12{
             .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES,
             .shaderFloat16 = fp16,
-            .timelineSemaphore = VK_TRUE,
-            .vulkanMemoryModel = VK_TRUE
+            .timelineSemaphore = VK_TRUE
         };
         const VkDeviceQueueCreateInfo requestedQueueInfo{
             .sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
@@ -173,7 +172,6 @@ namespace {
         const std::vector<const char*> requestedExtensions{
             VK_KHR_EXTERNAL_MEMORY_FD_EXTENSION_NAME,
             VK_KHR_EXTERNAL_SEMAPHORE_FD_EXTENSION_NAME,
-            VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME, // TODO: possibly attempt to get rid of
             VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME
         };
         const VkDeviceCreateInfo deviceInfo{
