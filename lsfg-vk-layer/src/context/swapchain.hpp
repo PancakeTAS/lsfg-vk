@@ -11,7 +11,6 @@
 #include "lsfg-vk-common/vulkan/vulkan.hpp"
 
 #include <cstdint>
-#include <optional>
 #include <utility>
 #include <vector>
 
@@ -62,7 +61,7 @@ namespace lsfgvk::layer {
         std::vector<vk::Image> destinationImages;
         ls::lazy<vk::TimelineSemaphore> syncSemaphore;
 
-        std::optional<vk::CommandBuffer> renderCommandBuffer;
+        ls::lazy<vk::CommandBuffer> renderCommandBuffer;
         ls::lazy<vk::Fence> renderFence;
         struct RenderPass {
             vk::CommandBuffer commandBuffer;

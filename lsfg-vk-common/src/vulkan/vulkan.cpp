@@ -223,6 +223,7 @@ namespace {
 
         const VkCommandPoolCreateInfo cmdpoolInfo{
             .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
+            .flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
             .queueFamilyIndex = cfi
         };
         auto res = fd.CreateCommandPool(device, &cmdpoolInfo, nullptr, &handle);

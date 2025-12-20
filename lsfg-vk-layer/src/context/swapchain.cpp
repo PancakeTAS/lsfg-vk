@@ -152,7 +152,8 @@ VkResult Swapchain::present(const vk::Vulkan& vk,
     this->renderFence->reset(vk);
 
     // copy swapchain image into backend source image
-    auto& cmdbuf = this->renderCommandBuffer.emplace(vk);
+    const auto& cmdbuf = *this->renderCommandBuffer;
+    cmdbuf.begin(vk);
 
     cmdbuf.blitImage(vk,
         {
@@ -181,24 +182,16 @@ VkResult Swapchain::present(const vk::Vulkan& vk,
         }
     );
 
+    cmdbuf.end(vk);
     cmdbuf.submit(vk,
         semaphores, nullptr, 0,
         {}, this->syncSemaphore->handle(), this->idx++
     );
 
     for (size_t i = 0; i < this->destinationImages.size(); i++) {
+        auto& postCopySemaphores = this->postCopySemaphores.at(this->idx % this->postCopySemaphores.size());
         auto& destinationImage = this->destinationImages.at(i);
         auto& pass = this->passes.at(i);
-        pass = RenderPass {
-            .commandBuffer = vk::CommandBuffer(vk),
-            .acquireSemaphore = vk::Semaphore(vk)
-        };
-
-        auto& postCopySemaphores = this->postCopySemaphores.at(this->idx % this->postCopySemaphores.size());
-        postCopySemaphores = {
-            vk::Semaphore(vk),
-            vk::Semaphore(vk)
-        };
 
         // acquire swapchain image
         uint32_t aqImageIdx{};
@@ -214,6 +207,7 @@ VkResult Swapchain::present(const vk::Vulkan& vk,
 
         // copy backend destination image into swapchain image
         auto& cmdbuf = pass.commandBuffer;
+        cmdbuf.begin(vk);
 
         cmdbuf.blitImage(vk,
             {
@@ -253,6 +247,7 @@ VkResult Swapchain::present(const vk::Vulkan& vk,
             postCopySemaphores.second.handle()
         };
 
+        cmdbuf.end(vk);
         cmdbuf.submit(vk,
             waitSemaphores, this->syncSemaphore->handle(), this->idx,
             signalSemaphores, nullptr, 0,
