@@ -38,9 +38,9 @@ Beta0::Beta0(const ls::Ctx& ctx,
     this->dispatchExtent = ls::add_shift_extent(extent, 7, 3);
 }
 
-void Beta0::prepare(const vk::Vulkan& vk, const vk::CommandBuffer& cmd) const {
+void Beta0::prepare(std::vector<VkImage>& images) const {
     for (const auto& img : this->images)
-        cmd.prepareImage(vk, img);
+        images.push_back(img.handle());
 }
 
 void Beta0::render(const vk::Vulkan& vk, const vk::CommandBuffer& cmd, size_t idx) const {

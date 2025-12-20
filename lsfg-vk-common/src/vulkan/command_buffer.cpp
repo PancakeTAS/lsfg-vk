@@ -62,38 +62,16 @@ CommandBuffer::CommandBuffer(const vk::Vulkan& vk)
         throw ls::vulkan_error(res, "vkBeginCommandBuffer() failed");
 }
 
-void CommandBuffer::prepareImage(const vk::Vulkan& vk,
-        const vk::Image& image,
-        const std::optional<VkClearColorValue>& clearColor) const {
-    const VkImageMemoryBarrier barrier{
-        .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
-        .srcAccessMask = VK_ACCESS_NONE,
-        .dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT,
-        .oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-        .newLayout = VK_IMAGE_LAYOUT_GENERAL,
-        .image = image.handle(),
-        .subresourceRange = {
-            .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-            .levelCount = 1,
-            .layerCount = 1
-        }
-    };
+
+void CommandBuffer::insertBarriers(const vk::Vulkan& vk,
+        const std::vector<vk::Barrier>& barriers) const {
     vk.df().CmdPipelineBarrier(*this->commandBuffer,
-        VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
+        VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
         0,
         0, nullptr,
         0, nullptr,
-        1, &barrier
+        static_cast<uint32_t>(barriers.size()), barriers.data()
     );
-
-    if (clearColor.has_value()) {
-        vk.df().CmdClearColorImage(*this->commandBuffer,
-            image.handle(),
-            VK_IMAGE_LAYOUT_GENERAL,
-            &clearColor.value(),
-            1, &barrier.subresourceRange
-        );
-    }
 }
 
 void CommandBuffer::dispatch(const vk::Vulkan& vk,

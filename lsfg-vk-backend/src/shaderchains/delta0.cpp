@@ -60,11 +60,11 @@ Delta0::Delta0(const ls::Ctx& ctx, size_t idx,
     this->dispatchExtent = ls::add_shift_extent(extent, 7, 3);
 }
 
-void Delta0::prepare(const vk::Vulkan& vk, const vk::CommandBuffer& cmd) const {
+void Delta0::prepare(std::vector<VkImage>& images) const {
     for (const auto& img : this->images0)
-        cmd.prepareImage(vk, img);
+        images.push_back(img.handle());
     for (const auto& img : this->images1)
-        cmd.prepareImage(vk, img);
+        images.push_back(img.handle());
 }
 
 void Delta0::render(const vk::Vulkan& vk, const vk::CommandBuffer& cmd, size_t idx) const {

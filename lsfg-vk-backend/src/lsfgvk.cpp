@@ -472,25 +472,45 @@ ContextImpl::ContextImpl(const InstanceImpl& instance,
     }
 
     // initialize all images
-    const vk::CommandBuffer cmdbuf{ctx.vk};
-    cmdbuf.prepareImage(ctx.vk, this->blackImage);
-    mipmaps.prepare(ctx.vk, cmdbuf);
+    std::vector<VkImage> images{};
+    images.push_back(this->blackImage.handle());
+    mipmaps.prepare(images);
     for (size_t i = 0; i < 7; ++i) {
-        alpha0.at(i).prepare(ctx.vk, cmdbuf);
-        alpha1.at(i).prepare(ctx.vk, cmdbuf);
+        alpha0.at(i).prepare(images);
+        alpha1.at(i).prepare(images);
     }
-    beta0.prepare(ctx.vk, cmdbuf);
-    beta1.prepare(ctx.vk, cmdbuf);
+    beta0.prepare(images);
+    beta1.prepare(images);
     for (const auto& pass : this->passes) {
         for (size_t i = 0; i < 7; ++i) {
-            pass.gamma0.at(i).prepare(ctx.vk, cmdbuf);
-            pass.gamma1.at(i).prepare(ctx.vk, cmdbuf);
+            pass.gamma0.at(i).prepare(images);
+            pass.gamma1.at(i).prepare(images);
 
             if (i < 4) continue;
-            pass.delta0.at(i - 4).prepare(ctx.vk, cmdbuf);
-            pass.delta1.at(i - 4).prepare(ctx.vk, cmdbuf);
+            pass.delta0.at(i - 4).prepare(images);
+            pass.delta1.at(i - 4).prepare(images);
         }
     }
+
+    std::vector<vk::Barrier> barriers{};
+    barriers.reserve(images.size());
+
+    for (const auto& image : images) {
+        barriers.emplace_back(vk::Barrier {
+            .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
+            .oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+            .newLayout = VK_IMAGE_LAYOUT_GENERAL,
+            .image = image,
+            .subresourceRange = {
+                .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+                .levelCount = 1,
+                .layerCount = 1
+            }
+        });
+    }
+
+    const vk::CommandBuffer cmdbuf{ctx.vk};
+    cmdbuf.insertBarriers(ctx.vk, barriers);
     cmdbuf.submit(ctx.vk); // wait for completion
 }
 

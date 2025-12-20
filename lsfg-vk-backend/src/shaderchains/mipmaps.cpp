@@ -41,9 +41,9 @@ Mipmaps::Mipmaps(const ls::Ctx& ctx,
     this->dispatchExtent = ls::add_shift_extent(ctx.flowExtent, 63, 6);
 }
 
-void Mipmaps::prepare(const vk::Vulkan& vk, const vk::CommandBuffer& cmd) const {
+void Mipmaps::prepare(std::vector<VkImage>& images) const {
     for (const auto& img : this->images)
-        cmd.prepareImage(vk, img);
+        images.push_back(img.handle());
 }
 
 void Mipmaps::render(const vk::Vulkan& vk, const vk::CommandBuffer& cmd, size_t idx) const {

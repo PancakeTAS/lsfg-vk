@@ -41,10 +41,10 @@ Alpha1::Alpha1(const ls::Ctx& ctx,
     this->dispatchExtent = ls::add_shift_extent(quarterExtent, 7, 3);
 }
 
-void Alpha1::prepare(const vk::Vulkan& vk, const vk::CommandBuffer& cmd) const {
+void Alpha1::prepare(std::vector<VkImage>& images) const {
     for (const auto& vec : this->images)
         for (const auto& img : vec)
-            cmd.prepareImage(vk, img);
+            images.push_back(img.handle());
 }
 
 void Alpha1::render(const vk::Vulkan& vk, const vk::CommandBuffer& cmd, size_t idx) const {

@@ -24,9 +24,8 @@ namespace chains {
             const std::pair<vk::Image, vk::Image>& sourceImages);
 
         /// prepare the shaderchain initially
-        /// @param vk the vulkan instance
-        /// @param cmd command buffer
-        void prepare(const vk::Vulkan& vk, const vk::CommandBuffer& cmd) const;
+        /// @param images vector to fill with image handles
+        void prepare(std::vector<VkImage>& images) const;
 
         /// render the mipmaps shaderchain
         /// @param vk the vulkan instance

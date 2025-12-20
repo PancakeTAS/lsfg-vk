@@ -62,13 +62,13 @@ Beta1::Beta1(const ls::Ctx& ctx,
     this->dispatchExtent1 = ls::add_shift_extent(extent, 31, 5);
 }
 
-void Beta1::prepare(const vk::Vulkan& vk, const vk::CommandBuffer& cmd) const {
+void Beta1::prepare(std::vector<VkImage>& images) const {
     for (size_t i = 0; i < 2; i++) {
-        cmd.prepareImage(vk, this->tempImages0.at(i));
-        cmd.prepareImage(vk, this->tempImages1.at(i));
+        images.push_back(this->tempImages0.at(i).handle());
+        images.push_back(this->tempImages1.at(i).handle());
     }
     for (const auto& img : this->images)
-        cmd.prepareImage(vk, img);
+        images.push_back(img.handle());
 }
 
 void Beta1::render(const vk::Vulkan& vk, const vk::CommandBuffer& cmd) const {

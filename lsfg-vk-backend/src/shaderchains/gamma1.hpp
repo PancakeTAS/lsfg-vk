@@ -29,9 +29,8 @@ namespace chains {
             const vk::Image& additionalInput1);
 
         /// prepare the shaderchain initially
-        /// @param vk the vulkan instance
-        /// @param cmd command buffer
-        void prepare(const vk::Vulkan& vk, const vk::CommandBuffer& cmd) const;
+        /// @param images vector to fill with image handles
+        void prepare(std::vector<VkImage>& images) const;
 
         /// render the gamma shaderchain
         /// @param vk the vulkan instance

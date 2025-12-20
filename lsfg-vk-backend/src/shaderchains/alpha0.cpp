@@ -54,16 +54,14 @@ Alpha0::Alpha0(const ls::Ctx& ctx,
     this->dispatchExtent1 = ls::add_shift_extent(quarterExtent, 7, 3);
 }
 
-void Alpha0::prepare(const vk::Vulkan& vk, const vk::CommandBuffer& cmd) const {
-    // TODO: find a way to batch prepare
-
+void Alpha0::prepare(std::vector<VkImage>& images) const {
     for (size_t i = 0; i < this->tempImages0.size(); i++) {
-        cmd.prepareImage(vk, this->tempImages0.at(i));
-        cmd.prepareImage(vk, this->tempImages1.at(i));
+        images.push_back(this->tempImages0.at(i).handle());
+        images.push_back(this->tempImages1.at(i).handle());
     }
 
     for (const auto& image : this->images)
-        cmd.prepareImage(vk, image);
+        images.push_back(image.handle());
 }
 
 void Alpha0::render(const vk::Vulkan& vk, const vk::CommandBuffer& cmd) const {

@@ -8,7 +8,6 @@
 #include "vulkan.hpp"
 
 #include <cstdint>
-#include <optional>
 #include <utility>
 #include <vector>
 
@@ -26,14 +25,6 @@ namespace vk {
         /// @throws ls::vulkan_error on failure
         CommandBuffer(const vk::Vulkan& vk);
 
-        /// initialize an image
-        /// @param vk the vulkan instance
-        /// @param image the image to initialize
-        /// @param clearColor optional clear color
-        void prepareImage(const vk::Vulkan& vk,
-            const vk::Image& image,
-            const std::optional<VkClearColorValue>& clearColor = std::nullopt) const;
-
         /// blit an image
         /// @param vk the vulkan instance
         /// @param preBarriers image memory barriers to apply before blit
@@ -45,6 +36,13 @@ namespace vk {
             const std::vector<vk::Barrier>& preBarriers,
             std::pair<VkImage, VkImage> images, VkExtent2D extent,
             const std::vector<vk::Barrier>& postBarriers) const;
+
+        /// insert a bunch of barriers
+        /// @param vk the vulkan instance
+        /// @param barriers image memory barriers to apply
+        /// throws ls::vulkan_error on failure
+        void insertBarriers(const vk::Vulkan& vk,
+            const std::vector<vk::Barrier>& barriers) const;
 
         /// dispatch a compute shader
         /// @param vk the vulkan instance
