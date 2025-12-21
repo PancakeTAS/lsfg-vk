@@ -4,7 +4,11 @@
 
 #include <array>
 #include <bitset>
+#include <cstddef>
 #include <cstdint>
+#include <filesystem>
+#include <fstream>
+#include <ios>
 #include <optional>
 #include <string>
 #include <vector>
@@ -235,6 +239,47 @@ namespace {
             }
         );
     }
+
+    /// try to read the pipeline cache from file
+    void readCacheFile(const std::filesystem::path& cachefile, std::vector<uint8_t>& data) {
+        std::ifstream file(cachefile, std::ios::binary | std::ios::ate);
+        if (!file.is_open())
+            return;
+
+        const std::streamsize size = file.tellg();
+        data = std::vector<uint8_t>(static_cast<size_t>(size));
+
+        file.seekg(0, std::ios::beg);
+        if (!file.read(reinterpret_cast<char*>(data.data()), size))
+            return;
+    }
+
+    /// create a pipeline cache
+    ls::owned_ptr<VkPipelineCache> createPipelineCache(
+            const VulkanDeviceFuncs& fd, VkDevice device,
+            const std::optional<std::filesystem::path>& cachefile) {
+        VkPipelineCache handle{};
+
+        std::vector<uint8_t> cache{};
+        if (cachefile && std::filesystem::exists(*cachefile))
+            readCacheFile(*cachefile, cache);
+
+        const VkPipelineCacheCreateInfo pipelineCacheInfo{
+            .sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO,
+            .initialDataSize = cache.size(),
+            .pInitialData = cache.data()
+        };
+        auto res = fd.CreatePipelineCache(device, &pipelineCacheInfo, nullptr, &handle);
+        if (res != VK_SUCCESS)
+            throw ls::vulkan_error(res, "vkCreatePipelineCache() failed");
+
+        return ls::owned_ptr<VkPipelineCache>(
+            new VkPipelineCache(handle),
+            [dev = device, defunc = fd.DestroyPipelineCache](VkPipelineCache& cache) {
+                defunc(dev, cache, nullptr);
+            }
+        );
+    }
 }
 
 /// initialize vulkan instance function pointers
@@ -323,8 +368,10 @@ VulkanDeviceFuncs vk::initVulkanDeviceFuncs(const VulkanInstanceFuncs& f, VkDevi
             "vkDestroyDescriptorSetLayout"),
         .CreatePipelineLayout = dpa<PFN_vkCreatePipelineLayout>(f, d, "vkCreatePipelineLayout"),
         .DestroyPipelineLayout = dpa<PFN_vkDestroyPipelineLayout>(f, d, "vkDestroyPipelineLayout"),
-        .CreateComputePipelines = dpa<PFN_vkCreateComputePipelines>(f, d,
-            "vkCreateComputePipelines"),
+        .CreatePipelineCache = dpa<PFN_vkCreatePipelineCache>(f, d, "vkCreatePipelineCache"),
+        .DestroyPipelineCache = dpa<PFN_vkDestroyPipelineCache>(f, d, "vkDestroyPipelineCache"),
+        .GetPipelineCacheData = dpa<PFN_vkGetPipelineCacheData>(f, d, "vkGetPipelineCacheData"),
+        .CreateComputePipelines = dpa<PFN_vkCreateComputePipelines>(f, d, "vkCreateComputePipelines"),
         .DestroyPipeline = dpa<PFN_vkDestroyPipeline>(f, d, "vkDestroyPipeline"),
 
         .SignalSemaphoreKHR = dpa<PFN_vkSignalSemaphoreKHR>(f, d, "vkSignalSemaphoreKHR"),
@@ -350,7 +397,8 @@ Vulkan::Vulkan(const std::string& appName, version appVersion,
         const std::string& engineName, version engineVersion,
         PhysicalDeviceSelector selectPhysicalDevice,
         bool isGraphical,
-        std::optional<PFN_vkSetDeviceLoaderData> setLoaderData) :
+        std::optional<PFN_vkSetDeviceLoaderData> setLoaderData,
+        const std::optional<std::filesystem::path>& cachefile) :
     instance(createInstance(
         appName, appVersion,
         engineName, engineVersion
@@ -379,7 +427,11 @@ Vulkan::Vulkan(const std::string& appName, version appVersion,
     cmdPool(createCommandPool(this->device_funcs,
         *this->device,
         this->queueFamilyIdx
-    )) {
+    )),
+    pipelineCache(createPipelineCache(this->device_funcs,
+        *this->device, cachefile
+    )),
+    cachefile(cachefile) {
 }
 
 Vulkan::Vulkan(VkInstance instance, VkDevice device,
@@ -387,7 +439,8 @@ Vulkan::Vulkan(VkInstance instance, VkDevice device,
         VulkanInstanceFuncs instanceFuncs,
         VulkanDeviceFuncs deviceFuncs,
         bool isGraphical,
-        std::optional<PFN_vkSetDeviceLoaderData> setLoaderData) :
+        std::optional<PFN_vkSetDeviceLoaderData> setLoaderData,
+        const std::optional<std::filesystem::path>& cachefile) :
     instance(new VkInstance(instance)),
     instance_funcs(instanceFuncs),
     phys_dev(physdev),
@@ -403,7 +456,11 @@ Vulkan::Vulkan(VkInstance instance, VkDevice device,
     cmdPool(createCommandPool(this->device_funcs,
         *this->device,
         this->queueFamilyIdx
-    )) {
+    )),
+    pipelineCache(createPipelineCache(this->device_funcs,
+        *this->device, cachefile
+    )),
+    cachefile(cachefile) {
 }
 
 std::optional<uint32_t> Vulkan::findMemoryTypeIndex(
@@ -421,4 +478,32 @@ std::optional<uint32_t> Vulkan::findMemoryTypeIndex(
             return i;
 
     return std::nullopt;
+}
+
+void Vulkan::persistPipelineCache() const noexcept {
+    if (!this->cachefile)
+        return;
+
+    size_t cacheSize{};
+    auto res = this->device_funcs.GetPipelineCacheData(*this->device,
+        *this->pipelineCache,
+        &cacheSize, nullptr);
+    if (res != VK_SUCCESS)
+        return;
+
+    std::vector<uint8_t> cacheData(cacheSize);
+    res = this->device_funcs.GetPipelineCacheData(*this->device,
+        *this->pipelineCache,
+        &cacheSize, cacheData.data());
+    if (res != VK_SUCCESS)
+        return;
+
+    std::ofstream file(*this->cachefile, std::ios::binary | std::ios::trunc);
+    if (!file.is_open())
+        return;
+
+    file.write(reinterpret_cast<const char*>(cacheData.data()),
+        static_cast<std::streamsize>(cacheData.size()));
+    if (!file.good())
+        return;
 }

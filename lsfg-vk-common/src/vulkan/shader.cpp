@@ -132,11 +132,9 @@ namespace {
             .layout = pipelineLayout
         };
         auto res = vk.df().CreateComputePipelines(vk.dev(),
-            VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &handle);
+            vk.cache(), 1, &pipelineInfo, nullptr, &handle);
         if (res != VK_SUCCESS)
             throw ls::vulkan_error(res, "vkCreateComputePipelines() failed");
-
-        // TODO: ponder pipeline cache
 
         return ls::owned_ptr<VkPipeline>(
             new VkPipeline(handle),
