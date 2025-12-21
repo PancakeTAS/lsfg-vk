@@ -24,12 +24,12 @@ Beta0::Beta0(const ls::Ctx& ctx,
     // create descriptor sets
     const auto& shader = (ctx.perf ?
         ctx.shaders.get().performance : ctx.shaders.get().quality).beta.at(0);
-    this->sets.reserve(3);
-    for (size_t i = 0; i < 3; i++)
+    this->sets.reserve(sourceImages.size());
+    for (size_t i = 0; i < sourceImages.size(); i++)
         this->sets.emplace_back(ls::ManagedShaderBuilder()
-            .sampleds(sourceImages.at((i + 1) % 3))
-            .sampleds(sourceImages.at((i + 2) % 3))
-            .sampleds(sourceImages.at(i % 3))
+            .sampleds(sourceImages.at((i + (sourceImages.size() - 2)) % sourceImages.size()))
+            .sampleds(sourceImages.at((i + (sourceImages.size() - 1)) % sourceImages.size()))
+            .sampleds(sourceImages.at(i % sourceImages.size()))
             .storages(this->images)
             .sampler(ctx.bnwSampler)
             .build(ctx.vk, ctx.pool, shader));
@@ -44,5 +44,5 @@ void Beta0::prepare(std::vector<VkImage>& images) const {
 }
 
 void Beta0::render(const vk::Vulkan& vk, const vk::CommandBuffer& cmd, size_t idx) const {
-    this->sets[idx % 3].dispatch(vk, cmd, dispatchExtent);
+    this->sets[idx % this->sets.size()].dispatch(vk, cmd, dispatchExtent);
 }

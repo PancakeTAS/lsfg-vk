@@ -18,8 +18,9 @@ namespace chains {
     public:
         /// create a alpha shaderchain
         /// @param ctx context
+        /// @param temporal temporal count
         /// @param sourceImages source images
-        Alpha1(const ls::Ctx& ctx,
+        Alpha1(const ls::Ctx& ctx, size_t temporal,
             const std::vector<vk::Image>& sourceImages);
 
         /// prepare the shaderchain initially

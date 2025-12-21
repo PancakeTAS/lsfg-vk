@@ -31,11 +31,11 @@ Delta0::Delta0(const ls::Ctx& ctx, size_t idx,
     const auto& shaders = (ctx.perf ?
         ctx.shaders.get().performance : ctx.shaders.get().quality).delta;
 
-    this->sets0.reserve(3);
-    for (size_t i = 0; i < 3; i++)
+    this->sets0.reserve(sourceImages.size());
+    for (size_t i = 0; i < sourceImages.size(); i++)
         this->sets0.emplace_back(ls::ManagedShaderBuilder()
-            .sampleds(sourceImages.at((i + 2) % 3))
-            .sampleds(sourceImages.at(i % 3))
+            .sampleds(sourceImages.at((i + (sourceImages.size() - 1)) % sourceImages.size()))
+            .sampleds(sourceImages.at(i % sourceImages.size()))
             .sampled(additionalInput0)
             .storages(this->images0)
             .sampler(ctx.bnwSampler)
@@ -43,11 +43,11 @@ Delta0::Delta0(const ls::Ctx& ctx, size_t idx,
             .buffer(ctx.constantBuffers.at(idx))
             .build(ctx.vk, ctx.pool, shaders.at(0)));
 
-    this->sets1.reserve(3);
-    for (size_t i = 0; i < 3; i++)
+    this->sets1.reserve(sourceImages.size());
+    for (size_t i = 0; i < sourceImages.size(); i++)
         this->sets1.emplace_back(ls::ManagedShaderBuilder()
-            .sampleds(sourceImages.at((i + 2) % 3))
-            .sampleds(sourceImages.at(i % 3))
+            .sampleds(sourceImages.at((i + (sourceImages.size() - 1)) % sourceImages.size()))
+            .sampleds(sourceImages.at(i % sourceImages.size()))
             .sampled(additionalInput1)
             .sampled(additionalInput0)
             .storages(this->images1)
@@ -68,6 +68,6 @@ void Delta0::prepare(std::vector<VkImage>& images) const {
 }
 
 void Delta0::render(const vk::Vulkan& vk, const vk::CommandBuffer& cmd, size_t idx) const {
-    this->sets0[idx % 3].dispatch(vk, cmd, dispatchExtent);
-    this->sets1[idx % 3].dispatch(vk, cmd, dispatchExtent);
+    this->sets0[idx % this->sets0.size()].dispatch(vk, cmd, dispatchExtent);
+    this->sets1[idx % this->sets1.size()].dispatch(vk, cmd, dispatchExtent);
 }
