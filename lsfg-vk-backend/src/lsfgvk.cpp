@@ -392,13 +392,13 @@ ContextImpl::ContextImpl(const InstanceImpl& instance,
             chains::Alpha0(ctx, mipmaps.getImages().at(6))
         },
         alpha1{
-            chains::Alpha1(ctx, alpha0.at(0).getImages()),
-            chains::Alpha1(ctx, alpha0.at(1).getImages()),
-            chains::Alpha1(ctx, alpha0.at(2).getImages()),
-            chains::Alpha1(ctx, alpha0.at(3).getImages()),
-            chains::Alpha1(ctx, alpha0.at(4).getImages()),
-            chains::Alpha1(ctx, alpha0.at(5).getImages()),
-            chains::Alpha1(ctx, alpha0.at(6).getImages())
+            chains::Alpha1(ctx, 3, alpha0.at(0).getImages()),
+            chains::Alpha1(ctx, 2, alpha0.at(1).getImages()),
+            chains::Alpha1(ctx, 2, alpha0.at(2).getImages()),
+            chains::Alpha1(ctx, 2, alpha0.at(3).getImages()),
+            chains::Alpha1(ctx, 2, alpha0.at(4).getImages()),
+            chains::Alpha1(ctx, 2, alpha0.at(5).getImages()),
+            chains::Alpha1(ctx, 2, alpha0.at(6).getImages())
         },
         beta0(ctx, alpha1.at(0).getImages()),
         beta1(ctx, beta0.getImages()) {

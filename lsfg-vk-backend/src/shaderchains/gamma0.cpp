@@ -25,11 +25,11 @@ Gamma0::Gamma0(const ls::Ctx& ctx, size_t idx,
     // create descriptor sets
     const auto& shader = (ctx.perf ?
         ctx.shaders.get().performance : ctx.shaders.get().quality).gamma.at(0);
-    this->sets.reserve(3);
-    for (size_t i = 0; i < 3; i++)
+    this->sets.reserve(sourceImages.size());
+    for (size_t i = 0; i < sourceImages.size(); i++)
         this->sets.emplace_back(ls::ManagedShaderBuilder()
-            .sampleds(sourceImages.at((i + 2) % 3))
-            .sampleds(sourceImages.at(i % 3))
+            .sampleds(sourceImages.at((i + (sourceImages.size() - 1)) % sourceImages.size()))
+            .sampleds(sourceImages.at(i % sourceImages.size()))
             .sampled(additionalInput)
             .storages(this->images)
             .sampler(ctx.bnwSampler)
@@ -47,5 +47,5 @@ void Gamma0::prepare(std::vector<VkImage>& images) const {
 }
 
 void Gamma0::render(const vk::Vulkan& vk, const vk::CommandBuffer& cmd, size_t idx) const {
-    this->sets[idx % 3].dispatch(vk, cmd, dispatchExtent);
+    this->sets[idx % this->sets.size()].dispatch(vk, cmd, dispatchExtent);
 }
