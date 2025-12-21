@@ -26,6 +26,7 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <cstdlib>
 #include <exception>
 #include <filesystem>
 #include <functional>
@@ -175,13 +176,27 @@ Instance::Instance(
 }
 
 namespace {
+    /// find the cache file path
+    std::filesystem::path findCacheFilePath() {
+        const char* xdgCacheHome = std::getenv("XDG_CACHE_HOME");
+        if (xdgCacheHome && *xdgCacheHome != '\0')
+            return std::filesystem::path(xdgCacheHome) / "lsfg-vk_pipeline_cache.bin";
+
+        const char* home = std::getenv("HOME");
+        if (home && *home != '\0')
+            return std::filesystem::path(home) / ".cache" / "lsfg-vk_pipeline_cache.bin";
+
+        return{"/tmp/lsfg-vk_pipeline_cache.bin"};
+    }
     /// create a Vulkan instance
     vk::Vulkan createVulkanInstance(vk::PhysicalDeviceSelector selectPhysicalDevice) {
         try {
             return{
                 "lsfg-vk", vk::version{1, 1, 0},
                 "lsfg-vk-engine", vk::version{1, 1, 0},
-                selectPhysicalDevice
+                selectPhysicalDevice,
+                false, std::nullopt,
+                findCacheFilePath()
             };
         } catch (const std::exception& e) {
             throw lsfgvk::error("Unable to initialize Vulkan", e);
@@ -239,6 +254,7 @@ InstanceImpl::InstanceImpl(vk::PhysicalDeviceSelector selectPhysicalDevice,
 #ifdef LSFGVK__RENDERDOC_INTEGRATION
     this->renderdoc = loadRenderDocIntegration();
 #endif
+    vk.persistPipelineCache(); // will silently fail
 }
 
 Context& Instance::openContext(std::pair<int, int> sourceFds, const std::vector<int>& destFds,

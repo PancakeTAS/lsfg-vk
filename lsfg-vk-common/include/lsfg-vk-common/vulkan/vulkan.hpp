@@ -4,6 +4,7 @@
 
 #include <bitset>
 #include <cstdint>
+#include <filesystem>
 #include <functional>
 #include <optional>
 #include <string>
@@ -96,6 +97,9 @@ namespace vk {
         PFN_vkDestroyDescriptorSetLayout DestroyDescriptorSetLayout;
         PFN_vkCreatePipelineLayout CreatePipelineLayout;
         PFN_vkDestroyPipelineLayout DestroyPipelineLayout;
+        PFN_vkCreatePipelineCache CreatePipelineCache;
+        PFN_vkDestroyPipelineCache DestroyPipelineCache;
+        PFN_vkGetPipelineCacheData GetPipelineCacheData;
         PFN_vkCreateComputePipelines CreateComputePipelines;
         PFN_vkDestroyPipeline DestroyPipeline;
 
@@ -147,12 +151,15 @@ namespace vk {
         /// @param engineVersion version of the engine
         /// @param selectPhysicalDevice function to select the physical device
         /// @param isGraphical whether the device is graphical (rather than compute)
+        /// @param setLoaderData optional function to set loader data
+        /// @param cachefile optional path to pipeline cache file
         /// @throws ls::vulkan_error on failure
         Vulkan(const std::string& appName, version appVersion,
             const std::string& engineName, version engineVersion,
             PhysicalDeviceSelector selectPhysicalDevice,
             bool isGraphical = false,
-            std::optional<PFN_vkSetDeviceLoaderData> setLoaderData = std::nullopt);
+            std::optional<PFN_vkSetDeviceLoaderData> setLoaderData = std::nullopt,
+            const std::optional<std::filesystem::path>& cachefile = std::nullopt);
 
         /// create based on an existing externally managed vulkan instance.
         /// @param instance vulkan instance handle
@@ -161,13 +168,16 @@ namespace vk {
         /// @param instanceFuncs instance function pointers
         /// @param deviceFuncs device function pointers
         /// @param isGraphical whether the device is graphical (rather than compute)
+        /// @param setLoaderData optional function to set loader data
+        /// @param cachefile optional path to pipeline cache file
         /// @throws ls::vulkan_error on failure
         Vulkan(VkInstance instance, VkDevice device,
             VkPhysicalDevice physdev,
             VulkanInstanceFuncs instanceFuncs,
             VulkanDeviceFuncs deviceFuncs,
             bool isGraphical = true,
-            std::optional<PFN_vkSetDeviceLoaderData> setLoaderData = std::nullopt);
+            std::optional<PFN_vkSetDeviceLoaderData> setLoaderData = std::nullopt,
+            const std::optional<std::filesystem::path>& cachefile = std::nullopt);
 
         /// find a memory type index
         /// @param validTypes bitset of valid memory types
@@ -175,6 +185,9 @@ namespace vk {
         /// @return the memory type index
         [[nodiscard]] std::optional<uint32_t> findMemoryTypeIndex(
             std::bitset<32> validTypes, bool hostVisibility) const;
+
+        /// persist the pipeline cache to file, silently failing on error
+        void persistPipelineCache() const noexcept;
 
         /// get the vulkan instance
         /// @return the instance handle
@@ -188,6 +201,9 @@ namespace vk {
         /// get the command pool
         /// @return the command pool handle
         [[nodiscard]] const auto& cmdpool() const { return this->cmdPool.get(); }
+        /// get the pipeline cache
+        /// @return the pipeline cache handle
+        [[nodiscard]] const auto& cache() const { return this->pipelineCache.get(); }
         /// get the compute queue
         /// @return the compute queue handle
         [[nodiscard]] const auto& queue() const { return this->computeQueue; }
@@ -220,5 +236,7 @@ namespace vk {
         VkQueue computeQueue;
 
         ls::owned_ptr<VkCommandPool> cmdPool;
+        ls::owned_ptr<VkPipelineCache> pipelineCache;
+        std::optional<std::filesystem::path> cachefile;
     };
 }

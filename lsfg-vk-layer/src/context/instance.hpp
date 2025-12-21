@@ -27,13 +27,6 @@ namespace lsfgvk::layer {
         /// ensure the layer is up-to-date
         void update();
 
-        // /// required instance extensions
-        // /// @return list of extension names
-        // [[nodiscard]] std::vector<const char*> instanceExtensions() const;
-        // /// required device extensions
-        // /// @return list of extension names
-        // [[nodiscard]] std::vector<const char*> deviceExtensions() const;
-
         /// modify instance create info
         /// @param createInfo original create info
         /// @param finish function to call after modification
