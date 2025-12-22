@@ -10,9 +10,9 @@
 
 #include <vulkan/vulkan_core.h>
 
-using namespace chains;
+using namespace lsfgvk::backend;
 
-Delta1::Delta1(const ls::Ctx& ctx, size_t idx,
+Delta1::Delta1(const Ctx& ctx, size_t idx,
         const std::vector<vk::Image>& sourceImages0,
         const std::vector<vk::Image>& sourceImages1,
         const vk::Image& additionalInput0,
@@ -40,22 +40,22 @@ Delta1::Delta1(const ls::Ctx& ctx, size_t idx,
         ctx.shaders.get().performance : ctx.shaders.get().quality).delta;
     this->sets.reserve(4 + 4);
 
-    this->sets.emplace_back(ls::ManagedShaderBuilder()
+    this->sets.emplace_back(ManagedShaderBuilder()
         .sampleds(sourceImages0)
         .storages(this->tempImages0)
         .sampler(ctx.bnbSampler)
         .build(ctx.vk, ctx.pool, shaders.at(1)));
-    this->sets.emplace_back(ls::ManagedShaderBuilder()
+    this->sets.emplace_back(ManagedShaderBuilder()
         .sampleds(this->tempImages0)
         .storages(this->tempImages1)
         .sampler(ctx.bnbSampler)
         .build(ctx.vk, ctx.pool, shaders.at(2)));
-    this->sets.emplace_back(ls::ManagedShaderBuilder()
+    this->sets.emplace_back(ManagedShaderBuilder()
         .sampleds(this->tempImages1)
         .storages(this->tempImages0)
         .sampler(ctx.bnbSampler)
         .build(ctx.vk, ctx.pool, shaders.at(3)));
-    this->sets.emplace_back(ls::ManagedShaderBuilder()
+    this->sets.emplace_back(ManagedShaderBuilder()
         .sampleds(this->tempImages0)
         .sampled(additionalInput0)
         .sampled(additionalInput1)
@@ -65,22 +65,22 @@ Delta1::Delta1(const ls::Ctx& ctx, size_t idx,
         .buffer(ctx.constantBuffers.at(idx))
         .build(ctx.vk, ctx.pool, shaders.at(4)));
 
-    this->sets.emplace_back(ls::ManagedShaderBuilder()
+    this->sets.emplace_back(ManagedShaderBuilder()
         .sampleds(sourceImages1)
         .storages(this->tempImages0, 0, m)
         .sampler(ctx.bnbSampler)
         .build(ctx.vk, ctx.pool, shaders.at(6)));
-    this->sets.emplace_back(ls::ManagedShaderBuilder()
+    this->sets.emplace_back(ManagedShaderBuilder()
         .sampleds(this->tempImages0, 0, m)
         .storages(this->tempImages1, 0, m)
         .sampler(ctx.bnbSampler)
         .build(ctx.vk, ctx.pool, shaders.at(7)));
-    this->sets.emplace_back(ls::ManagedShaderBuilder()
+    this->sets.emplace_back(ManagedShaderBuilder()
         .sampleds(this->tempImages1, 0, m)
         .storages(this->tempImages0, 0, m)
         .sampler(ctx.bnbSampler)
         .build(ctx.vk, ctx.pool, shaders.at(8)));
-    this->sets.emplace_back(ls::ManagedShaderBuilder()
+    this->sets.emplace_back(ManagedShaderBuilder()
         .sampleds(this->tempImages0, 0, m)
         .sampled(additionalInput2)
         .storage(*this->image1)
@@ -90,7 +90,7 @@ Delta1::Delta1(const ls::Ctx& ctx, size_t idx,
         .build(ctx.vk, ctx.pool, shaders.at(9)));
 
     // store dispatch extents
-    this->dispatchExtent = ls::add_shift_extent(extent, 7, 3);
+    this->dispatchExtent = backend::add_shift_extent(extent, 7, 3);
 }
 
 void Delta1::prepare(std::vector<VkImage>& images) const {

@@ -2,13 +2,13 @@
 #include "../configuration/config.hpp"
 #include "../configuration/detection.hpp"
 #include "swapchain.hpp"
-#include "lsfg-vk-backend/lsfgvk.hpp"
 #include "lsfg-vk-common/helpers/errors.hpp"
 #include "lsfg-vk-common/vulkan/vulkan.hpp"
 
 #include <algorithm>
 #include <cstdint>
 #include <cstdlib>
+#include <exception>
 #include <filesystem>
 #include <functional>
 #include <iostream>
@@ -79,7 +79,7 @@ namespace {
         if (std::filesystem::exists(local))
             return local;
 
-        throw lsfgvk::error("unable to locate Lossless.dll, please set the path in the configuration");
+        throw ls::error("unable to locate Lossless.dll, please set the path in the configuration");
     }
 }
 
@@ -199,7 +199,7 @@ void Root::modifySwapchainCreateInfo(const vk::Vulkan& vk, VkSwapchainCreateInfo
 void Root::createSwapchainContext(const vk::Vulkan& vk,
         VkSwapchainKHR swapchain, const SwapchainInfo& info) {
     if (!this->active_profile.has_value())
-        throw lsfgvk::error("attempted to create swapchain context while layer is inactive");
+        throw ls::error("attempted to create swapchain context while layer is inactive");
     const auto& profile = *this->active_profile;
 
     if (!this->backend.has_value()) { // emplace backend late, due to loader bug
@@ -207,22 +207,27 @@ void Root::createSwapchainContext(const vk::Vulkan& vk,
 
         setenv("DISABLE_LSFGVK", "1", 1); // NOLINT (c++-include)
 
-        this->backend.emplace(
-            [gpu = profile.gpu](
-                const std::string& deviceName,
-                std::pair<const std::string&, const std::string&> ids,
-                const std::optional<std::string>& pci
-            ) {
-                if (!gpu)
-                    return true;
+        try {
+            this->backend.emplace(
+                [gpu = profile.gpu](
+                    const std::string& deviceName,
+                    std::pair<const std::string&, const std::string&> ids,
+                    const std::optional<std::string>& pci
+                ) {
+                    if (!gpu)
+                        return true;
 
-                return (deviceName == *gpu)
-                    || (ids.first + ":" + ids.second == *gpu)
-                    || (pci && *pci == *gpu);
-            },
-            global.dll.value_or(findShaderDll()),
-            global.allow_fp16
-        );
+                    return (deviceName == *gpu)
+                        || (ids.first + ":" + ids.second == *gpu)
+                        || (pci && *pci == *gpu);
+                },
+                global.dll.value_or(findShaderDll()),
+                global.allow_fp16
+            );
+        } catch (const std::exception& e) {
+            unsetenv("DISABLE_LSFGVK"); // NOLINT (c++-include)
+            throw ls::error("failed to create backend instance", e);
+        }
 
         unsetenv("DISABLE_LSFGVK"); // NOLINT (c++-include)
     }

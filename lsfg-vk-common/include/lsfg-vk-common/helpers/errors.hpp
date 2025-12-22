@@ -1,5 +1,6 @@
 #pragma once
 
+#include <exception>
 #include <stdexcept>
 #include <string>
 
@@ -23,8 +24,27 @@ namespace ls {
 
         /// get the Vulkan result code associated with this error
         [[nodiscard]] virtual VkResult error() const;
-
     private:
         VkResult result;
+    };
+
+    /// simple error type
+    class [[gnu::visibility("default")]] error : public std::runtime_error {
+    public:
+        /// construct an error around an inner exception
+        /// @param msg error message
+        /// @param inner inner exception
+        explicit error(const std::string& msg, const std::exception& inner)
+            : std::runtime_error(msg + "\n- " + inner.what()), ex(inner) {}
+
+        /// construct an error
+        /// @param msg error message
+        explicit error(const std::string& msg)
+            : std::runtime_error(msg) {}
+
+        /// get the inner exception
+        [[nodiscard]] virtual const std::exception& inner() const;
+    private:
+        std::exception ex;
     };
 }

@@ -15,11 +15,11 @@
 
 #include <vulkan/vulkan_core.h>
 
-namespace ls {
+namespace lsfgvk::backend {
     /// exposed context data
     struct Ctx {
         ls::R<const vk::Vulkan> vk; // safe back reference
-        ls::R<const extr::ShaderRegistry> shaders; // safe back reference
+        ls::R<const ShaderRegistry> shaders; // safe back reference
 
         vk::DescriptorPool pool;
 

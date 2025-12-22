@@ -11,6 +11,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
+#include <exception>
 #include <functional>
 #include <optional>
 #include <utility>
@@ -53,7 +54,7 @@ void layer::context_ModifySwapchainCreateInfo(const GameConf& profile, uint32_t 
         VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
 
     switch (profile.pacing) {
-        case lsfgvk::layer::Pacing::None:
+        case Pacing::None:
             createInfo.minImageCount += profile.multiplier;
             if (maxImages && createInfo.minImageCount > maxImages)
                 createInfo.minImageCount = maxImages;
@@ -63,7 +64,7 @@ void layer::context_ModifySwapchainCreateInfo(const GameConf& profile, uint32_t 
     }
 }
 
-Swapchain::Swapchain(const vk::Vulkan& vk, lsfgvk::Instance& backend,
+Swapchain::Swapchain(const vk::Vulkan& vk, lsfgvk::backend::Instance& backend,
             GameConf profile, SwapchainInfo info) :
         instance(backend),
         profile(std::move(profile)), info(std::move(info)) {
@@ -90,16 +91,20 @@ Swapchain::Swapchain(const vk::Vulkan& vk, lsfgvk::Instance& backend,
     int syncFd{};
     this->syncSemaphore.emplace(vk, 0, std::nullopt, &syncFd);
 
-    this->ctx = ls::owned_ptr<ls::R<lsfgvk::Context>>(
-        new ls::R(backend.openContext(
-            { sourceFds.at(0), sourceFds.at(1) }, destinationFds, syncFd,
-            extent.width, extent.height,
-            hdr, this->profile.flow_scale, this->profile.performance_mode
-        )),
-        [backend = &backend](ls::R<lsfgvk::Context>& ctx) {
-            backend->closeContext(ctx);
-        }
-    );
+    try {
+        this->ctx = ls::owned_ptr<ls::R<lsfgvk::backend::Context>>(
+            new ls::R(backend.openContext(
+                { sourceFds.at(0), sourceFds.at(1) }, destinationFds, syncFd,
+                extent.width, extent.height,
+                hdr, this->profile.flow_scale, this->profile.performance_mode
+            )),
+            [backend = &backend](ls::R<lsfgvk::backend::Context>& ctx) {
+                backend->closeContext(ctx);
+            }
+        );
+    } catch (const std::exception& e) {
+        throw ls::error("failed to create swapchain context", e);
+    }
 
     this->renderCommandBuffer.emplace(vk);
     this->renderFence.emplace(vk);
@@ -127,7 +132,11 @@ VkResult Swapchain::present(const vk::Vulkan& vk,
     const auto& sourceImage = this->sourceImages.at(this->fidx % 2);
 
     // schedule frame generation
-    this->instance.get().scheduleFrames(this->ctx.get());
+    try {
+        this->instance.get().scheduleFrames(this->ctx.get());
+    } catch (const std::exception& e) {
+        throw ls::error("failed to schedule frames", e);
+    }
 
     // update present mode when not using pacing
     if (this->profile.pacing == Pacing::None) {
@@ -189,7 +198,7 @@ VkResult Swapchain::present(const vk::Vulkan& vk,
     );
 
     for (size_t i = 0; i < this->destinationImages.size(); i++) {
-        auto& postCopySemaphores = this->postCopySemaphores.at(this->idx % this->postCopySemaphores.size());
+        auto& pcs = this->postCopySemaphores.at(this->idx % this->postCopySemaphores.size());
         auto& destinationImage = this->destinationImages.at(i);
         auto& pass = this->passes.at(i);
 
@@ -243,8 +252,8 @@ VkResult Swapchain::present(const vk::Vulkan& vk,
         }
 
         const std::vector<VkSemaphore> signalSemaphores{
-            postCopySemaphores.first.handle(),
-            postCopySemaphores.second.handle()
+            pcs.first.handle(),
+            pcs.second.handle()
         };
 
         cmdbuf.end(vk);
@@ -259,7 +268,7 @@ VkResult Swapchain::present(const vk::Vulkan& vk,
             .sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
             .pNext = i ? nullptr : next_chain,
             .waitSemaphoreCount = 1,
-            .pWaitSemaphores = &postCopySemaphores.first.handle(),
+            .pWaitSemaphores = &pcs.first.handle(),
             .swapchainCount = 1,
             .pSwapchains = &swapchain,
             .pImageIndices = &aqImageIdx,

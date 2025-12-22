@@ -10,9 +10,9 @@
 
 #include <vulkan/vulkan_core.h>
 
-using namespace chains;
+using namespace lsfgvk::backend;
 
-Gamma1::Gamma1(const ls::Ctx& ctx, size_t idx,
+Gamma1::Gamma1(const Ctx& ctx, size_t idx,
         const std::vector<vk::Image>& sourceImages,
         const vk::Image& additionalInput0,
         const vk::Image& additionalInput1) {
@@ -33,22 +33,22 @@ Gamma1::Gamma1(const ls::Ctx& ctx, size_t idx,
     const auto& shaders = (ctx.perf ?
         ctx.shaders.get().performance : ctx.shaders.get().quality).gamma;
     this->sets.reserve(4);
-    this->sets.emplace_back(ls::ManagedShaderBuilder()
+    this->sets.emplace_back(ManagedShaderBuilder()
         .sampleds(sourceImages)
         .storages(this->tempImages0)
         .sampler(ctx.bnbSampler)
         .build(ctx.vk, ctx.pool, shaders.at(1)));
-    this->sets.emplace_back(ls::ManagedShaderBuilder()
+    this->sets.emplace_back(ManagedShaderBuilder()
         .sampleds(this->tempImages0)
         .storages(this->tempImages1)
         .sampler(ctx.bnbSampler)
         .build(ctx.vk, ctx.pool, shaders.at(2)));
-    this->sets.emplace_back(ls::ManagedShaderBuilder()
+    this->sets.emplace_back(ManagedShaderBuilder()
         .sampleds(this->tempImages1)
         .storages(this->tempImages0)
         .sampler(ctx.bnbSampler)
         .build(ctx.vk, ctx.pool, shaders.at(3)));
-    this->sets.emplace_back(ls::ManagedShaderBuilder()
+    this->sets.emplace_back(ManagedShaderBuilder()
         .sampleds(this->tempImages0)
         .sampled(additionalInput0)
         .sampled(additionalInput1)
@@ -59,7 +59,7 @@ Gamma1::Gamma1(const ls::Ctx& ctx, size_t idx,
         .build(ctx.vk, ctx.pool, shaders.at(4)));
 
     // store dispatch extents
-    this->dispatchExtent = ls::add_shift_extent(extent, 7, 3);
+    this->dispatchExtent = backend::add_shift_extent(extent, 7, 3);
 }
 
 void Gamma1::prepare(std::vector<VkImage>& images) const {

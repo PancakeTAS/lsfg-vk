@@ -4,7 +4,7 @@
 
 #include <cstddef>
 
-namespace ls {
+namespace lsfgvk::backend {
     /// calculate limits for descriptor pools
     /// @param count number of images
     /// @param perf whether performance mode is enabled

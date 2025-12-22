@@ -86,19 +86,20 @@ namespace {
                         throw ls::vulkan_error(res, "vkCreateInstance() failed");
                 }
             );
+
+            instance_info = new InstanceInfo{
+                .handle = *instance,
+                .funcs = vk::initVulkanInstanceFuncs(*instance, layer_info->GetInstanceProcAddr, true),
+                .devices = {}
+            };
+
+            return VK_SUCCESS;
         } catch (const ls::vulkan_error& e) {
             if (e.error() == VK_ERROR_EXTENSION_NOT_PRESENT)
                 std::cerr << "lsfg-vk: required Vulkan instance extensions are not present. "
                     "Your GPU driver is not supported.\n";
             return e.error();
         }
-
-        instance_info = new InstanceInfo{
-            .handle = *instance,
-            .funcs = vk::initVulkanInstanceFuncs(*instance, layer_info->GetInstanceProcAddr, true),
-            .devices = {}
-        };
-        return VK_SUCCESS;
     }
 
     // create device

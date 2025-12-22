@@ -10,13 +10,13 @@
 
 #include <vulkan/vulkan_core.h>
 
-using namespace chains;
+using namespace lsfgvk::backend;
 
-Alpha0::Alpha0(const ls::Ctx& ctx,
+Alpha0::Alpha0(const Ctx& ctx,
         const vk::Image& sourceImage) {
     const size_t m = ctx.perf ? 1 : 2; // multiplier
-    const VkExtent2D halfExtent = ls::add_shift_extent(sourceImage.getExtent(), 1, 1);
-    const VkExtent2D quarterExtent = ls::add_shift_extent(halfExtent, 1, 1);
+    const VkExtent2D halfExtent = backend::add_shift_extent(sourceImage.getExtent(), 1, 1);
+    const VkExtent2D quarterExtent = backend::add_shift_extent(halfExtent, 1, 1);
 
     // create temporary & output images
     this->tempImages0.reserve(m);
@@ -33,25 +33,25 @@ Alpha0::Alpha0(const ls::Ctx& ctx,
     // create descriptor sets
     const auto& shaders = ctx.perf ? ctx.shaders.get().performance : ctx.shaders.get().quality;
     this->sets.reserve(3);
-    this->sets.emplace_back(ls::ManagedShaderBuilder()
+    this->sets.emplace_back(ManagedShaderBuilder()
         .sampled(sourceImage)
         .storages(this->tempImages0)
         .sampler(ctx.bnbSampler)
         .build(ctx.vk, ctx.pool, shaders.alpha.at(0)));
-    this->sets.emplace_back(ls::ManagedShaderBuilder()
+    this->sets.emplace_back(ManagedShaderBuilder()
         .sampleds(this->tempImages0)
         .storages(this->tempImages1)
         .sampler(ctx.bnbSampler)
         .build(ctx.vk, ctx.pool, shaders.alpha.at(1)));
-    this->sets.emplace_back(ls::ManagedShaderBuilder()
+    this->sets.emplace_back(ManagedShaderBuilder()
         .sampleds(this->tempImages1)
         .storages(this->images)
         .sampler(ctx.bnbSampler)
         .build(ctx.vk, ctx.pool, shaders.alpha.at(2)));
 
     // store dispatch extents
-    this->dispatchExtent0 = ls::add_shift_extent(halfExtent, 7, 3);
-    this->dispatchExtent1 = ls::add_shift_extent(quarterExtent, 7, 3);
+    this->dispatchExtent0 = backend::add_shift_extent(halfExtent, 7, 3);
+    this->dispatchExtent1 = backend::add_shift_extent(quarterExtent, 7, 3);
 }
 
 void Alpha0::prepare(std::vector<VkImage>& images) const {

@@ -5,7 +5,8 @@
 #include <cstddef>
 #include <cstdint>
 
-using namespace ls;
+using namespace lsfgvk;
+using namespace lsfgvk::backend;
 
 namespace {
     const vk::Limits BASE_LIMITS{
@@ -32,7 +33,7 @@ namespace {
     };
 }
 
-vk::Limits ls::calculateDescriptorPoolLimits(size_t count, bool perf) {
+vk::Limits backend::calculateDescriptorPoolLimits(size_t count, bool perf) {
     const auto m = static_cast<uint16_t>(count);
 
     vk::Limits a{BASE_LIMITS};

@@ -13,14 +13,14 @@
 
 namespace ctx { struct Ctx; }
 
-namespace chains {
+namespace lsfgvk::backend {
     /// mipmaps shaderchain
     class Mipmaps {
     public:
         /// create a mipmaps shaderchain
         /// @param ctx context
         /// @param sourceImages pair of source images
-        Mipmaps(const ls::Ctx& ctx,
+        Mipmaps(const Ctx& ctx,
             const std::pair<vk::Image, vk::Image>& sourceImages);
 
         /// prepare the shaderchain initially
@@ -39,7 +39,7 @@ namespace chains {
     private:
         std::vector<vk::Image> images;
 
-        std::vector<ls::ManagedShader> sets;
+        std::vector<ManagedShader> sets;
         VkExtent2D dispatchExtent{};
     };
 }

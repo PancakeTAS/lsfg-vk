@@ -9,7 +9,7 @@
 #include <utility>
 #include <vector>
 
-namespace lsfgvk {
+namespace lsfgvk::backend {
 
     class [[gnu::visibility("default")]] ContextImpl;
     class [[gnu::visibility("default")]] InstanceImpl;
@@ -42,7 +42,7 @@ namespace lsfgvk {
     /// Function type for picking a device based on its name and IDs
     using DevicePicker = std::function<bool(
         const std::string& deviceName,
-        std::pair<const std::string&, const std::string&> ids, // (vendor ID, device ID) in 0xXXXX format
+        std::pair<const std::string&, const std::string&> ids, // (vendor ID, device ID) 0xXXXX format
         const std::optional<std::string>& pci // (bus:slot.func) if available, no padded zeros
     )>;
 
@@ -54,11 +54,11 @@ namespace lsfgvk {
         ///
         /// Create a lsfg-vk instance
         ///
-        /// @param devicePicker Function that picks a physical device based on its name or other identifiers.
+        /// @param devicePicker Function that picks a physical device based on some identifiers.
         /// @param shaderDllPath Path to the Lossless.dll file to load shaders from.
-        /// @param allowLowPrecision Whether to load low-precision (FP16) shaders if supported by the device.
+        /// @param allowLowPrecision Whether to load low-precision (FP16) shaders if supported.
         ///
-        /// @throws lsfgvk::error on failure
+        /// @throws backend::error on failure
         ///
         Instance(
             const DevicePicker& devicePicker,
@@ -90,7 +90,7 @@ namespace lsfgvk {
         /// @param flow Motion flow factor.
         /// @param perf Whether to enable performance mode.
         ///
-        /// @throws lsfgvk::error on failure
+        /// @throws backend::error on failure
         ///
         Context& openContext(
             std::pair<int, int> sourceFds,
@@ -104,7 +104,7 @@ namespace lsfgvk {
         /// Schedule a new set of generated frames.
         ///
         /// @param context Context to use.
-        /// @throws lsfgvk::error on failure
+        /// @throws backend::error on failure
         ///
         void scheduleFrames(Context& context);
 

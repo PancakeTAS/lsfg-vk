@@ -1,5 +1,5 @@
 #include "config.hpp"
-#include "lsfg-vk-backend/lsfgvk.hpp"
+#include "lsfg-vk-common/helpers/errors.hpp"
 
 #include <cstdlib>
 #include <filesystem>
@@ -61,7 +61,7 @@ multiplier = 2
     Pacing parcingFromString(const std::string& str) {
         if (str == "none")
             return Pacing::None;
-        throw lsfgvk::error("unknown pacing method: " + str);
+        throw ls::error("unknown pacing method: " + str);
     }
     /// try to find the config
     std::filesystem::path findPath() {
@@ -93,7 +93,7 @@ multiplier = 2
         };
 
         if (conf.dll && !std::filesystem::exists(*conf.dll))
-            throw lsfgvk::error("path to dll is invalid");
+            throw ls::error("path to dll is invalid");
 
         return conf;
     }
@@ -110,9 +110,9 @@ multiplier = 2
         };
 
         if (conf.multiplier <= 1)
-            throw lsfgvk::error("multiplier must be greater than 1");
+            throw ls::error("multiplier must be greater than 1");
         if (conf.flow_scale < 0.25F || conf.flow_scale > 1.0F)
-            throw lsfgvk::error("flow_scale must be between 0.25 and 1.0");
+            throw ls::error("flow_scale must be between 0.25 and 1.0");
 
         return conf;
     }
@@ -131,7 +131,7 @@ multiplier = 2
             conf.allow_fp16 = std::string(no_fp16) != "1";
 
         if (conf.dll && !std::filesystem::exists(*conf.dll))
-            throw lsfgvk::error("path to dll is invalid");
+            throw ls::error("path to dll is invalid");
 
         return conf;
     }
@@ -160,9 +160,9 @@ multiplier = 2
         if (pacing) conf.pacing = parcingFromString(std::string(pacing));
 
         if (conf.multiplier <= 1)
-            throw lsfgvk::error("multiplier must be greater than 1");
+            throw ls::error("multiplier must be greater than 1");
         if (conf.flow_scale < 0.25F || conf.flow_scale > 1.0F)
-            throw lsfgvk::error("flow_scale must be between 0.25 and 1.0");
+            throw ls::error("flow_scale must be between 0.25 and 1.0");
 
         return conf;
     }
@@ -183,16 +183,16 @@ Configuration::Configuration() :
     try {
         std::filesystem::create_directories(this->path.parent_path());
         if (!std::filesystem::exists(this->path.parent_path()))
-            throw lsfgvk::error("unable to create configuration directory");
+            throw ls::error("unable to create configuration directory");
 
         std::ofstream ofs(this->path);
         if (!ofs.is_open())
-            throw lsfgvk::error("unable to create default configuration file");
+            throw ls::error("unable to create default configuration file");
 
         ofs << DEFAULT_CONFIG;
         ofs.close();
     } catch (const std::filesystem::filesystem_error& e) {
-        throw lsfgvk::error("unable to create default configuration file", e);
+        throw ls::error("unable to create default configuration file", e);
     }
 }
 
@@ -203,7 +203,7 @@ bool Configuration::isUpToDate() {
     try {
         return std::filesystem::last_write_time(this->path) == this->timestamp;
     } catch (const std::filesystem::filesystem_error& e) {
-        throw lsfgvk::error("unable to access configuration file", e);
+        throw ls::error("unable to access configuration file", e);
     }
 }
 
@@ -211,7 +211,7 @@ void Configuration::reload() {
     try {
         this->timestamp = std::filesystem::last_write_time(this->path);
     } catch (const std::filesystem::filesystem_error& e) {
-        throw lsfgvk::error("unable to access configuration file", e);
+        throw ls::error("unable to access configuration file", e);
     }
 
     GlobalConf global{};
@@ -221,12 +221,12 @@ void Configuration::reload() {
     try {
         tbl = toml::parse_file(this->path.string());
     } catch (const toml::parse_error& e) {
-        throw lsfgvk::error("unable to parse configuration", e);
+        throw ls::error("unable to parse configuration", e);
     }
 
     auto vrs = tbl["version"];
     if (!vrs || !vrs.is_integer() || *vrs.as_integer() != 2)
-        throw lsfgvk::error("unsupported configuration version");
+        throw ls::error("unsupported configuration version");
 
     auto gbl = tbl["global"];
     if (gbl && gbl.is_table()) {

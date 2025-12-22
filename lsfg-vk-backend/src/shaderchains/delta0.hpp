@@ -12,7 +12,7 @@
 
 namespace ctx { struct Ctx; }
 
-namespace chains {
+namespace lsfgvk::backend {
     /// delta shaderchain
     class Delta0 {
     public:
@@ -22,7 +22,7 @@ namespace chains {
         /// @param sourceImages source images
         /// @param additionalInput0 additional input image
         /// @param additionalInput1 additional input image
-        Delta0(const ls::Ctx& ctx, size_t idx,
+        Delta0(const Ctx& ctx, size_t idx,
             const std::vector<std::vector<vk::Image>>& sourceImages,
             const vk::Image& additionalInput0,
             const vk::Image& additionalInput1);
@@ -48,8 +48,8 @@ namespace chains {
         std::vector<vk::Image> images0;
         std::vector<vk::Image> images1;
 
-        std::vector<ls::ManagedShader> sets0;
-        std::vector<ls::ManagedShader> sets1;
+        std::vector<ManagedShader> sets0;
+        std::vector<ManagedShader> sets1;
         VkExtent2D dispatchExtent{};
     };
 }

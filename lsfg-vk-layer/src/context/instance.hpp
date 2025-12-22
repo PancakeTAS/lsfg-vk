@@ -2,6 +2,7 @@
 
 #include "../configuration/config.hpp"
 #include "lsfg-vk-backend/lsfgvk.hpp"
+#include "lsfg-vk-common/helpers/errors.hpp"
 #include "lsfg-vk-common/helpers/pointers.hpp"
 #include "lsfg-vk-common/vulkan/vulkan.hpp"
 #include "swapchain.hpp"
@@ -17,7 +18,7 @@ namespace lsfgvk::layer {
     class Root {
     public:
         /// create the lsfg-vk root context
-        /// @throws lsfgvk::error on failure
+        /// @throws ls::error on failure
         Root();
 
         /// check if the layer is active
@@ -48,16 +49,17 @@ namespace lsfgvk::layer {
         /// @param vk vulkan instance
         /// @param swapchain swapchain handle
         /// @param info swapchain info
+        /// @throws ls::error on failure
         void createSwapchainContext(const vk::Vulkan& vk, VkSwapchainKHR swapchain,
             const SwapchainInfo& info);
         /// get swapchain context
         /// @param swapchain swapchain handle
         /// @return swapchain context
-        /// @throws lsfgvk::error if not found
+        /// @throws ls::error if not found
         [[nodiscard]] Swapchain& getSwapchainContext(VkSwapchainKHR swapchain) {
             const auto& it = this->swapchains.find(swapchain);
             if (it == this->swapchains.end())
-                throw lsfgvk::error("swapchain context not found");
+                throw ls::error("swapchain context not found");
 
             return it->second;
         }
@@ -68,7 +70,7 @@ namespace lsfgvk::layer {
         Configuration config;
         std::optional<GameConf> active_profile;
 
-        ls::lazy<lsfgvk::Instance> backend;
+        ls::lazy<lsfgvk::backend::Instance> backend;
         std::unordered_map<VkSwapchainKHR, Swapchain> swapchains;
     };
 

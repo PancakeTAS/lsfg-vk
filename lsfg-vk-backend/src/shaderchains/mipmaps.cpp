@@ -12,25 +12,25 @@
 
 #include <vulkan/vulkan_core.h>
 
-using namespace chains;
+using namespace lsfgvk::backend;
 
-Mipmaps::Mipmaps(const ls::Ctx& ctx,
+Mipmaps::Mipmaps(const Ctx& ctx,
         const std::pair<vk::Image, vk::Image>& sourceImages) {
     // create output images for base and 6 mips
     this->images.reserve(7);
     for (uint32_t i = 0; i < 7; i++)
        this->images.emplace_back(ctx.vk,
-            ls::shift_extent(ctx.flowExtent, i), VK_FORMAT_R8_UNORM);
+            backend::shift_extent(ctx.flowExtent, i), VK_FORMAT_R8_UNORM);
 
     // create descriptor sets for both input images
     this->sets.reserve(2);
-    this->sets.emplace_back(ls::ManagedShaderBuilder()
+    this->sets.emplace_back(ManagedShaderBuilder()
         .sampled(sourceImages.first)
         .storages(this->images)
         .sampler(ctx.bnbSampler)
         .buffer(ctx.constantBuffer)
         .build(ctx.vk, ctx.pool, ctx.shaders.get().mipmaps));
-    this->sets.emplace_back(ls::ManagedShaderBuilder()
+    this->sets.emplace_back(ManagedShaderBuilder()
         .sampled(sourceImages.second)
         .storages(this->images)
         .sampler(ctx.bnbSampler)
@@ -38,7 +38,7 @@ Mipmaps::Mipmaps(const ls::Ctx& ctx,
         .build(ctx.vk, ctx.pool, ctx.shaders.get().mipmaps));
 
     // store dispatch extent
-    this->dispatchExtent = ls::add_shift_extent(ctx.flowExtent, 63, 6);
+    this->dispatchExtent = backend::add_shift_extent(ctx.flowExtent, 63, 6);
 }
 
 void Mipmaps::prepare(std::vector<VkImage>& images) const {

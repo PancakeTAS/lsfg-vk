@@ -7,7 +7,7 @@
 #include <unordered_map>
 #include <vector>
 
-namespace extr {
+namespace lsfgvk::backend {
 
     /// shader collection struct
     struct Shaders {
@@ -32,7 +32,7 @@ namespace extr {
     /// @param fp16 whether to load fp16 variants
     /// @param resources map of resource IDs to their binary data
     /// @return constructed shader registry
-    /// @throws std::runtime_error if shaders are missing
+    /// @throws ls::error if shaders are missing
     /// @throws vk::vulkan_error on Vulkan errors
     ShaderRegistry buildShaderRegistry(const vk::Vulkan& vk, bool fp16,
         const std::unordered_map<uint32_t, std::vector<uint8_t>>& resources);

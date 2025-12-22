@@ -14,7 +14,8 @@
 
 #include <vulkan/vulkan_core.h>
 
-using namespace ls;
+using namespace lsfgvk;
+using namespace lsfgvk::backend;
 
 ManagedShaderBuilder& ManagedShaderBuilder::sampled(const vk::Image& image) {
     this->sampledImages.push_back(std::ref(image));

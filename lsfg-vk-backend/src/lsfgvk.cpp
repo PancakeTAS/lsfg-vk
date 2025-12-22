@@ -46,8 +46,15 @@
 #endif
 
 using namespace lsfgvk;
+using namespace lsfgvk::backend;
 
-namespace lsfgvk {
+namespace lsfgvk::backend {
+    error::error(const std::string& msg, const std::exception& inner)
+        : std::runtime_error(msg + "\n- " + inner.what()) {}
+    error::error(const std::string& msg)
+        : std::runtime_error(msg) {}
+    error::~error() = default;
+
     /// instance class
     class InstanceImpl {
     public:
@@ -70,7 +77,7 @@ namespace lsfgvk {
 #endif
     private:
         vk::Vulkan vk;
-        extr::ShaderRegistry shaders;
+        ShaderRegistry shaders;
 
 #ifdef LSFGVK__RENDERDOC_INTEGRATION
         std::optional<RENDERDOC_API_1_6_0> renderdoc;
@@ -102,20 +109,20 @@ namespace lsfgvk {
         std::vector<vk::CommandBuffer> cmdbufs;
         vk::Fence cmdbufFence;
 
-        ls::Ctx ctx;
+        Ctx ctx;
 
-        chains::Mipmaps mipmaps;
-        std::array<chains::Alpha0, 7> alpha0;
-        std::array<chains::Alpha1, 7> alpha1;
-        chains::Beta0 beta0;
-        chains::Beta1 beta1;
+        Mipmaps mipmaps;
+        std::array<Alpha0, 7> alpha0;
+        std::array<Alpha1, 7> alpha1;
+        Beta0 beta0;
+        Beta1 beta1;
         struct Pass {
-            std::vector<chains::Gamma0> gamma0;
-            std::vector<chains::Gamma1> gamma1;
+            std::vector<Gamma0> gamma0;
+            std::vector<Gamma1> gamma1;
 
-            std::vector<chains::Delta0> delta0;
-            std::vector<chains::Delta1> delta1;
-            ls::lazy<chains::Generate> generate;
+            std::vector<Delta0> delta0;
+            std::vector<Delta1> delta1;
+            ls::lazy<Generate> generate;
         };
         std::vector<Pass> passes;
     };
@@ -156,8 +163,8 @@ Instance::Instance(
 
             if (devicePicker(
                 std::string(devname.data()),
-                { ls::to_hex_id(props.properties.vendorID),
-                  ls::to_hex_id(props.properties.deviceID) },
+                { backend::to_hex_id(props.properties.vendorID),
+                  backend::to_hex_id(props.properties.deviceID) },
                 has_pci_ext ? std::optional<std::string>{
                     std::to_string(pciInfo.pciBus) + ":" +
                     std::to_string(pciInfo.pciDevice) + "." +
@@ -199,28 +206,28 @@ namespace {
                 findCacheFilePath()
             };
         } catch (const std::exception& e) {
-            throw lsfgvk::error("Unable to initialize Vulkan", e);
+            throw backend::error("Unable to initialize Vulkan", e);
         }
     }
     /// build a shader registry
-    extr::ShaderRegistry createShaderRegistry(vk::Vulkan& vk,
+    ShaderRegistry createShaderRegistry(vk::Vulkan& vk,
             const std::filesystem::path& shaderDllPath,
             bool allowLowPrecision) {
         std::unordered_map<uint32_t, std::vector<uint8_t>> resources{};
 
         try {
-            resources = extr::extractResourcesFromDLL(shaderDllPath);
+            resources = backend::extractResourcesFromDLL(shaderDllPath);
         } catch (const std::exception& e) {
-            throw lsfgvk::error("Unable to parse Lossless Scaling DLL", e);
+            throw backend::error("Unable to parse Lossless Scaling DLL", e);
         }
 
         try {
-            return extr::buildShaderRegistry(
+            return backend::buildShaderRegistry(
                 vk, allowLowPrecision && vk.supportsFP16(),
                 resources
             );
         } catch (const std::exception& e) {
-            throw lsfgvk::error("Unable to build shader registry", e);
+            throw backend::error("Unable to build shader registry", e);
         }
     }
 #ifdef LSFGVK__RENDERDOC_INTEGRATION
@@ -280,7 +287,7 @@ namespace {
                     VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, sourceFds.second)
             };
         } catch (const std::exception& e) {
-            throw lsfgvk::error("Unable to import destination images", e);
+            throw backend::error("Unable to import destination images", e);
         }
     }
     /// import destination images
@@ -297,7 +304,7 @@ namespace {
 
             return destImages;
         } catch (const std::exception& e) {
-            throw lsfgvk::error("Unable to import destination images", e);
+            throw backend::error("Unable to import destination images", e);
         }
     }
     /// create a black image
@@ -307,7 +314,7 @@ namespace {
                 { .width = 4, .height = 4 }
             };
         } catch (const std::exception& e) {
-            throw lsfgvk::error("Unable to create black image", e);
+            throw backend::error("Unable to create black image", e);
         }
     }
     /// import timeline semaphore
@@ -315,7 +322,7 @@ namespace {
         try {
             return{vk, 0, syncFd};
         } catch (const std::exception& e) {
-            throw lsfgvk::error("Unable to import timeline semaphore", e);
+            throw backend::error("Unable to import timeline semaphore", e);
         }
     }
     /// create prepass semaphores
@@ -323,7 +330,7 @@ namespace {
         try {
             return{vk, 0};
         } catch (const std::exception& e) {
-            throw lsfgvk::error("Unable to create prepass semaphore", e);
+            throw backend::error("Unable to create prepass semaphore", e);
         }
     }
     /// create command buffers
@@ -337,11 +344,11 @@ namespace {
 
             return cmdbufs;
         } catch (const std::exception& e) {
-            throw lsfgvk::error("Unable to create command buffers", e);
+            throw backend::error("Unable to create command buffers", e);
         }
     }
     /// create context data
-    ls::Ctx createCtx(const InstanceImpl& instance, VkExtent2D extent,
+    Ctx createCtx(const InstanceImpl& instance, VkExtent2D extent,
             bool hdr, float flow, bool perf, size_t count) {
         const auto& vk = instance.getVulkan();
         const auto& shaders = instance.getShaderRegistry();
@@ -352,7 +359,7 @@ namespace {
 
             for (size_t i = 0; i < count; ++i)
                 constantBuffers.emplace_back(vk,
-                    ls::getDefaultConstantBuffer(
+                    backend::getDefaultConstantBuffer(
                         i, count,
                         hdr, flow
                     )
@@ -361,9 +368,8 @@ namespace {
             return {
                 .vk = std::ref(vk),
                 .shaders = std::ref(shaders),
-                .pool{vk, ls::calculateDescriptorPoolLimits(count, perf)},
-                .constantBuffer{vk,
-                    ls::getDefaultConstantBuffer(0, 1, hdr, flow)},
+                .pool{vk, backend::calculateDescriptorPoolLimits(count, perf)},
+                .constantBuffer{vk, backend::getDefaultConstantBuffer(0, 1, hdr, flow)},
                 .constantBuffers{std::move(constantBuffers)},
                 .bnbSampler{vk, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER, VK_COMPARE_OP_NEVER, false},
                 .bnwSampler{vk, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER, VK_COMPARE_OP_NEVER, true},
@@ -379,7 +385,7 @@ namespace {
                 .count = count
             };
         } catch (const std::exception& e) {
-            throw lsfgvk::error("Unable to create context", e);
+            throw backend::error("Unable to create context", e);
         }
     }
 }
@@ -399,22 +405,22 @@ ContextImpl::ContextImpl(const InstanceImpl& instance,
         ctx(createCtx(instance, extent, hdr, flow, perf, destFds.size())),
         mipmaps(ctx, sourceImages),
         alpha0{
-            chains::Alpha0(ctx, mipmaps.getImages().at(0)),
-            chains::Alpha0(ctx, mipmaps.getImages().at(1)),
-            chains::Alpha0(ctx, mipmaps.getImages().at(2)),
-            chains::Alpha0(ctx, mipmaps.getImages().at(3)),
-            chains::Alpha0(ctx, mipmaps.getImages().at(4)),
-            chains::Alpha0(ctx, mipmaps.getImages().at(5)),
-            chains::Alpha0(ctx, mipmaps.getImages().at(6))
+            Alpha0(ctx, mipmaps.getImages().at(0)),
+            Alpha0(ctx, mipmaps.getImages().at(1)),
+            Alpha0(ctx, mipmaps.getImages().at(2)),
+            Alpha0(ctx, mipmaps.getImages().at(3)),
+            Alpha0(ctx, mipmaps.getImages().at(4)),
+            Alpha0(ctx, mipmaps.getImages().at(5)),
+            Alpha0(ctx, mipmaps.getImages().at(6))
         },
         alpha1{
-            chains::Alpha1(ctx, 3, alpha0.at(0).getImages()),
-            chains::Alpha1(ctx, 2, alpha0.at(1).getImages()),
-            chains::Alpha1(ctx, 2, alpha0.at(2).getImages()),
-            chains::Alpha1(ctx, 2, alpha0.at(3).getImages()),
-            chains::Alpha1(ctx, 2, alpha0.at(4).getImages()),
-            chains::Alpha1(ctx, 2, alpha0.at(5).getImages()),
-            chains::Alpha1(ctx, 2, alpha0.at(6).getImages())
+            Alpha1(ctx, 3, alpha0.at(0).getImages()),
+            Alpha1(ctx, 2, alpha0.at(1).getImages()),
+            Alpha1(ctx, 2, alpha0.at(2).getImages()),
+            Alpha1(ctx, 2, alpha0.at(3).getImages()),
+            Alpha1(ctx, 2, alpha0.at(4).getImages()),
+            Alpha1(ctx, 2, alpha0.at(5).getImages()),
+            Alpha1(ctx, 2, alpha0.at(6).getImages())
         },
         beta0(ctx, alpha1.at(0).getImages()),
         beta1(ctx, beta0.getImages()) {
@@ -544,7 +550,7 @@ void Instance::scheduleFrames(Context& context) {
     try {
         context.scheduleFrames();
     } catch (const std::exception& e) {
-        throw lsfgvk::error("Unable to schedule frames", e);
+        throw backend::error("Unable to schedule frames", e);
     }
 #ifdef LSFGVK__RENDERDOC_INTEGRATION
     if (impl->getRenderDocAPI()) {
@@ -559,7 +565,7 @@ void Instance::scheduleFrames(Context& context) {
 void Context::scheduleFrames() {
     // wait for previous pre-pass to complete
     if (this->fidx && !this->cmdbufFence.wait(this->ctx.vk))
-        throw lsfgvk::error("Timeout waiting for previous frame to complete");
+        throw backend::error("Timeout waiting for previous frame to complete");
     this->cmdbufFence.reset(this->ctx.vk);
 
     // schedule pre-pass
@@ -616,7 +622,7 @@ void Instance::closeContext(const Context& context) {
             return ctx.get() == context;
         });
     if (it == this->m_contexts.end())
-        throw lsfgvk::error("attempted to close unknown context",
+        throw backend::error("attempted to close unknown context",
             std::runtime_error("no such context"));
 
     const auto& vk = this->m_impl->getVulkan();
@@ -626,11 +632,3 @@ void Instance::closeContext(const Context& context) {
 }
 
 Instance::~Instance() = default;
-
-error::error(const std::string& msg, const std::exception& inner)
-    : std::runtime_error(msg + "\n- " + inner.what()) {}
-
-error::error(const std::string& msg)
-    : std::runtime_error(msg) {}
-
-error::~error() = default;

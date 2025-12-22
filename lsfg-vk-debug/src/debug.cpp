@@ -116,7 +116,7 @@ int main() {
         << (init_done_us - time_us) << "us\n";
 
     // initialize lsfg-vk
-    lsfgvk::Instance lsfgvk{
+    lsfgvk::backend::Instance lsfgvk{
         [](
             const std::string&,
             std::pair<const std::string&, const std::string&>,
@@ -127,7 +127,7 @@ int main() {
         "/home/pancake/.steam/steam/steamapps/common/Lossless Scaling/Lossless.dll",
         true
     };
-    lsfgvk::Context& lsfgvk_ctx = lsfgvk.openContext(
+    lsfgvk::backend::Context& lsfgvk_ctx = lsfgvk.openContext(
         srcfds, destfds,
         syncfd, EXTENT.width, EXTENT.height,
         false, 1.0F / 0.5F, true

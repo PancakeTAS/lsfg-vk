@@ -10,9 +10,9 @@
 
 #include <vulkan/vulkan_core.h>
 
-using namespace chains;
+using namespace lsfgvk::backend;
 
-Delta0::Delta0(const ls::Ctx& ctx, size_t idx,
+Delta0::Delta0(const Ctx& ctx, size_t idx,
         const std::vector<std::vector<vk::Image>>& sourceImages,
         const vk::Image& additionalInput0,
         const vk::Image& additionalInput1) {
@@ -33,7 +33,7 @@ Delta0::Delta0(const ls::Ctx& ctx, size_t idx,
 
     this->sets0.reserve(sourceImages.size());
     for (size_t i = 0; i < sourceImages.size(); i++)
-        this->sets0.emplace_back(ls::ManagedShaderBuilder()
+        this->sets0.emplace_back(ManagedShaderBuilder()
             .sampleds(sourceImages.at((i + (sourceImages.size() - 1)) % sourceImages.size()))
             .sampleds(sourceImages.at(i % sourceImages.size()))
             .sampled(additionalInput0)
@@ -45,7 +45,7 @@ Delta0::Delta0(const ls::Ctx& ctx, size_t idx,
 
     this->sets1.reserve(sourceImages.size());
     for (size_t i = 0; i < sourceImages.size(); i++)
-        this->sets1.emplace_back(ls::ManagedShaderBuilder()
+        this->sets1.emplace_back(ManagedShaderBuilder()
             .sampleds(sourceImages.at((i + (sourceImages.size() - 1)) % sourceImages.size()))
             .sampleds(sourceImages.at(i % sourceImages.size()))
             .sampled(additionalInput1)
@@ -57,7 +57,7 @@ Delta0::Delta0(const ls::Ctx& ctx, size_t idx,
             .build(ctx.vk, ctx.pool, shaders.at(5)));
 
     // store dispatch extents
-    this->dispatchExtent = ls::add_shift_extent(extent, 7, 3);
+    this->dispatchExtent = backend::add_shift_extent(extent, 7, 3);
 }
 
 void Delta0::prepare(std::vector<VkImage>& images) const {

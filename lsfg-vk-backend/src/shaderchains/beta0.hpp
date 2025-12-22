@@ -12,14 +12,14 @@
 
 namespace ctx { struct Ctx; }
 
-namespace chains {
+namespace lsfgvk::backend {
     /// beta shaderchain
     class Beta0 {
     public:
         /// create a beta shaderchain
         /// @param ctx context
         /// @param sourceImages source images
-        Beta0(const ls::Ctx& ctx,
+        Beta0(const Ctx& ctx,
             const std::vector<std::vector<vk::Image>>& sourceImages);
 
         /// prepare the shaderchain initially
@@ -38,7 +38,7 @@ namespace chains {
     private:
         std::vector<vk::Image> images;
 
-        std::vector<ls::ManagedShader> sets;
+        std::vector<ManagedShader> sets;
         VkExtent2D dispatchExtent{};
     };
 }

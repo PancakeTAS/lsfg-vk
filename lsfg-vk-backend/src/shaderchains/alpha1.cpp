@@ -10,9 +10,9 @@
 
 #include <vulkan/vulkan_core.h>
 
-using namespace chains;
+using namespace lsfgvk::backend;
 
-Alpha1::Alpha1(const ls::Ctx& ctx, size_t temporal,
+Alpha1::Alpha1(const Ctx& ctx, size_t temporal,
         const std::vector<vk::Image>& sourceImages) {
     const size_t m = ctx.perf ? 1 : 2; // multiplier
     const VkExtent2D quarterExtent = sourceImages.at(0).getExtent();
@@ -31,14 +31,14 @@ Alpha1::Alpha1(const ls::Ctx& ctx, size_t temporal,
     const auto& shaders = ctx.perf ? ctx.shaders.get().performance : ctx.shaders.get().quality;
     this->sets.reserve(temporal);
     for (size_t i = 0; i < temporal; i++)
-        this->sets.emplace_back(ls::ManagedShaderBuilder()
+        this->sets.emplace_back(ManagedShaderBuilder()
             .sampleds(sourceImages)
             .storages(this->images.at(i))
             .sampler(ctx.bnbSampler)
             .build(ctx.vk, ctx.pool, shaders.alpha.at(3)));
 
     // store dispatch extents
-    this->dispatchExtent = ls::add_shift_extent(quarterExtent, 7, 3);
+    this->dispatchExtent = backend::add_shift_extent(quarterExtent, 7, 3);
 }
 
 void Alpha1::prepare(std::vector<VkImage>& images) const {

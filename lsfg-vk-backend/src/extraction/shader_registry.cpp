@@ -1,16 +1,17 @@
 #include "shader_registry.hpp"
+#include "lsfg-vk-common/helpers/errors.hpp"
 #include "lsfg-vk-common/vulkan/shader.hpp"
 #include "lsfg-vk-common/vulkan/vulkan.hpp"
 
 #include <cstddef>
 #include <cstdint>
 #include <span>
-#include <stdexcept>
 #include <string>
 #include <unordered_map>
 #include <vector>
 
-using namespace extr;
+using namespace lsfgvk;
+using namespace lsfgvk::backend;
 
 namespace {
     /// get the source code for a shader
@@ -24,7 +25,7 @@ namespace {
             (perf ? OFFSET_PERF : 0) +
             (fp16 ? OFFSET_FP16 : 0));
         if (it == resources.end())
-            throw std::runtime_error("unable to find shader with id: " + std::to_string(id));
+            throw ls::error("unable to find shader with id: " + std::to_string(id));
 
         return it->second;
     }
@@ -70,7 +71,7 @@ namespace {
     }
 }
 
-ShaderRegistry extr::buildShaderRegistry(const vk::Vulkan& vk, bool fp16,
+ShaderRegistry backend::buildShaderRegistry(const vk::Vulkan& vk, bool fp16,
         const std::unordered_map<uint32_t, std::vector<uint8_t>>& resources) {
     // patch the generate shader
     std::vector<uint8_t> generate_data = getShaderSource(256, fp16, false, resources);

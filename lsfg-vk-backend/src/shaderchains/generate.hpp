@@ -13,7 +13,7 @@
 
 namespace ctx { struct Ctx; }
 
-namespace chains {
+namespace lsfgvk::backend {
     /// generate shaderchain
     class Generate {
     public:
@@ -24,7 +24,7 @@ namespace chains {
         /// @param inputImage1 input image 1
         /// @param inputImage2 input image 2
         /// @param inputImage3 input image 3
-        Generate(const ls::Ctx& ctx, size_t idx,
+        Generate(const Ctx& ctx, size_t idx,
             const std::pair<vk::Image, vk::Image>& sourceImages,
             const vk::Image& inputImage1,
             const vk::Image& inputImage2,
@@ -37,7 +37,7 @@ namespace chains {
         /// @param idx frame index
         void render(const vk::Vulkan& vk, const vk::CommandBuffer& cmd, size_t idx) const;
     private:
-        std::vector<ls::ManagedShader> sets;
+        std::vector<ManagedShader> sets;
         VkExtent2D dispatchExtent{};
     };
 }

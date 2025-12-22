@@ -44,16 +44,16 @@ namespace lsfgvk::layer {
     class Configuration {
     public:
         /// create a new configuration
-        /// @throws lsfgvk::error on failure
+        /// @throws ls::error on failure
         Configuration();
 
         /// check if the configuration is out of date
-        /// @throws lsfgvk::error on failure
+        /// @throws ls::error on failure
         /// @return true if the configuration is out of date
         bool isUpToDate();
 
         /// reload the configuration from disk
-        /// @throws lsfgvk::error on failure
+        /// @throws ls::error on failure
         void reload();
 
         /// get the global configuration

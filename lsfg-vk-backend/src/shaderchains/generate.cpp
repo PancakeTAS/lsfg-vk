@@ -11,9 +11,9 @@
 
 #include <vulkan/vulkan_core.h>
 
-using namespace chains;
+using namespace lsfgvk::backend;
 
-Generate::Generate(const ls::Ctx& ctx, size_t idx,
+Generate::Generate(const Ctx& ctx, size_t idx,
         const std::pair<vk::Image, vk::Image>& sourceImages,
         const vk::Image& inputImage1,
         const vk::Image& inputImage2,
@@ -23,7 +23,7 @@ Generate::Generate(const ls::Ctx& ctx, size_t idx,
     const auto& shader = ctx.hdr ?
         ctx.shaders.get().generate_hdr : ctx.shaders.get().generate;
     this->sets.reserve(2);
-    this->sets.emplace_back(ls::ManagedShaderBuilder()
+    this->sets.emplace_back(ManagedShaderBuilder()
         .sampled(sourceImages.second)
         .sampled(sourceImages.first)
         .sampled(inputImage1)
@@ -34,7 +34,7 @@ Generate::Generate(const ls::Ctx& ctx, size_t idx,
         .sampler(ctx.eabSampler)
         .buffer(ctx.constantBuffers.at(idx))
         .build(ctx.vk, ctx.pool, shader));
-    this->sets.emplace_back(ls::ManagedShaderBuilder()
+    this->sets.emplace_back(ManagedShaderBuilder()
         .sampled(sourceImages.first)
         .sampled(sourceImages.second)
         .sampled(inputImage1)
@@ -47,7 +47,7 @@ Generate::Generate(const ls::Ctx& ctx, size_t idx,
         .build(ctx.vk, ctx.pool, shader));
 
     // store dispatch extent
-    this->dispatchExtent = ls::add_shift_extent(ctx.sourceExtent, 15, 4);
+    this->dispatchExtent = backend::add_shift_extent(ctx.sourceExtent, 15, 4);
 }
 
 void Generate::render(const vk::Vulkan& vk, const vk::CommandBuffer& cmd, size_t idx) const {

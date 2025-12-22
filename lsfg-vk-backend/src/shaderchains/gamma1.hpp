@@ -13,7 +13,7 @@
 
 namespace ctx { struct Ctx; }
 
-namespace chains {
+namespace lsfgvk::backend {
     /// gamma shaderchain
     class Gamma1 {
     public:
@@ -23,7 +23,7 @@ namespace chains {
         /// @param sourceImages source images
         /// @param additionalInput0 additional input image
         /// @param additionalInput1 additional input image
-        Gamma1(const ls::Ctx& ctx, size_t idx,
+        Gamma1(const Ctx& ctx, size_t idx,
             const std::vector<vk::Image>& sourceImages,
             const vk::Image& additionalInput0,
             const vk::Image& additionalInput1);
@@ -45,7 +45,7 @@ namespace chains {
         std::vector<vk::Image> tempImages1;
         ls::lazy<vk::Image> image;
 
-        std::vector<ls::ManagedShader> sets;
+        std::vector<ManagedShader> sets;
         VkExtent2D dispatchExtent{};
     };
 }

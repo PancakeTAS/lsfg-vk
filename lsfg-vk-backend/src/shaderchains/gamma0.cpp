@@ -10,9 +10,9 @@
 
 #include <vulkan/vulkan_core.h>
 
-using namespace chains;
+using namespace lsfgvk::backend;
 
-Gamma0::Gamma0(const ls::Ctx& ctx, size_t idx,
+Gamma0::Gamma0(const Ctx& ctx, size_t idx,
         const std::vector<std::vector<vk::Image>>& sourceImages,
         const vk::Image& additionalInput) {
     const VkExtent2D extent = sourceImages.at(0).at(0).getExtent();
@@ -27,7 +27,7 @@ Gamma0::Gamma0(const ls::Ctx& ctx, size_t idx,
         ctx.shaders.get().performance : ctx.shaders.get().quality).gamma.at(0);
     this->sets.reserve(sourceImages.size());
     for (size_t i = 0; i < sourceImages.size(); i++)
-        this->sets.emplace_back(ls::ManagedShaderBuilder()
+        this->sets.emplace_back(ManagedShaderBuilder()
             .sampleds(sourceImages.at((i + (sourceImages.size() - 1)) % sourceImages.size()))
             .sampleds(sourceImages.at(i % sourceImages.size()))
             .sampled(additionalInput)
@@ -38,7 +38,7 @@ Gamma0::Gamma0(const ls::Ctx& ctx, size_t idx,
             .build(ctx.vk, ctx.pool, shader));
 
     // store dispatch extents
-    this->dispatchExtent = ls::add_shift_extent(extent, 7, 3);
+    this->dispatchExtent = backend::add_shift_extent(extent, 7, 3);
 }
 
 void Gamma0::prepare(std::vector<VkImage>& images) const {

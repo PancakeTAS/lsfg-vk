@@ -10,9 +10,9 @@
 
 #include <vulkan/vulkan_core.h>
 
-using namespace chains;
+using namespace lsfgvk::backend;
 
-Beta0::Beta0(const ls::Ctx& ctx,
+Beta0::Beta0(const Ctx& ctx,
         const std::vector<std::vector<vk::Image>>& sourceImages) {
     const VkExtent2D extent = sourceImages.at(0).at(0).getExtent();
 
@@ -26,7 +26,7 @@ Beta0::Beta0(const ls::Ctx& ctx,
         ctx.shaders.get().performance : ctx.shaders.get().quality).beta.at(0);
     this->sets.reserve(sourceImages.size());
     for (size_t i = 0; i < sourceImages.size(); i++)
-        this->sets.emplace_back(ls::ManagedShaderBuilder()
+        this->sets.emplace_back(ManagedShaderBuilder()
             .sampleds(sourceImages.at((i + (sourceImages.size() - 2)) % sourceImages.size()))
             .sampleds(sourceImages.at((i + (sourceImages.size() - 1)) % sourceImages.size()))
             .sampleds(sourceImages.at(i % sourceImages.size()))
@@ -35,7 +35,7 @@ Beta0::Beta0(const ls::Ctx& ctx,
             .build(ctx.vk, ctx.pool, shader));
 
     // store dispatch extents
-    this->dispatchExtent = ls::add_shift_extent(extent, 7, 3);
+    this->dispatchExtent = backend::add_shift_extent(extent, 7, 3);
 }
 
 void Beta0::prepare(std::vector<VkImage>& images) const {
