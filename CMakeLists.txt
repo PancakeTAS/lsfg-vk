@@ -4,6 +4,8 @@ project(lsfg-vk LANGUAGES CXX)
 # === user facing options
 option(LSFGVK_BUILD_VULKAN_LAYER
     "Build the Vulkan layer" ON)
+option(LSFGVK_BUILD_USER_INTERFACE
+    "Build the user interface" ON)
 option(LSFGVK_BUILD_DEBUG_TOOL
     "Build the debug tool for testing and debugging" OFF)
 
@@ -46,6 +48,9 @@ add_subdirectory(lsfg-vk-common)
 add_subdirectory(lsfg-vk-backend)
 if(LSFGVK_BUILD_VULKAN_LAYER)
     add_subdirectory(lsfg-vk-layer)
+endif()
+if(LSFGVK_BUILD_USER_INTERFACE)
+    add_subdirectory(lsfg-vk-ui)
 endif()
 if(LSFGVK_BUILD_DEBUG_TOOL)
     add_subdirectory(lsfg-vk-debug)
