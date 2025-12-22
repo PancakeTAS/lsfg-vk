@@ -1,4 +1,6 @@
 set(COMMON_SOURCES
+    "src/configuration/config.cpp"
+    "src/configuration/detection.cpp"
     "src/helpers/errors.cpp"
     "src/vulkan/buffer.cpp"
     "src/vulkan/command_buffer.cpp"
@@ -16,3 +18,6 @@ add_library(lsfg-vk-common STATIC ${COMMON_SOURCES})
 
 target_include_directories(lsfg-vk-common
     PUBLIC include)
+
+target_include_directories(lsfg-vk-common SYSTEM
+    PRIVATE thirdparty/include)

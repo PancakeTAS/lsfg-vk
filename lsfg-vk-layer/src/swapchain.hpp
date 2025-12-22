@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../configuration/config.hpp"
 #include "lsfg-vk-backend/lsfgvk.hpp"
+#include "lsfg-vk-common/configuration/config.hpp"
 #include "lsfg-vk-common/helpers/pointers.hpp"
 #include "lsfg-vk-common/vulkan/command_buffer.hpp"
 #include "lsfg-vk-common/vulkan/fence.hpp"
@@ -31,7 +31,7 @@ namespace lsfgvk::layer {
     /// @param profile active game profile
     /// @param maxImages maximum number of images supported by the surface
     /// @param createInfo swapchain create info to modify
-    void context_ModifySwapchainCreateInfo(const GameConf& profile, uint32_t maxImages,
+    void context_ModifySwapchainCreateInfo(const ls::GameConf& profile, uint32_t maxImages,
         VkSwapchainCreateInfoKHR& createInfo);
 
     /// swapchain context for a layer instance
@@ -43,7 +43,7 @@ namespace lsfgvk::layer {
         /// @param profile active game profile
         /// @param info swapchain info
         Swapchain(const vk::Vulkan& vk, lsfgvk::backend::Instance& backend,
-            GameConf profile, SwapchainInfo info);
+            ls::GameConf profile, SwapchainInfo info);
 
         /// present a frame
         /// @param vk vulkan instance
@@ -75,7 +75,7 @@ namespace lsfgvk::layer {
         size_t idx{1};
         size_t fidx{0}; // real frame index
 
-        GameConf profile;
+        ls::GameConf profile;
         SwapchainInfo info;
     };
 

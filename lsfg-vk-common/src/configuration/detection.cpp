@@ -1,5 +1,5 @@
-#include "detection.hpp"
-#include "config.hpp"
+#include "lsfg-vk-common/configuration/detection.hpp"
+#include "lsfg-vk-common/configuration/config.hpp"
 
 #include <array>
 #include <cstdlib>
@@ -12,8 +12,7 @@
 
 #include <sys/types.h>
 
-using namespace lsfgvk;
-using namespace lsfgvk::layer;
+using namespace ls;
 
 namespace {
     // try to match a profile by id
@@ -26,7 +25,7 @@ namespace {
     }
 }
 
-Identification layer::identify() {
+Identification ls::identify() {
     Identification id{};
 
     // fetch LSFGVK_PROFILE
@@ -83,7 +82,7 @@ Identification layer::identify() {
     return id;
 }
 
-std::optional<std::pair<IdentType, GameConf>> layer::findProfile(
+std::optional<std::pair<IdentType, GameConf>> ls::findProfile(
         const Configuration& config, const Identification& id) {
     const auto& profiles = config.getProfiles();
 

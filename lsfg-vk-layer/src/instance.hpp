@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../configuration/config.hpp"
 #include "lsfg-vk-backend/lsfgvk.hpp"
+#include "lsfg-vk-common/configuration/config.hpp"
 #include "lsfg-vk-common/helpers/errors.hpp"
 #include "lsfg-vk-common/helpers/pointers.hpp"
 #include "lsfg-vk-common/vulkan/vulkan.hpp"
@@ -67,8 +67,8 @@ namespace lsfgvk::layer {
         /// @param swapchain swapchain handle
         void removeSwapchainContext(VkSwapchainKHR swapchain);
     private:
-        Configuration config;
-        std::optional<GameConf> active_profile;
+        ls::Configuration config;
+        std::optional<ls::GameConf> active_profile;
 
         ls::lazy<lsfgvk::backend::Instance> backend;
         std::unordered_map<VkSwapchainKHR, Swapchain> swapchains;

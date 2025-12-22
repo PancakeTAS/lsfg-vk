@@ -1,4 +1,4 @@
-#include "config.hpp"
+#include "lsfg-vk-common/configuration/config.hpp"
 #include "lsfg-vk-common/helpers/errors.hpp"
 
 #include <cstdlib>
@@ -12,10 +12,10 @@
 #define TOML_ENABLE_FORMATTERS 0
 #include <toml.hpp>
 
-using namespace lsfgvk::layer;
+using namespace ls;
 
 namespace {
-    const char* DEFAULT_CONFIG = R"(version = 2
+     constexpr char const* DEFAULT_CONFIG = R"(version = 2
 
 [global]
 # dll = '/media/games/Lossless Scaling/Lossless.dll' # if you don't have LS in the default location

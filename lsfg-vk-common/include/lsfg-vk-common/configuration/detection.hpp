@@ -6,7 +6,7 @@
 #include <string>
 #include <utility>
 
-namespace lsfgvk::layer {
+namespace ls {
 
     /// identification data for a process
     struct Identification {

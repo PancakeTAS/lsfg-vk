@@ -1,6 +1,6 @@
 #include "swapchain.hpp"
-#include "../configuration/config.hpp"
 #include "lsfg-vk-backend/lsfgvk.hpp"
+#include "lsfg-vk-common/configuration/config.hpp"
 #include "lsfg-vk-common/helpers/errors.hpp"
 #include "lsfg-vk-common/helpers/pointers.hpp"
 #include "lsfg-vk-common/vulkan/command_buffer.hpp"
@@ -48,13 +48,13 @@ namespace {
     }
 }
 
-void layer::context_ModifySwapchainCreateInfo(const GameConf& profile, uint32_t maxImages,
+void layer::context_ModifySwapchainCreateInfo(const ls::GameConf& profile, uint32_t maxImages,
         VkSwapchainCreateInfoKHR& createInfo) {
     createInfo.imageUsage |=
         VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
 
     switch (profile.pacing) {
-        case Pacing::None:
+        case ls::Pacing::None:
             createInfo.minImageCount += profile.multiplier;
             if (maxImages && createInfo.minImageCount > maxImages)
                 createInfo.minImageCount = maxImages;
@@ -65,7 +65,7 @@ void layer::context_ModifySwapchainCreateInfo(const GameConf& profile, uint32_t 
 }
 
 Swapchain::Swapchain(const vk::Vulkan& vk, lsfgvk::backend::Instance& backend,
-            GameConf profile, SwapchainInfo info) :
+            ls::GameConf profile, SwapchainInfo info) :
         instance(backend),
         profile(std::move(profile)), info(std::move(info)) {
     const VkExtent2D extent = this->info.extent;
@@ -139,7 +139,7 @@ VkResult Swapchain::present(const vk::Vulkan& vk,
     }
 
     // update present mode when not using pacing
-    if (this->profile.pacing == Pacing::None) {
+    if (this->profile.pacing == ls::Pacing::None) {
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wunsafe-buffer-usage"
         auto* info = reinterpret_cast<VkSwapchainPresentModeInfoEXT*>(next_chain);

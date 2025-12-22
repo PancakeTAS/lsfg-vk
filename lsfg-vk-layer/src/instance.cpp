@@ -1,7 +1,6 @@
 #include "instance.hpp"
-#include "../configuration/config.hpp"
-#include "../configuration/detection.hpp"
 #include "swapchain.hpp"
+#include "lsfg-vk-common/configuration/detection.hpp"
 #include "lsfg-vk-common/helpers/errors.hpp"
 #include "lsfg-vk-common/vulkan/vulkan.hpp"
 
@@ -86,7 +85,7 @@ namespace {
 Root::Root() {
     // find active profile
     this->config.reload();
-    const auto& profile = findProfile(this->config, identify());
+    const auto& profile = findProfile(this->config, ls::identify());
     if (!profile.has_value())
         return;
 
@@ -94,16 +93,16 @@ Root::Root() {
 
     std::cerr << "lsfg-vk: using profile with name '" << this->active_profile->name << "' ";
     switch (profile->first) {
-        case IdentType::OVERRIDE:
+        case ls::IdentType::OVERRIDE:
             std::cerr << "(identified via override)\n";
             break;
-        case IdentType::EXECUTABLE:
+        case ls::IdentType::EXECUTABLE:
             std::cerr << "(identified via executable)\n";
             break;
-        case IdentType::WINE_EXECUTABLE:
+        case ls::IdentType::WINE_EXECUTABLE:
             std::cerr << "(identified via wine executable)\n";
             break;
-        case IdentType::PROCESS_NAME:
+        case ls::IdentType::PROCESS_NAME:
             std::cerr << "(identified via process name)\n";
             break;
     }

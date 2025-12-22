@@ -6,7 +6,7 @@
 #include <string>
 #include <vector>
 
-namespace lsfgvk::layer {
+namespace ls {
 
     /// global configuration
     struct GlobalConf {

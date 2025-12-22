@@ -1,4 +1,4 @@
-#include "context/instance.hpp"
+#include "instance.hpp"
 #include "lsfg-vk-common/helpers/errors.hpp"
 #include "lsfg-vk-common/helpers/pointers.hpp"
 #include "lsfg-vk-common/vulkan/vulkan.hpp"
@@ -15,7 +15,7 @@
 #include <vulkan/vk_layer.h>
 #include <vulkan/vulkan_core.h>
 
-using namespace lsfgvk;
+using namespace lsfgvk::layer;
 
 namespace {
     // global layer info initialized at layer negotiation
@@ -23,7 +23,7 @@ namespace {
         std::unordered_map<std::string, PFN_vkVoidFunction> map; //!< function pointer override map
         PFN_vkGetInstanceProcAddr GetInstanceProcAddr;
 
-        layer::Root root;
+        Root root;
     }* layer_info;
 
     // instance-wide info initialized at instance creation
@@ -428,7 +428,7 @@ VkResult vkNegotiateLoaderLayerInterfaceVersion(VkNegotiateLayerInterface* pVers
                 { "vkDestroySwapchainKHR", VKPTR(myvkDestroySwapchainKHR) }
 #undef VKPTR
             },
-            .root = layer::Root()
+            .root = Root()
         };
 
         if (!layer_info->root.active()) { // skip inactive
