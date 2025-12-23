@@ -10,7 +10,7 @@ using namespace lsfgvk::ui;
 
 int main(int argc, char* argv[]) {
     const QGuiApplication app(argc, argv);
-    QGuiApplication::setWindowIcon(QIcon(":/rsc/icon.png"));
+    QGuiApplication::setWindowIcon(QIcon(":/rsc/gay.pancake.lsfg-vk-ui.png"));
     QGuiApplication::setApplicationName("lsfg-vk-ui");
     QGuiApplication::setApplicationDisplayName("lsfg-vk-ui");
 

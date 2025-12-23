@@ -14,7 +14,7 @@ set(UI_RESOURCES
     "rsc/widgets/FileEdit.qml"
     "rsc/widgets/FlowSlider.qml"
     "rsc/widgets/List.qml"
-    "rsc/icon.png"
+    "rsc/gay.pancake.lsfg-vk-ui.png"
     "rsc/UI.qml")
 
 qt_add_executable(lsfg-vk-ui ${UI_SOURCES})
@@ -37,3 +37,12 @@ target_link_libraries(lsfg-vk-ui
     PRIVATE lsfg-vk-common
     PRIVATE lsfg-vk-backend
     PRIVATE Qt6::Quick)
+
+install(TARGETS lsfg-vk-ui
+    RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}")
+if(LSFGVK_INSTALL_XDG_FILES)
+    install(FILES "rsc/gay.pancake.lsfg-vk-ui.png"
+        DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/icons/hicolor/256x256/apps")
+    install(FILES "rsc/lsfg-vk-ui.desktop"
+        DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/applications")
+endif()

@@ -1,13 +1,14 @@
 cmake_minimum_required(VERSION 3.10)
 project(lsfg-vk LANGUAGES CXX)
+include(GNUInstallDirs)
 
-# === user facing options
-option(LSFGVK_BUILD_VULKAN_LAYER
-    "Build the Vulkan layer" ON)
-option(LSFGVK_BUILD_USER_INTERFACE
-    "Build the user interface" ON)
-option(LSFGVK_BUILD_DEBUG_TOOL
-    "Build the debug tool for testing and debugging" OFF)
+# === READ HERE FOR BUILD OPTIONS ===
+option(LSFGVK_BUILD_VULKAN_LAYER    "Build the Vulkan layer"     ON)
+option(LSFGVK_BUILD_USER_INTERFACE  "Build the user interface"   ON)
+option(LSFGVK_BUILD_DEBUG_TOOL      "Build the debug tool"      OFF)
+option(LSFGVK_INSTALL_DEVELOP       "Install development files" OFF)
+option(LSFGVK_INSTALL_XDG_FILES     "Install xdg app files"      ON)
+# === READ HERE FOR BUILD OPTIONS ===
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)

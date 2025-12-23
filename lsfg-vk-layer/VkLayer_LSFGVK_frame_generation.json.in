@@ -1,10 +1,10 @@
 {
   "file_format_version": "1.1.0",
   "layer": {
-    "name": "VK_LAYER_LS_frame_generation",
+    "name": "VK_LAYER_LSFGVK_frame_generation",
     "description": "Lossless Scaling frame generation layer",
     "implementation_version": "2",
-    "library_path": "liblsfg-vk-layer.so",
+    "library_path": "@LSFGVK_LAYER_LIBRARY_PATH@",
     "type": "GLOBAL",
     "api_version": "1.4.328",
     "disable_environment": {

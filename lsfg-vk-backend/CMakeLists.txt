@@ -26,3 +26,11 @@ target_link_libraries(lsfg-vk-backend
 
 set_target_properties(lsfg-vk-backend PROPERTIES
     CXX_VISIBILITY_PRESET hidden)
+
+if(LSFGVK_INSTALL_DEVELOP)
+    install(TARGETS lsfg-vk-backend
+        ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}")
+    install(DIRECTORY "include/lsfg-vk-backend/"
+        DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/lsfg-vk-backend"
+        FILES_MATCHING PATTERN "*.hpp")
+endif()

@@ -21,3 +21,11 @@ target_include_directories(lsfg-vk-common
 
 target_include_directories(lsfg-vk-common SYSTEM
     PRIVATE thirdparty/include)
+
+if(LSFGVK_INSTALL_DEVELOP)
+    install(TARGETS lsfg-vk-common
+        ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}")
+    install(DIRECTORY "include/lsfg-vk-common/"
+        DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/lsfg-vk-common"
+        FILES_MATCHING PATTERN "*.hpp")
+endif()
