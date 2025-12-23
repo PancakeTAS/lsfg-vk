@@ -79,12 +79,6 @@ ApplicationWindow {
                 focus: true
             }
             Button {
-                icon.name: "find-location"
-                onClicked: {
-                    // TODO :3
-                }
-            }
-            Button {
                 icon.name: "list-add"
                 onClicked: backend.addActiveIn(active_in_name.text)
             }
