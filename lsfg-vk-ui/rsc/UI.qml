@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import QtQuick.Window
+import "dialogs"
 import "panes"
 import "widgets"
 
@@ -51,6 +52,49 @@ ApplicationWindow {
         }
     }
 
+    LargeDialog {
+        id: active_in_dialog
+        onConfirm: backend.createProfile(create_name.text)
+
+        List {
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+
+            model: backend.active_in
+            selected: backend.active_in_index
+            onSelect: (index) => {
+                backend.active_in_index = index
+                var idx = backend.active_in.index(index, 0);
+                active_in_name.text = backend.active_in.data(idx);
+            }
+        }
+
+        RowLayout {
+            spacing: 8
+
+            TextField {
+                Layout.fillWidth: true
+                id: active_in_name
+                placeholderText: "Specify linux binary / exe file / process name"
+                focus: true
+            }
+            Button {
+                icon.name: "find-location"
+                onClicked: {
+                    // TODO :3
+                }
+            }
+            Button {
+                icon.name: "list-add"
+                onClicked: backend.addActiveIn(active_in_name.text)
+            }
+            Button {
+                icon.name: "list-remove"
+                onClicked: backend.removeActiveIn()
+            }
+        }
+    }
+
     SplitView {
         anchors.fill: parent
         orientation: Qt.Horizontal
@@ -67,7 +111,7 @@ ApplicationWindow {
                 horizontalAlignment: Text.AlignHCenter
             }
 
-            ProfileList {
+            List {
                 model: backend.profiles
                 selected: backend.profile_index
                 onSelect: (index) => backend.profile_index = index
@@ -138,6 +182,18 @@ ApplicationWindow {
                 enabled: backend.available
 
                 GroupEntry {
+                    title: "Active In"
+                    description: "Specify which applications this profile is active in"
+
+                    Button {
+                        Layout.alignment: Qt.AlignRight
+
+                        text: "Edit..."
+                        onClicked: active_in_dialog.open()
+                    }
+                }
+
+                GroupEntry {
                     title: "Multiplier"
                     description: "Control the amount of generated frames"
 
@@ -169,7 +225,7 @@ ApplicationWindow {
 
                 GroupEntry {
                     title: "Performance Mode"
-                    description: "Use a significantly lighter frame generation modeln"
+                    description: "Use a significantly lighter frame generation model"
 
                     CheckBox {
                         Layout.alignment: Qt.AlignRight

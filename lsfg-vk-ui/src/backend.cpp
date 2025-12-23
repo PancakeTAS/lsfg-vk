@@ -41,6 +41,16 @@ Backend::Backend() {
 
     this->m_profile_list_model = new QStringListModel(profiles, this);
 
+    // create active_in list models
+    this->m_active_in_list_models.reserve(this->m_profiles.size());
+    for (const auto& profile : this->m_profiles) {
+        QStringList active_in; // NOLINT (IWYU)
+        for (const auto& path : profile.active_in)
+            active_in.append(QString::fromStdString(path));
+
+        this->m_active_in_list_models.push_back(new QStringListModel(active_in, this));
+    }
+
     // try to select first profile
     if (!this->m_profiles.empty())
         this->m_profile_index = 0;

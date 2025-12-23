@@ -6,13 +6,14 @@ set(UI_SOURCES
     "src/utils.cpp")
 
 set(UI_RESOURCES
-    "rsc/panes/CenteredDialog.qml"
+    "rsc/dialogs/CenteredDialog.qml"
+    "rsc/dialogs/LargeDialog.qml"
     "rsc/panes/Group.qml"
     "rsc/panes/GroupEntry.qml"
     "rsc/panes/Pane.qml"
-    "rsc/panes/ProfileList.qml"
     "rsc/widgets/FileEdit.qml"
     "rsc/widgets/FlowSlider.qml"
+    "rsc/widgets/List.qml"
     "rsc/UI.qml")
 
 qt_add_executable(lsfg-vk-ui ${UI_SOURCES})

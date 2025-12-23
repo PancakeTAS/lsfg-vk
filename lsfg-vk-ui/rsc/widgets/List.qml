@@ -13,6 +13,7 @@ Rectangle {
     border.color: palette.light
     border.width: 1
     radius: 4
+    clip: true
 
     ListView {
         anchors.fill: parent
@@ -24,6 +25,7 @@ Rectangle {
         delegate: Rectangle {
             width: view.width
             height: 32
+            radius: 4
             color: ListView.isCurrentItem ? palette.highlight : "transparent"
 
             Text {

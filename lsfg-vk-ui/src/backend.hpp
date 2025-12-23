@@ -7,6 +7,7 @@
 #include <QString>
 #include <atomic>
 #include <qstringlistmodel.h>
+#include <qtmetamacros.h>
 #include <utility>
 
 #define getters public
@@ -18,33 +19,29 @@ namespace lsfgvk::ui {
     class Backend : public QObject {
         Q_OBJECT
 
-        Q_PROPERTY(QStringList gpus READ calculateGPUList NOTIFY refreshUI)
+
         Q_PROPERTY(QStringListModel* profiles READ calculateProfileListModel NOTIFY refreshUI)
         Q_PROPERTY(int profile_index READ getProfileIndex WRITE profileSelected NOTIFY refreshUI)
-        Q_PROPERTY(bool available READ isValidProfileIndex NOTIFY refreshUI)
 
         Q_PROPERTY(QString dll READ getDll WRITE dllUpdated NOTIFY refreshUI)
         Q_PROPERTY(bool allow_fp16 READ getAllowFP16 WRITE allowFP16Updated NOTIFY refreshUI)
 
+        Q_PROPERTY(bool available READ isValidProfileIndex NOTIFY refreshUI)
+        Q_PROPERTY(QStringListModel* active_in READ calculateActiveInModel NOTIFY refreshUI)
+        Q_PROPERTY(int active_in_index READ getActiveInIndex WRITE activeInSelected NOTIFY refreshUI)
         Q_PROPERTY(size_t multiplier READ getMultiplier WRITE multiplierUpdated NOTIFY refreshUI)
         Q_PROPERTY(float flow_scale READ getFlowScale WRITE flowScaleUpdated NOTIFY refreshUI)
         Q_PROPERTY(bool performance_mode READ getPerformanceMode WRITE performanceModeUpdated NOTIFY refreshUI)
         Q_PROPERTY(QString pacing_mode READ getPacingMode WRITE pacingModeUpdated NOTIFY refreshUI)
+        Q_PROPERTY(QStringList gpus READ calculateGPUList NOTIFY refreshUI)
         Q_PROPERTY(QString gpu READ getGPU WRITE gpuUpdated NOTIFY refreshUI)
 
     public:
         explicit Backend();
 
     getters:
-        [[nodiscard]] QStringList calculateGPUList() const {
-            return this->m_gpu_list;
-        }
-
         [[nodiscard]] QStringListModel* calculateProfileListModel() const {
             return this->m_profile_list_model;
-        }
-        [[nodiscard]] bool isValidProfileIndex() const {
-            return this->m_profile_index >= 0 && std::cmp_less(this->m_profile_index, this->m_profiles.size());
         }
         [[nodiscard]] int getProfileIndex() const {
             return this->m_profile_index;
@@ -60,6 +57,18 @@ namespace lsfgvk::ui {
 #define VALIDATE_AND_GET_PROFILE(default) \
     if (!isValidProfileIndex()) return default; \
     auto& conf = this->m_profiles[static_cast<size_t>(this->m_profile_index)];
+
+        [[nodiscard]] bool isValidProfileIndex() const {
+            return this->m_profile_index >= 0 && std::cmp_less(this->m_profile_index, this->m_profiles.size());
+        }
+        [[nodiscard]] QStringListModel* calculateActiveInModel() const {
+            if (!isValidProfileIndex()) return nullptr;
+            return this->m_active_in_list_models.at(static_cast<size_t>(this->m_profile_index));
+        }
+        [[nodiscard]] int getActiveInIndex() const {
+            if (!isValidProfileIndex()) return -1;
+            return static_cast<int>(this->m_active_in_index);
+        }
 
         [[nodiscard]] size_t getMultiplier() const {
             VALIDATE_AND_GET_PROFILE(2)
@@ -80,6 +89,9 @@ namespace lsfgvk::ui {
             }
             throw std::runtime_error("Unknown pacing type in backend");
         }
+        [[nodiscard]] QStringList calculateGPUList() const {
+            return this->m_gpu_list;
+        }
         [[nodiscard]] QString getGPU() const {
             VALIDATE_AND_GET_PROFILE("Default")
             return QString::fromStdString(conf.gpu.value_or("Default"));
@@ -90,6 +102,11 @@ namespace lsfgvk::ui {
     setters:
         void profileSelected(int idx) {
             this->m_profile_index = idx;
+            emit refreshUI();
+        }
+
+        void activeInSelected(int idx) {
+            this->m_active_in_index = idx;
             emit refreshUI();
         }
 
@@ -145,6 +162,34 @@ namespace lsfgvk::ui {
             MARK_DIRTY()
         }
 
+        Q_INVOKABLE void addActiveIn(const QString& name) {
+            VALIDATE_AND_GET_PROFILE()
+            auto& active_in = conf.active_in;
+            active_in.push_back(name.toStdString());
+
+            auto& model = this->m_active_in_list_models
+                .at(static_cast<size_t>(this->m_profile_index));
+            model->insertRow(model->rowCount());
+            model->setData(model->index(model->rowCount() - 1), name);
+            MARK_DIRTY()
+        }
+        Q_INVOKABLE void removeActiveIn() {
+            VALIDATE_AND_GET_PROFILE()
+            if (this->m_active_in_index < 0 || std::cmp_greater_equal(static_cast<size_t>(this->m_active_in_index), conf.active_in.size()))
+                return;
+
+            auto& active_in = conf.active_in;
+            active_in.erase(active_in.begin() + this->m_active_in_index);
+            auto& model = this->m_active_in_list_models
+                .at(static_cast<size_t>(this->m_profile_index));
+            model->removeRow(this->m_active_in_index);
+            if (!active_in.empty())
+                this->m_active_in_index = 0;
+            else
+                this->m_active_in_index = -1;
+            MARK_DIRTY()
+        }
+
         Q_INVOKABLE void createProfile(const QString& name) {
             ls::GameConf conf;
             conf.name = name.toStdString();
@@ -189,9 +234,13 @@ namespace lsfgvk::ui {
         ls::GlobalConf m_global;
         std::vector<ls::GameConf> m_profiles;
 
-        QStringList m_gpu_list;
         QStringListModel* m_profile_list_model;
         int m_profile_index{-1};
+
+        std::vector<QStringListModel*> m_active_in_list_models;
+        int m_active_in_index{-1};
+
+        QStringList m_gpu_list;
 
         std::atomic_bool m_dirty{false};
     };
