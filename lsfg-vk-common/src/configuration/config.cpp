@@ -1,7 +1,9 @@
 #include "lsfg-vk-common/configuration/config.hpp"
 #include "lsfg-vk-common/helpers/errors.hpp"
 
+#include <cstdint>
 #include <cstdlib>
+#include <exception>
 #include <filesystem>
 #include <fstream>
 #include <optional>
@@ -9,37 +11,76 @@
 #include <utility>
 #include <vector>
 
-#define TOML_ENABLE_FORMATTERS 0
 #include <toml.hpp>
 
 using namespace ls;
 
+void ConfigFile::createDefaultConfigFile(const std::filesystem::path& path) {
+    try {
+        std::filesystem::create_directories(path.parent_path());
+        if (!std::filesystem::exists(path.parent_path()))
+            throw ls::error("unable to create configuration directory");
+
+        std::ofstream ofs(path);
+        if (!ofs.is_open())
+            throw ls::error("unable to create default configuration file");
+
+        ofs << R"(version = 2
+
+   [global]
+   # dll = '/media/games/Lossless Scaling/Lossless.dll' # if you don't have LS in the default location
+   allow_fp16 = true # this will improve give a MASSIVE performance boost on AMD, but be super slow on older (!) NVIDIA GPUs
+
+   [[profile]]
+   name = "4x FG / 85% [Performance]"
+   active_in = [ # see the wiki for more info
+       'vkcube',
+       'vkcubepp'
+   ]
+   # gpu = 'NVIDIA GeForce RTX 5080' # see the wiki for more info
+   multiplier = 4
+   flow_scale = 0.85
+   performance_mode = true
+   pacing = 'none' # see the wiki for more info
+
+   [[profile]]
+   name = "2x FG / 100%"
+   active_in = 'GenshinImpact.exe'
+   gpu = 'NVIDIA GeForce RTX 5080'
+   multiplier = 2
+   )";
+        ofs.close();
+    } catch (const std::filesystem::filesystem_error& e) {
+        throw ls::error("unable to create default configuration file", e);
+    }
+}
+
+ConfigFile::ConfigFile() {
+    this->globalConf = {
+        .allow_fp16 = true
+    };
+    this->profileConfs.emplace_back(GameConf {
+        .name = "4x FG / 85% [Performance]",
+        .active_in = {
+            "vkcube",
+            "vkcubepp"
+        },
+        .multiplier = 4,
+        .flow_scale = 0.85F,
+        .performance_mode = true,
+        .pacing = Pacing::None
+    });
+    this->profileConfs.emplace_back(GameConf {
+        .name = "2x FG / 100%",
+        .active_in = {
+            "GenshinImpact.exe"
+        },
+        .gpu = "NVIDIA GeForce RTX 5080",
+        .multiplier = 2
+    });
+}
+
 namespace {
-     constexpr char const* DEFAULT_CONFIG = R"(version = 2
-
-[global]
-# dll = '/media/games/Lossless Scaling/Lossless.dll' # if you don't have LS in the default location
-allow_fp16 = true # this will improve give a MASSIVE performance boost on AMD, but be super slow on older (!) NVIDIA GPUs
-
-[[profile]]
-name = "4x FG / 85% [Performance]"
-active_in = [ # see the wiki for more info
-    'vkcube',
-    'vkcubepp'
-]
-# gpu = 'NVIDIA GeForce RTX 5080' # see the wiki for more info
-multiplier = 4
-flow_scale = 0.85
-performance_mode = true
-pacing = 'none' # see the wiki for more info
-
-[[profile]]
-name = "2x FG / 100%"
-active_in = 'GenshinImpact.exe'
-gpu = 'NVIDIA GeForce RTX 5080'
-multiplier = 2
-)";
-
     /// parse an activity array from toml value
     std::vector<std::string> activityFromString(const toml::node_view<const toml::node>& val) {
         std::vector<std::string> active_in{};
@@ -62,28 +103,6 @@ multiplier = 2
         if (str == "none")
             return Pacing::None;
         throw ls::error("unknown pacing method: " + str);
-    }
-    /// try to find the config
-    std::filesystem::path findPath() {
-        // always honor LSFGVK_CONFIG if set
-        const char* envPath = std::getenv("LSFGVK_CONFIG");
-        if (envPath && *envPath != '\0')
-            return{envPath};
-
-        // then check the XDG overriden location
-        const char* xdgPath = std::getenv("XDG_CONFIG_HOME");
-        if (xdgPath && *xdgPath != '\0')
-            return std::filesystem::path(xdgPath)
-                / "lsfg-vk" / "conf.toml";
-
-        // fallback to typical user home
-        const char* homePath = std::getenv("HOME");
-        if (homePath && *homePath != '\0')
-            return std::filesystem::path(homePath)
-                / ".config" / "lsfg-vk" / "conf.toml";
-
-        // finally, use system-wide config
-        return "/etc/lsfg-vk/conf.toml";
     }
     /// parse the global configuration
     GlobalConf parseGlobalConf(const toml::table& tbl) {
@@ -168,77 +187,131 @@ multiplier = 2
     }
 }
 
-Configuration::Configuration() :
-        path(findPath()),
-        from_env(std::getenv("LSFGVK_ENV") != nullptr) {
-    if (this->from_env) {
-        this->global = parseGlobalConfFromEnv();
-        this->profiles.push_back(parseGameConfFromEnv());
-        return;
-    }
-
-    if (std::filesystem::exists(this->path))
-        return;
-
+ConfigFile::ConfigFile(const std::filesystem::path& path) {
+    toml::table table;
     try {
-        std::filesystem::create_directories(this->path.parent_path());
-        if (!std::filesystem::exists(this->path.parent_path()))
-            throw ls::error("unable to create configuration directory");
-
-        std::ofstream ofs(this->path);
-        if (!ofs.is_open())
-            throw ls::error("unable to create default configuration file");
-
-        ofs << DEFAULT_CONFIG;
-        ofs.close();
-    } catch (const std::filesystem::filesystem_error& e) {
-        throw ls::error("unable to create default configuration file", e);
-    }
-}
-
-bool Configuration::isUpToDate() {
-    if (this->from_env)
-        return true;
-
-    try {
-        return std::filesystem::last_write_time(this->path) == this->timestamp;
-    } catch (const std::filesystem::filesystem_error& e) {
-        throw ls::error("unable to access configuration file", e);
-    }
-}
-
-void Configuration::reload() {
-    try {
-        this->timestamp = std::filesystem::last_write_time(this->path);
-    } catch (const std::filesystem::filesystem_error& e) {
-        throw ls::error("unable to access configuration file", e);
-    }
-
-    GlobalConf global{};
-    std::vector<GameConf> profiles{};
-
-    toml::table tbl;
-    try {
-        tbl = toml::parse_file(this->path.string());
+        table = toml::parse_file(path.string());
     } catch (const toml::parse_error& e) {
         throw ls::error("unable to parse configuration", e);
     }
 
-    auto vrs = tbl["version"];
-    if (!vrs || !vrs.is_integer() || *vrs.as_integer() != 2)
+    auto version = table["version"];
+    if (!version || !version.is_integer() || *version.as_integer() != 2)
         throw ls::error("unsupported configuration version");
 
-    auto gbl = tbl["global"];
-    if (gbl && gbl.is_table()) {
-        global = parseGlobalConf(*gbl.as_table());
+    auto global = table["global"];
+    if (global && global.is_table()) {
+        this->globalConf = parseGlobalConf(*global.as_table());
     }
 
-    auto pfls = tbl["profile"];
-    if (pfls && pfls.is_array_of_tables()) {
-        for (const auto& pfl : *pfls.as_array())
-            profiles.push_back(parseGameConf(*pfl.as_table()));
+    auto profiles = table["profile"];
+    if (profiles && profiles.is_array_of_tables())
+        for (const auto& profile : *profiles.as_array())
+            this->profileConfs.push_back(parseGameConf(*profile.as_table()));
+}
+
+void ConfigFile::write(const std::filesystem::path& path) const {
+    toml::table table;
+    table.insert("version", 2);
+
+    toml::table global;
+    if (this->globalConf.dll)
+        global.insert("dll", *this->globalConf.dll);
+    global.insert("allow_fp16", this->globalConf.allow_fp16);
+    table.insert("global", global);
+
+    toml::array profiles;
+    for (const auto& conf : this->profileConfs) {
+        toml::table profile;
+        profile.insert("name", conf.name);
+
+        if (!conf.active_in.empty()) {
+            if (conf.active_in.size() == 1) {
+                profile.insert("active_in", conf.active_in.front());
+            } else {
+                toml::array active_in;
+                for (const auto& entry : conf.active_in)
+                    active_in.push_back(entry);
+                profile.insert("active_in", active_in);
+            }
+        }
+        if (conf.gpu)
+            profile.insert("gpu", conf.gpu.value_or(""));
+        profile.insert("multiplier", static_cast<int64_t>(conf.multiplier));
+        profile.insert("flow_scale", conf.flow_scale);
+        profile.insert("performance_mode", conf.performance_mode);
+        switch (conf.pacing) {
+            case Pacing::None:
+                profile.insert("pacing", "none");
+                break;
+        }
+
+        profiles.push_back(profile);
+    }
+    table.insert("profile", profiles);
+
+    try {
+        std::ofstream ofs(path);
+        if (!ofs.is_open())
+            throw ls::error("unable to open configuration file for writing");
+
+        ofs << toml::toml_formatter {
+            table,
+            toml::v3::format_flags::relaxed_float_precision
+        } << '\n';
+        ofs.close();
+    } catch (const std::exception& e) {
+        throw ls::error("unable to write configuration file", e);
+    }
+}
+
+WatchedConfig::WatchedConfig() : path(findConfigurationFile()) {
+    if (std::getenv("LSFGVK_ENV")) {
+        auto& config = this->configFile;
+        config.global() = parseGlobalConfFromEnv();
+        config.profiles().push_back(parseGameConfFromEnv());
+
+        return;
     }
 
-    this->global = std::move(global);
-    this->profiles = std::move(profiles);
+    if (!std::filesystem::exists(this->path))
+        ConfigFile::createDefaultConfigFile(this->path);
+
+    this->configFile = ConfigFile(this->path);
+}
+
+bool WatchedConfig::update() {
+    if (std::getenv("LSFGVK_ENV"))
+        return false;
+
+    const auto now = std::filesystem::last_write_time(this->path);
+    if (now == this->last_timestamp)
+        return false;
+
+    ConfigFile new_config{this->path};
+    this->last_timestamp = now;
+    this->configFile = std::move(new_config);
+    return true;
+}
+
+std::filesystem::path ls::findConfigurationFile() {
+    // always honor LSFGVK_CONFIG if set
+    const char* envPath = std::getenv("LSFGVK_CONFIG");
+    if (envPath && *envPath != '\0')
+        return{envPath};
+
+    // then check the XDG overriden location
+    const char* xdgPath = std::getenv("XDG_CONFIG_HOME");
+    if (xdgPath && *xdgPath != '\0')
+        return std::filesystem::path(xdgPath)
+            / "lsfg-vk" / "conf.toml";
+
+    // fallback to typical user home
+    const char* homePath = std::getenv("HOME");
+    if (homePath && *homePath != '\0')
+        return std::filesystem::path(homePath)
+            / ".config" / "lsfg-vk" / "conf.toml";
+
+    // finally, use system-wide config
+    return "/etc/lsfg-vk/conf.toml";
 }

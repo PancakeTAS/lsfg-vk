@@ -36,5 +36,5 @@ namespace ls {
     /// @param id identification data
     /// @return ident pair if found
     std::optional<std::pair<IdentType, GameConf>> findProfile(
-        const Configuration& config, const Identification& id);
+        const ConfigFile& config, const Identification& id);
 }

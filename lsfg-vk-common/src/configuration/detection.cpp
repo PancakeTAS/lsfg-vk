@@ -83,12 +83,12 @@ Identification ls::identify() {
 }
 
 std::optional<std::pair<IdentType, GameConf>> ls::findProfile(
-        const Configuration& config, const Identification& id) {
-    const auto& profiles = config.getProfiles();
+        const ConfigFile& config, const Identification& id) {
+    const auto& profiles = config.profiles();
 
     // check for the environment option first
     if (std::getenv("LSFGVK_ENV") != nullptr)
-        return std::make_pair(IdentType::OVERRIDE, config.getProfiles().front());
+        return std::make_pair(IdentType::OVERRIDE, profiles.front());
 
     // then override first
     if (id.override.has_value()) {

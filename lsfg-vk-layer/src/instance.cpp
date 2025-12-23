@@ -84,8 +84,7 @@ namespace {
 
 Root::Root() {
     // find active profile
-    this->config.reload();
-    const auto& profile = findProfile(this->config, ls::identify());
+    const auto& profile = findProfile(this->config.get(), ls::identify());
     if (!profile.has_value())
         return;
 
@@ -109,8 +108,7 @@ Root::Root() {
 }
 
 void Root::update() {
-    if (!this->config.isUpToDate())
-        this->config.reload();
+    this->config.update();
 }
 
 void Root::modifyInstanceCreateInfo(VkInstanceCreateInfo& createInfo,
@@ -202,7 +200,7 @@ void Root::createSwapchainContext(const vk::Vulkan& vk,
     const auto& profile = *this->active_profile;
 
     if (!this->backend.has_value()) { // emplace backend late, due to loader bug
-        const auto& global = this->config.getGlobalConf();
+        const auto& global = this->config.get().global();
 
         setenv("DISABLE_LSFGVK", "1", 1); // NOLINT (c++-include)
 

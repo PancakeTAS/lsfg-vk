@@ -27,7 +27,8 @@ set_target_properties(lsfg-vk-ui PROPERTIES
 target_compile_options(lsfg-vk-ui PRIVATE
     -Wno-ctad-maybe-unsupported
     -Wno-unsafe-buffer-usage-in-libc-call
-    -Wno-global-constructors)
+    -Wno-global-constructors
+    -Wno-unsafe-buffer-usage)
 
 target_link_libraries(lsfg-vk-ui
     PUBLIC lsfg-vk-common

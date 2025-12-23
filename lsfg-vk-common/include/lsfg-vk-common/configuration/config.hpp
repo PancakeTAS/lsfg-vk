@@ -40,36 +40,69 @@ namespace ls {
         Pacing pacing{Pacing::None};
     };
 
-    /// automatically updating configuration
-    class Configuration {
+    /// parsed configuration file
+    class ConfigFile {
     public:
-        /// create a new configuration
+        /// create a default configuration file at the given path
+        /// @param path path to configuration file
         /// @throws ls::error on failure
-        Configuration();
+        static void createDefaultConfigFile(const std::filesystem::path& path);
 
-        /// check if the configuration is out of date
+        /// load the default configuration
         /// @throws ls::error on failure
-        /// @return true if the configuration is out of date
-        bool isUpToDate();
-
-        /// reload the configuration from disk
+        ConfigFile();
+        /// load configuration from file
+        /// @param path path to configuration file
         /// @throws ls::error on failure
-        void reload();
+        ConfigFile(const std::filesystem::path& path);
 
         /// get the global configuration
         /// @return global configuration
-        [[nodiscard]] const GlobalConf& getGlobalConf() const { return global; }
-
+        [[nodiscard]] auto& global() { return this->globalConf; }
         /// get the game profiles
         /// @return list of game profiles
-        [[nodiscard]] const std::vector<GameConf>& getProfiles() const { return profiles; }
-    private:
-        std::filesystem::path path;
-        std::chrono::time_point<std::chrono::file_clock> timestamp;
-        bool from_env{};
+        [[nodiscard]] auto& profiles() { return this->profileConfs; }
 
-        GlobalConf global;
-        std::vector<GameConf> profiles;
+        /// get the global configuration
+        /// @return global configuration
+        [[nodiscard]] const auto& global() const { return this->globalConf; }
+        /// get the game profiles
+        /// @return list of game profiles
+        [[nodiscard]] const auto& profiles() const { return this->profileConfs; }
+
+        /// write the configuration back to file
+        /// @param path path to configuration file
+        /// @throws ls::error on failure
+        void write(const std::filesystem::path& path) const;
+    private:
+        GlobalConf globalConf{};
+        std::vector<GameConf> profileConfs;
     };
+
+    /// configuration watcher with additional environment support
+    class WatchedConfig {
+    public:
+        /// create a new configuration watcher
+        /// @throws ls::error on failure
+        WatchedConfig();
+
+        /// reload the configuration from disk if it has changed
+        /// @throws ls::error on failure
+        /// @return true if the configuration was reloaded
+        bool update();
+
+        /// access the underlying configuration file
+        /// @return configuration file
+        [[nodiscard]] const auto& get() const { return this->configFile; }
+    private:
+        ConfigFile configFile;
+
+        std::filesystem::path path;
+        std::chrono::time_point<std::chrono::file_clock> last_timestamp;
+    };
+
+    /// find the configuration file in the most common locations
+    /// @return path to configuration file
+    std::filesystem::path findConfigurationFile();
 
 }

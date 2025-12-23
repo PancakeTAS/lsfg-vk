@@ -5,6 +5,8 @@
 #include <QStringList>
 #include <QString>
 #include <chrono>
+#include <exception>
+#include <filesystem>
 #include <iostream>
 #include <thread>
 
@@ -12,11 +14,20 @@ using namespace lsfgvk::ui;
 
 Backend::Backend() {
     // load configuration
-    ls::Configuration config;
-    config.reload();
+    ls::ConfigFile config{};
 
-    this->m_global = config.getGlobalConf();
-    this->m_profiles = config.getProfiles();
+    auto path = ls::findConfigurationFile();
+    if (std::filesystem::exists(path)) {
+        try {
+            config = ls::ConfigFile(path);
+        } catch (const std::exception&) {
+            std::cerr << "the configuration file is invalid, it has been backed up to '.old'\n";
+            std::filesystem::rename(path, path.string() + ".old");
+        }
+    }
+
+    this->m_global = config.global();
+    this->m_profiles = config.profiles();
 
     // create profile list model
     QStringList profiles; // NOLINT (IWYU)
@@ -30,14 +41,22 @@ Backend::Backend() {
         this->m_profile_index = 0;
 
     // spawn saving thread
-    std::thread([this]() {
+    std::thread([this, path]() {
         while (true) {
             std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
             if (!this->m_dirty.exchange(false))
                 continue;
 
-            std::cerr << "configuration updated >:3" << '\n';
+            ls::ConfigFile config{};
+            config.global() = this->m_global;
+            config.profiles() = this->m_profiles;
+
+            try {
+                config.write(path);
+            } catch (const std::exception& e) {
+                std::cerr << "unable to write configuration:\n- " << e.what() << "\n";
+            }
         }
     }).detach();
 }

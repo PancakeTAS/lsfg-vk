@@ -67,7 +67,7 @@ namespace lsfgvk::layer {
         /// @param swapchain swapchain handle
         void removeSwapchainContext(VkSwapchainKHR swapchain);
     private:
-        ls::Configuration config;
+        ls::WatchedConfig config;
         std::optional<ls::GameConf> active_profile;
 
         ls::lazy<lsfgvk::backend::Instance> backend;
