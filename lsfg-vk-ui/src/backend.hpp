@@ -6,6 +6,7 @@
 #include <QStringListModel>
 #include <QString>
 #include <atomic>
+#include <qstringlistmodel.h>
 #include <utility>
 
 #define getters public
@@ -17,6 +18,7 @@ namespace lsfgvk::ui {
     class Backend : public QObject {
         Q_OBJECT
 
+        Q_PROPERTY(QStringList gpus READ calculateGPUList NOTIFY refreshUI)
         Q_PROPERTY(QStringListModel* profiles READ calculateProfileListModel NOTIFY refreshUI)
         Q_PROPERTY(int profile_index READ getProfileIndex WRITE profileSelected NOTIFY refreshUI)
         Q_PROPERTY(bool available READ isValidProfileIndex NOTIFY refreshUI)
@@ -34,6 +36,10 @@ namespace lsfgvk::ui {
         explicit Backend();
 
     getters:
+        [[nodiscard]] QStringList calculateGPUList() const {
+            return this->m_gpu_list;
+        }
+
         [[nodiscard]] QStringListModel* calculateProfileListModel() const {
             return this->m_profile_list_model;
         }
@@ -132,7 +138,7 @@ namespace lsfgvk::ui {
         }
         void gpuUpdated(const QString& gpu) {
             VALIDATE_AND_GET_PROFILE()
-            if (gpu.trimmed().isEmpty())
+            if (gpu.trimmed().isEmpty() || gpu == "Default")
                 conf.gpu = std::nullopt;
             else
                 conf.gpu.emplace(gpu.toStdString());
@@ -183,6 +189,7 @@ namespace lsfgvk::ui {
         ls::GlobalConf m_global;
         std::vector<ls::GameConf> m_profiles;
 
+        QStringList m_gpu_list;
         QStringListModel* m_profile_list_model;
         int m_profile_index{-1};
 

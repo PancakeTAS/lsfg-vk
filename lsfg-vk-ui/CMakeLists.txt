@@ -2,7 +2,8 @@ find_package(Qt6 REQUIRED COMPONENTS Quick)
 
 set(UI_SOURCES
     "src/backend.cpp"
-    "src/main.cpp")
+    "src/main.cpp"
+    "src/utils.cpp")
 
 set(UI_RESOURCES
     "rsc/panes/CenteredDialog.qml"
@@ -31,5 +32,6 @@ target_compile_options(lsfg-vk-ui PRIVATE
     -Wno-unsafe-buffer-usage)
 
 target_link_libraries(lsfg-vk-ui
-    PUBLIC lsfg-vk-common
+    PRIVATE lsfg-vk-common
+    PRIVATE lsfg-vk-backend
     PRIVATE Qt6::Quick)

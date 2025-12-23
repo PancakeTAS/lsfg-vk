@@ -13,7 +13,6 @@ RowLayout {
 
     Slider {
         Layout.fillWidth: true;
-        Layout.maximumWidth: 450;
 
         value: root.value
         from: root.from

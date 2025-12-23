@@ -1,4 +1,5 @@
 #include "backend.hpp"
+#include "utils.hpp"
 #include "lsfg-vk-common/configuration/config.hpp"
 
 #include <QStringListModel>
@@ -10,6 +11,7 @@
 #include <iostream>
 #include <thread>
 
+using namespace lsfgvk;
 using namespace lsfgvk::ui;
 
 Backend::Backend() {
@@ -28,6 +30,9 @@ Backend::Backend() {
 
     this->m_global = config.global();
     this->m_profiles = config.profiles();
+
+    // create gpu list
+    this->m_gpu_list = ui::getAvailableGPUs();
 
     // create profile list model
     QStringList profiles; // NOLINT (IWYU)

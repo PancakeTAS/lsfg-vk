@@ -110,6 +110,8 @@ ApplicationWindow {
                     description: "Change the location of Lossless.dll"
 
                     FileEdit {
+                        Layout.fillWidth: true
+
                         title: "Select Lossless.dll"
                         filter: "Dynamic Link Library Files (*.dll)"
 
@@ -123,6 +125,8 @@ ApplicationWindow {
                     description: "Allow acceleration through half-precision"
 
                     CheckBox {
+                        Layout.alignment: Qt.AlignRight
+
                         checked: backend.allow_fp16
                         onToggled: backend.allow_fp16 = checked
                     }
@@ -138,6 +142,8 @@ ApplicationWindow {
                     description: "Control the amount of generated frames"
 
                     SpinBox {
+                        Layout.alignment: Qt.AlignRight
+
                         from: 2
                         to: 100
 
@@ -151,6 +157,8 @@ ApplicationWindow {
                     description: "Lower the internal motion estimation resolution"
 
                     FlowSlider {
+                        Layout.fillWidth: true
+
                         from: 0.25
                         to: 1.00
 
@@ -164,6 +172,8 @@ ApplicationWindow {
                     description: "Use a significantly lighter frame generation modeln"
 
                     CheckBox {
+                        Layout.alignment: Qt.AlignRight
+
                         checked: backend.performance_mode
                         onToggled: backend.performance_mode = checked
                     }
@@ -174,8 +184,9 @@ ApplicationWindow {
                     description: "Change how frames are presented to the display"
 
                     ComboBox {
-                        model: ["None"]
+                        Layout.fillWidth: true
 
+                        model: ["None"]
                         currentValue: backend.pacing_mode
                         onActivated: (index) => backend.pacing_mode = model[index]
                     }
@@ -186,8 +197,9 @@ ApplicationWindow {
                     description: "Select which GPU to use for frame generation"
 
                     ComboBox {
-                        model: ["Default"]
+                        Layout.fillWidth: true
 
+                        model: backend.gpus
                         currentValue: backend.gpu
                         onActivated: (index) => backend.gpu = model[index]
                     }

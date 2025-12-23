@@ -14,7 +14,6 @@ RowLayout {
 
     TextField {
         Layout.fillWidth: true;
-        Layout.maximumWidth: 450;
 
         text: root.text
         onEditingFinished: root.update(text)
