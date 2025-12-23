@@ -1,4 +1,5 @@
-#include "ui.hpp"
+#include "backend.hpp"
+
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
@@ -12,9 +13,9 @@ int main(int argc, char* argv[]) {
     QGuiApplication::setApplicationDisplayName("lsfg-vk-ui");
 
     QQmlApplicationEngine engine;
-    UI ui;
+    Backend backend;
 
-    engine.rootContext()->setContextProperty("ui", &ui);
+    engine.rootContext()->setContextProperty("backend", &backend);
     engine.load("qrc:/rsc/UI.qml");
 
     return QGuiApplication::exec();

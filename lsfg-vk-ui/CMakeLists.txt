@@ -1,7 +1,7 @@
 find_package(Qt6 REQUIRED COMPONENTS Quick)
 
 set(UI_SOURCES
-    "src/ui.cpp"
+    "src/backend.cpp"
     "src/main.cpp")
 
 set(UI_RESOURCES
@@ -28,5 +28,6 @@ target_compile_options(lsfg-vk-ui PRIVATE
     -Wno-unsafe-buffer-usage-in-libc-call
     -Wno-global-constructors)
 
-target_link_libraries(lsfg-vk-ui PRIVATE
-    Qt6::Quick)
+target_link_libraries(lsfg-vk-ui
+    PUBLIC lsfg-vk-common
+    PRIVATE Qt6::Quick)
