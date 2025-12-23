@@ -25,19 +25,19 @@ namespace ls {
     /// game profile configuration
     struct GameConf {
         /// name of the profile
-        std::string name;
+        std::string name{"Profile"};
         /// optional activation string/array
         std::vector<std::string> active_in;
         /// gpu to use (in case of multiple)
         std::optional<std::string> gpu;
         /// multiplier for frame generation
-        size_t multiplier;
+        size_t multiplier{2};
         /// non-inverted flow scale
-        float flow_scale;
+        float flow_scale{1.00F};
         /// use performance mode
-        bool performance_mode;
+        bool performance_mode{false};
         /// pacing method
-        Pacing pacing;
+        Pacing pacing{Pacing::None};
     };
 
     /// automatically updating configuration
