@@ -160,6 +160,7 @@ namespace lsfgvk::ui {
         }
 
         Q_INVOKABLE void addActiveIn(const QString& name) {
+            if (name.trimmed().isEmpty()) return;
             VALIDATE_AND_GET_PROFILE()
             auto& active_in = conf.active_in;
             active_in.push_back(name.toStdString());
@@ -188,6 +189,8 @@ namespace lsfgvk::ui {
         }
 
         Q_INVOKABLE void createProfile(const QString& name) {
+            if (name.trimmed().isEmpty()) return;
+
             ls::GameConf conf;
             conf.name = name.toStdString();
             this->m_profiles.push_back(std::move(conf));
@@ -200,6 +203,8 @@ namespace lsfgvk::ui {
             MARK_DIRTY()
         }
         Q_INVOKABLE void renameProfile(const QString& name) {
+            if (name.trimmed().isEmpty()) return;
+
             VALIDATE_AND_GET_PROFILE()
             conf.name = name.toStdString();
             auto& model = this->m_profile_list_model;
