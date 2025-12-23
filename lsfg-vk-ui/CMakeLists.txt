@@ -14,6 +14,7 @@ set(UI_RESOURCES
     "rsc/widgets/FileEdit.qml"
     "rsc/widgets/FlowSlider.qml"
     "rsc/widgets/List.qml"
+    "rsc/icon.png"
     "rsc/UI.qml")
 
 qt_add_executable(lsfg-vk-ui ${UI_SOURCES})

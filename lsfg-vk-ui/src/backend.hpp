@@ -6,8 +6,6 @@
 #include <QStringListModel>
 #include <QString>
 #include <atomic>
-#include <qstringlistmodel.h>
-#include <qtmetamacros.h>
 #include <utility>
 
 #define getters public
@@ -18,7 +16,6 @@ namespace lsfgvk::ui {
     /// Class tying ui and configuration together
     class Backend : public QObject {
         Q_OBJECT
-
 
         Q_PROPERTY(QStringListModel* profiles READ calculateProfileListModel NOTIFY refreshUI)
         Q_PROPERTY(int profile_index READ getProfileIndex WRITE profileSelected NOTIFY refreshUI)
