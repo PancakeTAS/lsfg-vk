@@ -1,5 +1,6 @@
 #include "backend.hpp"
 
+#include <QIcon>
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
@@ -9,6 +10,7 @@ using namespace lsfgvk::ui;
 
 int main(int argc, char* argv[]) {
     const QGuiApplication app(argc, argv);
+    QGuiApplication::setWindowIcon(QIcon(":/rsc/icon.png"));
     QGuiApplication::setApplicationName("lsfg-vk-ui");
     QGuiApplication::setApplicationDisplayName("lsfg-vk-ui");
 
