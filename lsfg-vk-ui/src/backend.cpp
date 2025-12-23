@@ -12,7 +12,7 @@ using namespace lsfgvk::ui;
 
 Backend::Backend() {
     // load configuration
-    ls::Configuration config{false};
+    ls::Configuration config;
     config.reload();
 
     this->m_global = config.getGlobalConf();

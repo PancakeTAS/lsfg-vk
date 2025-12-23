@@ -13,48 +13,41 @@ ApplicationWindow {
     minimumHeight: 400
     visible: true
 
-    Dialog {
-        id: dialog_name
-        title: "(...)"
-        standardButtons: Dialog.Ok | Dialog.Cancel
+    CenteredDialog {
+        id: create_dialog
+        name: "Create New Profile"
+        onConfirm: backend.createProfile(create_name.text)
 
-        modal: true
-        dim: true
-        x: (parent.width - width) / 2
-        y: (parent.height - height) / 2
-
-        contentItem: ColumnLayout {
-            spacing: 8
-
-            TextField {
-                Layout.fillWidth: true
-
-                id: nameField
-                placeholderText: "Choose a profile name"
-                selectByMouse: true
-                focus: true
-            }
+        TextField {
+            Layout.fillWidth: true
+            id: create_name
+            placeholderText: "Choose a profile name"
+            focus: true
         }
     }
 
-    Dialog {
-        id: dialog_confirm
-        title: "Confirm Deletion"
-        standardButtons: Dialog.Ok | Dialog.Cancel
+    CenteredDialog {
+        id: rename_dialog
+        name: "Rename Profile"
+        onConfirm: backend.renameProfile(rename_name.text)
 
-        modal: true
-        dim: true
-        x: (parent.width - width) / 2
-        y: (parent.height - height) / 2
+        TextField {
+            Layout.fillWidth: true
+            id: rename_name
+            placeholderText: "Choose a profile name"
+            focus: true
+        }
+    }
 
-        contentItem: ColumnLayout {
-            spacing: 8
+    CenteredDialog {
+        id: delete_dialog
+        name: "Confirm Deletion"
+        onConfirm: backend.deleteProfile()
 
-            Label {
-                Layout.fillWidth: true
-                text: "Are you sure you want to delete the selected profile?"
-                horizontalAlignment: Text.AlignHCenter
-            }
+        Label {
+            Layout.fillWidth: true
+            text: "Are you sure you want to delete the selected profile?"
+            horizontalAlignment: Text.AlignHCenter
         }
     }
 
@@ -84,27 +77,24 @@ ApplicationWindow {
                 Layout.fillWidth: true
                 text: "Create New Profile"
                 onClicked: {
-                    dialog_name.title = "Create New Profile"
-                    nameField.text = ""
-
-                    dialog_name.open()
+                    create_name.text = ""
+                    create_dialog.open()
                 }
             }
             Button {
                 Layout.fillWidth: true
                 text: "Rename Profile"
                 onClicked: {
-                    dialog_name.title = "Rename Profile"
-                    nameField.text = "(...)"
-
-                    dialog_name.open()
+                    var idx = backend.profiles.index(backend.profile_index, 0);
+                    rename_name.text = backend.profiles.data(idx);
+                    rename_dialog.open()
                 }
             }
             Button {
                 Layout.fillWidth: true
                 text: "Delete Profile"
                 onClicked: {
-                    dialog_confirm.open()
+                    delete_dialog.open()
                 }
             }
         }

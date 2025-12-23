@@ -139,6 +139,40 @@ namespace lsfgvk::ui {
             MARK_DIRTY()
         }
 
+        Q_INVOKABLE void createProfile(const QString& name) {
+            ls::GameConf conf;
+            conf.name = name.toStdString();
+            this->m_profiles.push_back(std::move(conf));
+
+            auto& model = this->m_profile_list_model;
+            model->insertRow(model->rowCount());
+            model->setData(model->index(model->rowCount() - 1), name);
+
+            this->m_profile_index = static_cast<int>(this->m_profiles.size() - 1);
+            MARK_DIRTY()
+        }
+        Q_INVOKABLE void renameProfile(const QString& name) {
+            VALIDATE_AND_GET_PROFILE()
+            conf.name = name.toStdString();
+            auto& model = this->m_profile_list_model;
+            model->setData(model->index(this->m_profile_index), name);
+            MARK_DIRTY()
+        }
+        Q_INVOKABLE void deleteProfile() {
+            if (!isValidProfileIndex())
+                return;
+
+            auto& profiles = this->m_profiles;
+            profiles.erase(profiles.begin() + this->m_profile_index);
+            auto& model = this->m_profile_list_model;
+            model->removeRow(this->m_profile_index);
+            if (!this->m_profiles.empty())
+                this->m_profile_index = 0;
+            else
+                this->m_profile_index = -1;
+            MARK_DIRTY()
+        }
+
 #undef VALIDATE_AND_GET_PROFILE
 #undef MARK_DIRTY
 

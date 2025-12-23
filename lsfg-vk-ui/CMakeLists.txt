@@ -5,6 +5,7 @@ set(UI_SOURCES
     "src/main.cpp")
 
 set(UI_RESOURCES
+    "rsc/panes/CenteredDialog.qml"
     "rsc/panes/Group.qml"
     "rsc/panes/GroupEntry.qml"
     "rsc/panes/Pane.qml"
