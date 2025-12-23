@@ -107,8 +107,17 @@ Root::Root() {
     }
 }
 
-void Root::update() {
-    this->config.update();
+bool Root::update() {
+    if (!this->config.update())
+        return false;
+
+    const auto& profile = findProfile(this->config.get(), ls::identify());
+    if (profile.has_value())
+        this->active_profile = profile->second;
+    else
+        this->active_profile = std::nullopt;
+
+    return true;
 }
 
 void Root::modifyInstanceCreateInfo(VkInstanceCreateInfo& createInfo,

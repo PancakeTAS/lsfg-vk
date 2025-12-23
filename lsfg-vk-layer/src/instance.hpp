@@ -26,7 +26,8 @@ namespace lsfgvk::layer {
         [[nodiscard]] bool active() const { return this->active_profile.has_value(); }
 
         /// ensure the layer is up-to-date
-        void update();
+        /// @return true if the configuration was updated
+        bool update();
 
         /// modify instance create info
         /// @param createInfo original create info

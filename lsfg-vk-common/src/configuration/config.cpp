@@ -287,9 +287,9 @@ bool WatchedConfig::update() {
     const auto now = std::filesystem::last_write_time(this->path);
     if (now == this->last_timestamp)
         return false;
+    this->last_timestamp = now;
 
     ConfigFile new_config{this->path};
-    this->last_timestamp = now;
     this->configFile = std::move(new_config);
     return true;
 }

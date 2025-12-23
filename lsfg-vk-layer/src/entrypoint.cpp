@@ -2,6 +2,7 @@
 #include "lsfg-vk-common/helpers/errors.hpp"
 #include "lsfg-vk-common/helpers/pointers.hpp"
 #include "lsfg-vk-common/vulkan/vulkan.hpp"
+#include "swapchain.hpp"
 
 #include <cstddef>
 #include <cstdint>
@@ -33,6 +34,7 @@ namespace {
 
         std::unordered_map<VkDevice, vk::Vulkan> devices;
         std::unordered_map<VkSwapchainKHR, ls::R<vk::Vulkan>> swapchains;
+        std::unordered_map<VkSwapchainKHR, SwapchainInfo> swapchainInfos;
     }* instance_info;
 
     // create instance
@@ -314,14 +316,16 @@ namespace {
             if (res != VK_SUCCESS)
                 throw ls::vulkan_error(res, "vkGetSwapchainImagesKHR() failed");
 
-            // create lsfg-vk swapchain
-            layer_info->root.createSwapchainContext(it->second, *swapchain, {
+            auto& info = instance_info->swapchainInfos.emplace(*swapchain, SwapchainInfo {
                 .images = std::move(swapchainImages),
                 .format = newInfo.imageFormat,
                 .colorSpace = newInfo.imageColorSpace,
                 .extent = newInfo.imageExtent,
                 .presentMode = newInfo.presentMode
-            });
+            }).first->second;
+
+            // create lsfg-vk swapchain
+            layer_info->root.createSwapchainContext(it->second, *swapchain, info);
 
             instance_info->swapchains.emplace(*swapchain,
                 ls::R<vk::Vulkan>(it->second));
@@ -342,6 +346,30 @@ namespace {
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wunsafe-buffer-usage"
         VkResult result = VK_SUCCESS;
+
+        // ensure layer config is up to date
+        bool reload{};
+        try {
+            reload = layer_info->root.update();
+        } catch (const std::exception&) {
+            reload = false; // ignore parse errors
+        }
+
+        if (reload) {
+            try {
+                for (const auto& [swapchain, vk] : instance_info->swapchains) {
+                    auto& info = instance_info->swapchainInfos.at(swapchain);
+
+                    layer_info->root.removeSwapchainContext(swapchain);
+                    layer_info->root.createSwapchainContext(vk, swapchain, info);
+                }
+
+                std::cerr << "lsfg-vk: updated lsfg-vk configuration\n";
+            } catch (const std::exception& e) {
+                std::cerr << "lsfg-vk: something went wrong during lsfg-vk configuration update:\n";
+                std::cerr << "- " << e.what() << '\n';
+            }
+        }
 
         // present each swapchain
         for (size_t i = 0; i < info->swapchainCount; i++) {
