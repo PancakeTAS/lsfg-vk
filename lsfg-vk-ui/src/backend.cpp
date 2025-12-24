@@ -1,10 +1,11 @@
+#include <QStringListModel>
+#include <QStringList>
+#include <QString>
+
 #include "backend.hpp"
 #include "utils.hpp"
 #include "lsfg-vk-common/configuration/config.hpp"
 
-#include <QStringListModel>
-#include <QStringList>
-#include <QString>
 #include <chrono>
 #include <exception>
 #include <filesystem>

@@ -32,6 +32,7 @@ namespace {
     /// patch the generate shader
     void patchGenerateShader(std::vector<uint8_t>& data, bool hdr) {
 #pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunknown-warning-option"
 #pragma clang diagnostic ignored "-Wunsafe-buffer-usage-in-container"
         auto* _ptr = data.data();
         const std::span<uint32_t> words(
