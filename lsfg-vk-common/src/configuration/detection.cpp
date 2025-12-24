@@ -58,8 +58,8 @@ Identification ls::identify() {
                 pos = line.find_last_of(' ');
                 if (pos == std::string::npos)
                     continue;
-                pos += 1; // skip space
             }
+            pos += 1; // skip slash or space
 
             const std::string wine_executable = line.substr(pos);
             if (wine_executable.empty())
