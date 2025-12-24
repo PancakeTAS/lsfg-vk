@@ -20,11 +20,9 @@ modules:
     buildsystem: cmake-ninja
     config-opts:
       - -DCMAKE_BUILD_TYPE=Release
-      - -DCMAKE_C_COMPILER=clang
-      - -DCMAKE_CXX_COMPILER=clang++
       - -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=On
+      - -DCMAKE_CXX_COMPILER=clang++
+      - -DLSFGVK_LAYER_LIBRARY_PATH=/usr/lib/extensions/vulkan/lsfgvk/lib/liblsfg-vk-layer.so
     sources:
       - type: dir
-        path: ..
-      - type: patch
-        path: VkLayer_LS_frame_generation.patch
+        path: ../../..

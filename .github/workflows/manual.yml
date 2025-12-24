@@ -1,0 +1,87 @@
+name: (Manual) lsfg-vk
+
+on:
+  issue_comment:
+    types: ["created"]
+
+permissions:
+  pull-requests: write
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    # Run if PancakeTAS commented '@action build'
+    # on a pull request
+    if: |
+      github.event.issue.pull_request &&
+      github.event.comment.body == '@actions build' &&
+      github.event.comment.user.login == 'PancakeTAS'
+    steps:
+    # Query GitHub API to find the branch on which the
+    # comment was left. Then check it out
+    - name: Find commit hash
+      id: prRef
+      run: |
+        echo "ref=$(gh pr view $PR_NUMBER --repo ${{ github.repository }} --json headRefName \
+          | jq -r '.headRefName')" >> $GITHUB_OUTPUT
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        PR_NUMBER: ${{ github.event.issue.number }}
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ steps.prRef.outputs.ref }}
+        fetch-depth: 0
+    # Install build dependencies & Update Vulkan headers
+    - name: Install build dependencies
+      uses: awalsh128/cache-apt-pkgs-action@latest
+      with:
+        packages:
+          git curl
+          llvm clang clang-tools clang-tidy
+          cmake ninja-build pkg-config
+          libvulkan-dev
+          mesa-common-dev
+          qt6-base-dev qt6-base-dev-tools
+          qt6-tools-dev qt6-tools-dev-tools
+          qt6-declarative-dev qt6-declarative-dev-tools
+        version: 2.0
+    - name: Update Vulkan headers
+      run: |
+        git clone -b vulkan-sdk-1.4.328 https://github.com/KhronosGroup/Vulkan-Headers /tmp/vkh
+        sudo rm -rf /usr/include/{vulkan,vk_video}
+        sudo mv /tmp/vkh/include/{vulkan,vk_video} /usr/include/
+        rm -rf /tmp/vkh
+    # Configure and build lsfg-vk
+    - name: Configure lsfg-vk
+      run: |
+        cmake -B build -G Ninja \
+          -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+          -DCMAKE_INSTALL_PREFIX=./target \
+          -DCMAKE_CXX_COMPILER=clang++ \
+          -DLSFGVK_BUILD_VULKAN_LAYER=On \
+          -DLSFGVK_BUILD_USER_INTERFACE=On \
+          -DLSFGVK_INSTALL_XDG_FILES=On
+    - name: Build with Ninja
+      run: |
+        ninja -C build
+    - name: Install with CMake
+      run: |
+        cmake --install build
+    # Compress lsfg-vk into an artifact
+    - name: Upload lsfg-vk artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: lsfg-vk
+        path: |
+          target/*
+    # Comment on pull request
+    - name: Comment on PR
+      uses: thollander/actions-comment-pull-request@v3
+      with:
+        pr-number: ${{ github.event.issue.number }}
+        message: |
+          **Development Build**
+
+          I have built this lsfg-vk pull request for you:
+          https://github.com/PancakeTAS/lsfg-vk/actions/runs/${{ github.run_id }}

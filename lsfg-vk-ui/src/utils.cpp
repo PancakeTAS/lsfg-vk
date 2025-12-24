@@ -35,6 +35,10 @@ QStringList ui::getAvailableGPUs() { // NOLINT (IWYU)
         // expected
     }
 
+    // first remove 1:1 duplicates
+    std::ranges::sort(gpus);
+    gpus.erase(std::ranges::unique(gpus).begin(), gpus.end());
+
     // build the frontend list
     QStringList list{"Default"}; // NOLINT (IWYU)
     for (const auto& gpu : gpus) {
@@ -46,10 +50,16 @@ QStringList ui::getAvailableGPUs() { // NOLINT (IWYU)
         );
 
         // add pci id to distinguish, otherwise add just the name
+        QString entry;
         if (count > 1 && gpu.second.has_value())
-            list.append(QString::fromStdString(*gpu.second));
+            entry = QString::fromStdString(*gpu.second);
         else
-            list.append(QString::fromStdString(gpu.first));
+            entry = QString::fromStdString(gpu.first);
+
+        // ensure no duplicates (flatpak does funny things)
+        if (list.contains(entry))
+            continue;
+        list.append(entry);
     }
 
     return list;

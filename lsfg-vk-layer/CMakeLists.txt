@@ -13,7 +13,8 @@ set_target_properties(lsfg-vk-layer PROPERTIES
     CXX_VISIBILITY_PRESET hidden)
 
 set(LSFGVK_LAYER_LIBRARY_PATH
-    "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}/liblsfg-vk-layer.so")
+    "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}/liblsfg-vk-layer.so"
+    CACHE STRING "Path to Vulkan layer shared object")
 configure_file(
     "VkLayer_LSFGVK_frame_generation.json.in"
     "VkLayer_LSFGVK_frame_generation.json"

@@ -44,6 +44,6 @@ install(TARGETS lsfg-vk-ui
 if(LSFGVK_INSTALL_XDG_FILES)
     install(FILES "rsc/gay.pancake.lsfg-vk-ui.png"
         DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/icons/hicolor/256x256/apps")
-    install(FILES "rsc/lsfg-vk-ui.desktop"
+    install(FILES "rsc/gay.pancake.lsfg-vk-ui.desktop"
         DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/applications")
 endif()

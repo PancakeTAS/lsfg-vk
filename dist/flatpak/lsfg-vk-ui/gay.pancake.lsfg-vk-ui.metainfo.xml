@@ -13,8 +13,8 @@
   <url type="faq">https://github.com/PancakeTAS/lsfg-vk/wiki</url>
   <url type="help">https://github.com/PancakeTAS/lsfg-vk/wiki</url>
 
-  <metadata_license>MIT</metadata_license>
-  <project_license>MIT</project_license>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-3.0-or-later</project_license>
 
   <description>
     <p>The lsfg-vk project brings Lossless Scaling&apos;s frame generation to Linux users by acting as a Vulkan layer inbetween your game and your graphics card.</p>
