@@ -1,7 +1,7 @@
 ---
 name: Feature request
-about: Request a new feature (DO NOT REQUEST ANYTHING UNRELATED TO FRAME GENERATION)
-title: "[COMPATIBILITY] Explain your bug"
+about: Request a new feature
+title: "[FEATURE] (describe the feature)"
 labels: feature
 assignees: ''
 
