@@ -1,3 +1,5 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+
 #include "limits.hpp"
 
 #include "lsfg-vk-common/vulkan/descriptor_pool.hpp"

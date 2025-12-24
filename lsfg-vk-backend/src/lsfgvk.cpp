@@ -1,3 +1,5 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+
 #include "lsfg-vk-backend/lsfgvk.hpp"
 #include "extraction/dll_reader.hpp"
 #include "extraction/shader_registry.hpp"
