@@ -16,14 +16,17 @@ Checks:
 - "-readability-math-missing-parentheses"
 - "-readability-named-parameter"
 - "-bugprone-easily-swappable-parameters"
+- "-misc-non-private-member-variables-in-classes"
 # configure modernization
 - "modernize-*"
 - "-modernize-use-trailing-return-type"
+- "-modernize-use-designated-initializers"
 # configure cppcoreguidelines
 - "cppcoreguidelines-*"
 - "-cppcoreguidelines-avoid-magic-numbers"
 - "-cppcoreguidelines-pro-type-reinterpret-cast"
 - "-cppcoreguidelines-macro-usage"
+- "-cppcoreguidelines-pro-bounds-pointer-arithmetic"
 # disable slow and pointless checks
 - "-modernize-use-std-numbers"
 - "-modernize-type-traits"

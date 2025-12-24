@@ -2,6 +2,7 @@ set(COMMON_SOURCES
     "src/configuration/config.cpp"
     "src/configuration/detection.cpp"
     "src/helpers/errors.cpp"
+    "src/helpers/paths.cpp"
     "src/vulkan/buffer.cpp"
     "src/vulkan/command_buffer.cpp"
     "src/vulkan/descriptor_pool.cpp"

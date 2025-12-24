@@ -19,9 +19,10 @@ modules:
     config-opts:
       - -DCMAKE_BUILD_TYPE=Release
       - -DCMAKE_INSTALL_PREFIX=/app
-      - -DLSFGVK_BUILD_VULKAN_LAYER=Off
-      - -DLSFGVK_BUILD_USER_INTERFACE=On
-      - -DLSFGVK_INSTALL_XDG_FILES=On
+      - -DLSFGVK_BUILD_VK_LAYER=OFF
+      - -DLSFGVK_BUILD_UI=ON
+      - -DLSFGVK_BUILD_CLI=OFF
+      - -DLSFGVK_INSTALL_XDG_FILES=ON
     sources:
       - type: dir
         path: ../../..

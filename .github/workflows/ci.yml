@@ -40,9 +40,10 @@ jobs:
           -DCMAKE_BUILD_TYPE=Release \
           -DCMAKE_INSTALL_PREFIX=./target \
           -DCMAKE_CXX_COMPILER=clang++ \
-          -DLSFGVK_BUILD_VULKAN_LAYER=On \
-          -DLSFGVK_BUILD_USER_INTERFACE=On \
-          -DLSFGVK_INSTALL_XDG_FILES=On \
+          -DLSFGVK_BUILD_VK_LAYER=ON \
+          -DLSFGVK_BUILD_UI=ON \
+          -DLSFGVK_BUILD_CLI=ON \
+          -DLSFGVK_INSTALL_XDG_FILES=ON \
           -DLSFGVK_LAYER_LIBRARY_PATH="../../../lib/liblsfg-vk-layer.so"
     - name: Build with Ninja
       run: |

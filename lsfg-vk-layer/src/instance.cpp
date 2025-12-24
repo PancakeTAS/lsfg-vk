@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 
 #include "instance.hpp"
+#include "lsfg-vk-common/helpers/paths.hpp"
 #include "swapchain.hpp"
 #include "lsfg-vk-common/configuration/detection.hpp"
 #include "lsfg-vk-common/helpers/errors.hpp"
@@ -10,7 +11,6 @@
 #include <cstdint>
 #include <cstdlib>
 #include <exception>
-#include <filesystem>
 #include <functional>
 #include <iostream>
 #include <optional>
@@ -40,47 +40,6 @@ namespace {
         }
 
         return extensions;
-    }
-    // find the shader dll
-    std::filesystem::path findShaderDll() {
-        const std::vector<std::filesystem::path> FRAGMENTS{{
-            ".local/share/Steam/steamapps/common",
-            ".steam/steam/steamapps/common",
-            ".steam/debian-installation/steamapps/common",
-            ".var/app/com.valvesoftware.Steam/.local/share/Steam/steamapps/common",
-            "snap/steam/common/.local/share/Steam/steamapps/common"
-        }};
-
-        // check XDG overridden location
-        const char* xdgPath = std::getenv("XDG_DATA_HOME");
-        if (xdgPath && *xdgPath != '\0') {
-            auto base = std::filesystem::path(xdgPath);
-
-            for (const auto& frag : FRAGMENTS) {
-                auto full = base / frag / "Lossless Scaling" / "Lossless.dll";
-                if (std::filesystem::exists(full))
-                    return full;
-            }
-        }
-
-        // check home directory
-        const char* homePath = std::getenv("HOME");
-        if (homePath && *homePath != '\0') {
-            auto base = std::filesystem::path(homePath);
-
-            for (const auto& frag : FRAGMENTS) {
-                auto full = base / frag / "Lossless Scaling" / "Lossless.dll";
-                if (std::filesystem::exists(full))
-                    return full;
-            }
-        }
-
-        // fallback to same directory
-        auto local = std::filesystem::current_path() / "Lossless.dll";
-        if (std::filesystem::exists(local))
-            return local;
-
-        throw ls::error("unable to locate Lossless.dll, please set the path in the configuration");
     }
 }
 
@@ -216,6 +175,12 @@ void Root::createSwapchainContext(const vk::Vulkan& vk,
         setenv("DISABLE_LSFGVK", "1", 1); // NOLINT (c++-include)
 
         try {
+            std::string dll{};
+            if (global.dll.has_value())
+                dll = *global.dll;
+            else
+                dll = ls::findShaderDll();
+
             this->backend.emplace(
                 [gpu = profile.gpu](
                     const std::string& deviceName,
@@ -229,8 +194,7 @@ void Root::createSwapchainContext(const vk::Vulkan& vk,
                         || (ids.first + ":" + ids.second == *gpu)
                         || (pci && *pci == *gpu);
                 },
-                global.dll.value_or(findShaderDll()),
-                global.allow_fp16
+                dll, global.allow_fp16
             );
         } catch (const std::exception& e) {
             unsetenv("DISABLE_LSFGVK"); // NOLINT (c++-include)
