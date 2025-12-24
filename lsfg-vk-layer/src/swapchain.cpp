@@ -64,7 +64,7 @@ void layer::context_ModifySwapchainCreateInfo(const ls::GameConf& profile, uint3
     }
 }
 
-Swapchain::Swapchain(const vk::Vulkan& vk, lsfgvk::backend::Instance& backend,
+Swapchain::Swapchain(const vk::Vulkan& vk, backend::Instance& backend,
             ls::GameConf profile, SwapchainInfo info) :
         instance(backend),
         profile(std::move(profile)), info(std::move(info)) {
@@ -92,13 +92,13 @@ Swapchain::Swapchain(const vk::Vulkan& vk, lsfgvk::backend::Instance& backend,
     this->syncSemaphore.emplace(vk, 0, std::nullopt, &syncFd);
 
     try {
-        this->ctx = ls::owned_ptr<ls::R<lsfgvk::backend::Context>>(
-            new ls::R(backend.openContext(
+        this->ctx = ls::owned_ptr<ls::R<backend::Context>>(
+            new ls::R<backend::Context>(backend.openContext(
                 { sourceFds.at(0), sourceFds.at(1) }, destinationFds, syncFd,
                 extent.width, extent.height,
                 hdr, this->profile.flow_scale, this->profile.performance_mode
             )),
-            [backend = &backend](ls::R<lsfgvk::backend::Context>& ctx) {
+            [backend = &backend](ls::R<backend::Context>& ctx) {
                 backend->closeContext(ctx);
             }
         );
@@ -141,6 +141,7 @@ VkResult Swapchain::present(const vk::Vulkan& vk,
     // update present mode when not using pacing
     if (this->profile.pacing == ls::Pacing::None) {
 #pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunknown-warning-option"
 #pragma clang diagnostic ignored "-Wunsafe-buffer-usage"
         auto* info = reinterpret_cast<VkSwapchainPresentModeInfoEXT*>(next_chain);
         while (info) {

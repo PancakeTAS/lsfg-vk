@@ -1,10 +1,11 @@
 #pragma once
 
-#include "lsfg-vk-common/configuration/config.hpp"
-
 #include <QObject>
 #include <QStringListModel>
 #include <QString>
+
+#include "lsfg-vk-common/configuration/config.hpp"
+
 #include <atomic>
 #include <utility>
 

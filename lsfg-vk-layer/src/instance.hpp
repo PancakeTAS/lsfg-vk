@@ -71,7 +71,7 @@ namespace lsfgvk::layer {
         ls::WatchedConfig config;
         std::optional<ls::GameConf> active_profile;
 
-        ls::lazy<lsfgvk::backend::Instance> backend;
+        ls::lazy<backend::Instance> backend;
         std::unordered_map<VkSwapchainKHR, Swapchain> swapchains;
     };
 

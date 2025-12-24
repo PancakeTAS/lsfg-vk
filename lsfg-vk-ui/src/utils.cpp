@@ -1,8 +1,9 @@
+#include <QStringList>
+#include <QString>
+
 #include "utils.hpp"
 #include "lsfg-vk-backend/lsfgvk.hpp"
 
-#include <QStringList>
-#include <QString>
 #include <algorithm>
 #include <optional>
 #include <stdexcept>

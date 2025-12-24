@@ -28,6 +28,7 @@ set_target_properties(lsfg-vk-ui PROPERTIES
     AUTOUIC ON)
 
 target_compile_options(lsfg-vk-ui PRIVATE
+    -Wno-unknown-warning-option
     -Wno-ctad-maybe-unsupported
     -Wno-unsafe-buffer-usage-in-libc-call
     -Wno-global-constructors

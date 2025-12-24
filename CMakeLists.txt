@@ -4,16 +4,17 @@ include(GNUInstallDirs)
 
 # === READ HERE FOR BUILD OPTIONS ===
 option(LSFGVK_BUILD_VULKAN_LAYER    "Build the Vulkan layer"     ON)
-option(LSFGVK_BUILD_USER_INTERFACE  "Build the user interface"   ON)
+option(LSFGVK_BUILD_USER_INTERFACE  "Build the user interface"  OFF)
 option(LSFGVK_BUILD_DEBUG_TOOL      "Build the debug tool"      OFF)
 option(LSFGVK_INSTALL_DEVELOP       "Install development files" OFF)
-option(LSFGVK_INSTALL_XDG_FILES     "Install xdg app files"      ON)
+option(LSFGVK_INSTALL_XDG_FILES     "Install xdg app files"     OFF)
 # === READ HERE FOR BUILD OPTIONS ===
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+set(CMAKE_SKIP_RPATH ON)
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     set(CMAKE_EXPORT_COMPILE_COMMANDS ON)

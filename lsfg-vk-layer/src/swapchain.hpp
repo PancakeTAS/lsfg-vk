@@ -42,7 +42,7 @@ namespace lsfgvk::layer {
         /// @param backend lsfg-vk backend instance
         /// @param profile active game profile
         /// @param info swapchain info
-        Swapchain(const vk::Vulkan& vk, lsfgvk::backend::Instance& backend,
+        Swapchain(const vk::Vulkan& vk, backend::Instance& backend,
             ls::GameConf profile, SwapchainInfo info);
 
         /// present a frame
@@ -70,8 +70,8 @@ namespace lsfgvk::layer {
         std::vector<RenderPass> passes;
         std::vector<std::pair<vk::Semaphore, vk::Semaphore>> postCopySemaphores;
 
-        ls::R<lsfgvk::backend::Instance> instance;
-        ls::owned_ptr<ls::R<lsfgvk::backend::Context>> ctx;
+        ls::R<backend::Instance> instance;
+        ls::owned_ptr<ls::R<backend::Context>> ctx;
         size_t idx{1};
         size_t fidx{0}; // real frame index
 

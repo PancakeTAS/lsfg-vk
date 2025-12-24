@@ -1,10 +1,10 @@
-#include "backend.hpp"
-
 #include <QIcon>
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
 #include <QUrl>
+
+#include "backend.hpp"
 
 using namespace lsfgvk::ui;
 
