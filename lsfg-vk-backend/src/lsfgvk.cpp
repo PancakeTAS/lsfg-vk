@@ -201,8 +201,8 @@ namespace {
     vk::Vulkan createVulkanInstance(vk::PhysicalDeviceSelector selectPhysicalDevice) {
         try {
             return{
-                "lsfg-vk", vk::version{1, 1, 0},
-                "lsfg-vk-engine", vk::version{1, 1, 0},
+                "lsfg-vk", vk::version{2, 0, 0},
+                "lsfg-vk-engine", vk::version{2, 0, 0},
                 selectPhysicalDevice,
                 false, std::nullopt,
                 findCacheFilePath()

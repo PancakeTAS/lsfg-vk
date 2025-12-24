@@ -38,8 +38,8 @@ QStringList ui::getAvailableGPUs() { // NOLINT (IWYU)
     }
 
     // first remove 1:1 duplicates
-    std::ranges::sort(gpus);
-    gpus.erase(std::ranges::unique(gpus).begin(), gpus.end());
+    std::sort(gpus.begin(), gpus.end());                           // NOLINT (ranges [thanks gcc!])
+    gpus.erase(std::unique(gpus.begin(), gpus.end()), gpus.end()); // NOLINT
 
     // build the frontend list
     QStringList list{"Default"}; // NOLINT (IWYU)

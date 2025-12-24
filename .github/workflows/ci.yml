@@ -4,6 +4,9 @@ on:
   push:
     branches: ["release", "develop"]
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-22.04
@@ -34,12 +37,13 @@ jobs:
     - name: Configure lsfg-vk
       run: |
         cmake -B build -G Ninja \
-          -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+          -DCMAKE_BUILD_TYPE=Release \
           -DCMAKE_INSTALL_PREFIX=./target \
           -DCMAKE_CXX_COMPILER=clang++ \
           -DLSFGVK_BUILD_VULKAN_LAYER=On \
           -DLSFGVK_BUILD_USER_INTERFACE=On \
-          -DLSFGVK_INSTALL_XDG_FILES=On
+          -DLSFGVK_INSTALL_XDG_FILES=On \
+          -DLSFGVK_LAYER_LIBRARY_PATH="../../../lib/liblsfg-vk-layer.so"
     - name: Build with Ninja
       run: |
         ninja -C build
@@ -53,3 +57,14 @@ jobs:
         name: lsfg-vk
         path: |
           target/*
+    - name: Compress lsfg-vk for release
+      run: |
+        tar -cJf "lsfg-vk-2.0.0-dev${{ github.run_number }}-linux.tar.xz" -C target .
+    - name: Update pre-release version
+      uses: marvinpinto/action-automatic-releases@latest
+      with:
+        repo_token: "${{ secrets.GITHUB_TOKEN }}"
+        automatic_release_tag: v2.0.0-dev
+        title: "lsfg-vk 2.0.0-dev${{ github.run_number }}"
+        files: |
+          lsfg-vk-2.0.0-dev${{ github.run_number }}-linux.tar.xz

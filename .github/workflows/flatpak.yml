@@ -22,7 +22,6 @@ jobs:
           bundle: "org.freedesktop.Platform.VulkanLayer.lsfg_vk_${{ matrix.version }}.flatpak"
           manifest-path: "dist/flatpak/lsfg-vk-layer/org.freedesktop.Platform.VulkanLayer.lsfgvk_${{ matrix.version }}.yml"
           branch: "${{ matrix.version }}"
-          cache: false
   flatpak-ui:
     runs-on: ubuntu-latest
     container:
@@ -37,4 +36,3 @@ jobs:
           bundle: "gay.pancake.lsfg-vk-ui.flatpak"
           manifest-path: "dist/flatpak/lsfg-vk-ui/gay.pancake.lsfg-vk-ui.yml"
           branch: "${{ github.ref_name }}"
-          cache: false

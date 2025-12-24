@@ -75,8 +75,8 @@ int main() {
     const uint64_t time_us = get_current_time_us();
 
     const vk::Vulkan vk{
-        "lsfg-vk-debug", vk::version{1, 1, 0},
-        "lsfg-vk-debug-engine", vk::version{1, 0, 0},
+        "lsfg-vk-debug", vk::version{2, 0, 0},
+        "lsfg-vk-debug-engine", vk::version{2, 0, 0},
         [](const vk::VulkanInstanceFuncs,
                 const std::vector<VkPhysicalDevice>& devices) {
             return devices.front();

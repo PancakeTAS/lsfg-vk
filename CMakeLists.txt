@@ -6,8 +6,9 @@ include(GNUInstallDirs)
 option(LSFGVK_BUILD_VULKAN_LAYER    "Build the Vulkan layer"     ON)
 option(LSFGVK_BUILD_USER_INTERFACE  "Build the user interface"  OFF)
 option(LSFGVK_BUILD_DEBUG_TOOL      "Build the debug tool"      OFF)
-option(LSFGVK_INSTALL_DEVELOP       "Install development files" OFF)
-option(LSFGVK_INSTALL_XDG_FILES     "Install xdg app files"     OFF)
+option(LSFGVK_INSTALL_DEVELOP       "Install development libraries and headers"      OFF)
+option(LSFGVK_INSTALL_XDG_FILES     "Install the application icon and desktop files" OFF)
+option(LSFGVK_LAYER_LIBRARY_PATH    "Change where Vulkan searches for the layer library" liblsfg-vk-layer.so)
 # === READ HERE FOR BUILD OPTIONS ===
 
 set(CMAKE_CXX_STANDARD 20)
