@@ -42,7 +42,7 @@
 
 #include <vulkan/vulkan_core.h>
 
-#ifdef LSFGVK__RENDERDOC_INTEGRATION
+#ifdef LSFGVK_TESTING_RENDERDOC
 #include <renderdoc_app.h>
 #include <dlfcn.h>
 #endif
@@ -72,7 +72,7 @@ namespace lsfgvk::backend {
         /// get the shader registry
         /// @return the shader registry
         [[nodiscard]] const auto& getShaderRegistry() const { return this->shaders; }
-#ifdef LSFGVK__RENDERDOC_INTEGRATION
+#ifdef LSFGVK_TESTING_RENDERDOC
         /// get the RenderDoc API
         /// @return the RenderDoc API
         [[nodiscard]] const auto& getRenderDocAPI() const { return this->renderdoc; }
@@ -81,7 +81,7 @@ namespace lsfgvk::backend {
         vk::Vulkan vk;
         ShaderRegistry shaders;
 
-#ifdef LSFGVK__RENDERDOC_INTEGRATION
+#ifdef LSFGVK_TESTING_RENDERDOC
         std::optional<RENDERDOC_API_1_6_0> renderdoc;
 #endif
     };
@@ -232,7 +232,7 @@ namespace {
             throw backend::error("Unable to build shader registry", e);
         }
     }
-#ifdef LSFGVK__RENDERDOC_INTEGRATION
+#ifdef LSFGVK_TESTING_RENDERDOC
     /// load RenderDoc integration
     std::optional<RENDERDOC_API_1_6_0> loadRenderDocIntegration() {
         void* module = dlopen("librenderdoc.so", RTLD_NOW | RTLD_NOLOAD);
@@ -260,7 +260,7 @@ InstanceImpl::InstanceImpl(vk::PhysicalDeviceSelector selectPhysicalDevice,
         : vk(createVulkanInstance(selectPhysicalDevice)),
         shaders(createShaderRegistry(this->vk, shaderDllPath,
             allowLowPrecision && vk.supportsFP16())) {
-#ifdef LSFGVK__RENDERDOC_INTEGRATION
+#ifdef LSFGVK_TESTING_RENDERDOC
     this->renderdoc = loadRenderDocIntegration();
 #endif
     vk.persistPipelineCache(); // will silently fail
@@ -540,8 +540,8 @@ ContextImpl::ContextImpl(const InstanceImpl& instance,
     cmdbuf.submit(ctx.vk); // wait for completion
 }
 
-void Instance::scheduleFrames(Context& context) {
-#ifdef LSFGVK__RENDERDOC_INTEGRATION
+void Instance::scheduleFrames(Context& context) { // NOLINT (static)
+#ifdef LSFGVK_TESTING_RENDERDOC
     const auto& impl = this->m_impl;
     if (impl->getRenderDocAPI()) {
         impl->getRenderDocAPI()->StartFrameCapture(
@@ -554,7 +554,7 @@ void Instance::scheduleFrames(Context& context) {
     } catch (const std::exception& e) {
         throw backend::error("Unable to schedule frames", e);
     }
-#ifdef LSFGVK__RENDERDOC_INTEGRATION
+#ifdef LSFGVK_TESTING_RENDERDOC
     if (impl->getRenderDocAPI()) {
         impl->getVulkan().df().DeviceWaitIdle(impl->getVulkan().dev());
         impl->getRenderDocAPI()->EndFrameCapture(
