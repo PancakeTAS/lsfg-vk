@@ -1,3 +1,5 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+
 #include "instance.hpp"
 #include "swapchain.hpp"
 #include "lsfg-vk-common/configuration/detection.hpp"

@@ -1,3 +1,5 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+
 #include "lsfg-vk-backend/lsfgvk.hpp"
 #include "lsfg-vk-common/vulkan/buffer.hpp"
 #include "lsfg-vk-common/vulkan/command_buffer.hpp"

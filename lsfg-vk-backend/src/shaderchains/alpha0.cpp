@@ -1,3 +1,5 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+
 #include "alpha0.hpp"
 #include "../helpers/utils.hpp"
 #include "lsfg-vk-common/helpers/pointers.hpp"
