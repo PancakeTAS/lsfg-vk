@@ -197,6 +197,7 @@ namespace lsfgvk::ui {
             ls::GameConf conf;
             conf.name = name.toStdString();
             this->m_profiles.push_back(std::move(conf));
+            this->m_active_in_list_models.push_back(new QStringListModel({}, this));
 
             auto& model = this->m_profile_list_model;
             model->insertRow(model->rowCount());
@@ -220,6 +221,8 @@ namespace lsfgvk::ui {
 
             auto& profiles = this->m_profiles;
             profiles.erase(profiles.begin() + this->m_profile_index);
+            auto& active_in_models = this->m_active_in_list_models;
+            active_in_models.erase(active_in_models.begin() + this->m_profile_index);
             auto& model = this->m_profile_list_model;
             model->removeRow(this->m_profile_index);
             if (!this->m_profiles.empty())
