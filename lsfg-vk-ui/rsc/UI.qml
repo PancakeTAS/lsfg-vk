@@ -9,7 +9,7 @@ import "widgets"
 ApplicationWindow {
     title: "lsfg-vk Configuration Window"
     width: 900
-    height: 475
+    height: 550
     minimumWidth: 700
     minimumHeight: 400
     visible: true

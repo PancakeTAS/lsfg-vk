@@ -9,15 +9,13 @@ RowLayout {
 
     id: root
     spacing: 12
-    height: 32
 
-    Item {
-        Layout.fillWidth: true
-        Layout.fillHeight: true
+    ColumnLayout {
         clip: true
 
         ColumnLayout {
-            anchors.fill: parent
+            Layout.fillWidth: true
+            Layout.fillHeight: true
             spacing: 0
 
             Label {
@@ -37,12 +35,12 @@ RowLayout {
         }
     }
 
-    Item {
-        Layout.fillWidth: true
-        Layout.fillHeight: true
+    RowLayout {
+        Item {
+            Layout.fillWidth: true
+        }
 
         ColumnLayout {
-            anchors.fill: parent
             spacing: 0
             id: inner
         }
