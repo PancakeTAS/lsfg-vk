@@ -237,8 +237,8 @@ ApplicationWindow {
                         Layout.fillWidth: true
 
                         model: ["None"]
-                        currentValue: backend.pacing_mode
-                        onActivated: (index) => backend.pacing_mode = model[index]
+                        currentIndex: backend.pacing_mode
+                        onActivated: (index) => backend.pacing_mode = index
                     }
                 }
 
@@ -250,8 +250,8 @@ ApplicationWindow {
                         Layout.fillWidth: true
 
                         model: backend.gpus
-                        currentValue: backend.gpu
-                        onActivated: (index) => backend.gpu = model[index]
+                        currentIndex: backend.gpu
+                        onActivated: (index) => backend.gpu = index
                     }
                 }
             }

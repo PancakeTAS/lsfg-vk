@@ -32,9 +32,9 @@ namespace lsfgvk::ui {
         Q_PROPERTY(size_t multiplier READ getMultiplier WRITE multiplierUpdated NOTIFY refreshUI)
         Q_PROPERTY(float flow_scale READ getFlowScale WRITE flowScaleUpdated NOTIFY refreshUI)
         Q_PROPERTY(bool performance_mode READ getPerformanceMode WRITE performanceModeUpdated NOTIFY refreshUI)
-        Q_PROPERTY(QString pacing_mode READ getPacingMode WRITE pacingModeUpdated NOTIFY refreshUI)
+        Q_PROPERTY(int pacing_mode READ getPacingMode WRITE pacingModeUpdated NOTIFY refreshUI)
         Q_PROPERTY(QStringList gpus READ calculateGPUList NOTIFY refreshUI)
-        Q_PROPERTY(QString gpu READ getGPU WRITE gpuUpdated NOTIFY refreshUI)
+        Q_PROPERTY(int gpu READ getGPU WRITE gpuUpdated NOTIFY refreshUI)
 
     public:
         explicit Backend();
@@ -82,19 +82,20 @@ namespace lsfgvk::ui {
             VALIDATE_AND_GET_PROFILE(false)
             return conf.performance_mode;
         }
-        [[nodiscard]] QString getPacingMode() const {
-            VALIDATE_AND_GET_PROFILE("None")
+        [[nodiscard]] int getPacingMode() const {
+            VALIDATE_AND_GET_PROFILE(0)
             switch (conf.pacing) {
-                case ls::Pacing::None: return "None";
+                case ls::Pacing::None: return 0;
             }
             throw std::runtime_error("Unknown pacing type in backend");
         }
         [[nodiscard]] QStringList calculateGPUList() const {
             return this->m_gpu_list;
         }
-        [[nodiscard]] QString getGPU() const {
-            VALIDATE_AND_GET_PROFILE("Default")
-            return QString::fromStdString(conf.gpu.value_or("Default"));
+        [[nodiscard]] int getGPU() const {
+            VALIDATE_AND_GET_PROFILE(0)
+            auto gpu = QString::fromStdString(conf.gpu.value_or("Default"));
+            return static_cast<int>(this->m_gpu_list.indexOf(gpu));
         }
 
 #undef VALIDATE_AND_GET_PROFILE
@@ -147,14 +148,21 @@ namespace lsfgvk::ui {
             conf.performance_mode = performance_mode;
             MARK_DIRTY()
         }
-        void pacingModeUpdated(const QString& pacing_mode) {
+        void pacingModeUpdated(int pacing_mode) {
             VALIDATE_AND_GET_PROFILE()
-            if (pacing_mode == "None")
-                conf.pacing = ls::Pacing::None;
+            if (pacing_mode == 0)
+            switch (pacing_mode) {
+                case 0:
+                    conf.pacing = ls::Pacing::None;
+                    break;
+                default:
+                    throw std::runtime_error("Unknown pacing mode in backend");
+            }
             MARK_DIRTY()
         }
-        void gpuUpdated(const QString& gpu) {
+        void gpuUpdated(int gpu_idx) {
             VALIDATE_AND_GET_PROFILE()
+            const auto& gpu = this->m_gpu_list.at(gpu_idx);
             if (gpu.trimmed().isEmpty() || gpu == "Default")
                 conf.gpu = std::nullopt;
             else

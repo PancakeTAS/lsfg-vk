@@ -19,7 +19,7 @@ This will extract lsfg-vk to `~/.local`. Please **keep track of the files that w
 
 4. The graphical interface requires Qt6 and Qt6 Quick in order to run. If you do not have these installed, install the following packages:
 ```bash
-sudo apt install qt6-qpa-plugins libqt6quick6 # On Debian/Ubuntu-based systems
+sudo apt install qt6-qpa-plugins libqt6quick6 qml6-module-qtquick-controls qml6-module-qtquick-layouts qml6-module-qtquick-window qml6-module-qtquick-dialogs # On Debian/Ubuntu-based systems
 sudo pacman -S qt6-declarative qt6-base # On Arch-based systems
 sudo dnf install qt6-qtdeclarative qt6-qtbase # On Fedora
 ```
