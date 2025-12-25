@@ -29,28 +29,28 @@ void ConfigFile::createDefaultConfigFile(const std::filesystem::path& path) {
 
         ofs << R"(version = 2
 
-   [global]
-   # dll = '/media/games/Lossless Scaling/Lossless.dll' # if you don't have LS in the default location
-   allow_fp16 = true # this will improve give a MASSIVE performance boost on AMD, but be super slow on older (!) NVIDIA GPUs
+[global]
+# dll = '/media/games/Lossless Scaling/Lossless.dll' # if you don't have LS in the default location
+allow_fp16 = true # this will improve give a MASSIVE performance boost on AMD, but be super slow on older (!) NVIDIA GPUs
 
-   [[profile]]
-   name = "4x FG / 85% [Performance]"
-   active_in = [ # see the wiki for more info
-       'vkcube',
-       'vkcubepp'
-   ]
-   # gpu = 'NVIDIA GeForce RTX 5080' # see the wiki for more info
-   multiplier = 4
-   flow_scale = 0.85
-   performance_mode = true
-   pacing = 'none' # see the wiki for more info
+[[profile]]
+name = "4x FG / 85% [Performance]"
+active_in = [ # see the wiki for more info
+    'vkcube',
+    'vkcubepp'
+]
+# gpu = 'NVIDIA GeForce RTX 5080' # see the wiki for more info
+multiplier = 4
+flow_scale = 0.85
+performance_mode = true
+pacing = 'none' # see the wiki for more info
 
-   [[profile]]
-   name = "2x FG / 100%"
-   active_in = 'GenshinImpact.exe'
-   gpu = 'NVIDIA GeForce RTX 5080'
-   multiplier = 2
-   )";
+[[profile]]
+name = "2x FG / 100%"
+active_in = 'GenshinImpact.exe'
+gpu = 'NVIDIA GeForce RTX 5080'
+multiplier = 2
+)";
         ofs.close();
     } catch (const std::filesystem::filesystem_error& e) {
         throw ls::error("unable to create default configuration file", e);
