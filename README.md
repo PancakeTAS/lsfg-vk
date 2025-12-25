@@ -4,10 +4,10 @@
 **lsfg-vk** is a Vulkan layer that hooks into Vulkan applications and generates additional frames using Lossless Scaling's frame generation algorithm.
 
 >[!CAUTION]
->You are reading the README for the upcoming version 2.0 of lsfg-vk. For the stable version 1.x, [please read here](https://github.com/PancakeTAS/lsfg-vk/tree/ff1a0f72a7d6d08b84d58b7b4dc5f05c9f904f98)
+> You are reading the README for the upcoming version 2.0 of lsfg-vk. For the stable version 1.x, [please read here](https://github.com/PancakeTAS/lsfg-vk/tree/ff1a0f72a7d6d08b84d58b7b4dc5f05c9f904f98)
 
 ## Installation
->[!INFO]
+>[!TIP]
 > If you are on a Steam Deck or similar handheld, consider using the [Decky plugin for lsfg-vk](https://github.com/xXJSONDeruloXx/decky-lsfg-vk). This is an easy way to install and configure lsfg-vk on the Steam Deck.
 > Please keep in mind that it is not officially supported and support questions should be directed to the plugin's repository & discord.
 

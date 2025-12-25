@@ -6,6 +6,7 @@
 #include <array>
 #include <cstdlib>
 #include <fstream>
+#include <iostream>
 #include <optional>
 #include <string>
 #include <unistd.h>
@@ -36,7 +37,7 @@ namespace {
     std::optional<GameConf> matchEndsWithId(const std::vector<GameConf>& profiles, const std::string& id) {
         for (const auto& profile : profiles)
             for (const auto& activation : profile.active_in)
-                if (activation.ends_with(id))
+                if (id.ends_with(activation))
                     return profile;
         return std::nullopt;
     }
@@ -101,6 +102,8 @@ Identification ls::identify() {
 std::optional<std::pair<IdentType, GameConf>> ls::findProfile(
         const ConfigFile& config, const Identification& id) {
     const auto& profiles = config.profiles();
+
+    std::cerr << "wine exec: " << (id.wine_executable.has_value() ? id.wine_executable.value() : "none") << "\n";
 
     // check for the environment option first
     if (std::getenv("LSFGVK_ENV") != nullptr)
