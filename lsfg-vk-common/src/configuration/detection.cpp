@@ -17,11 +17,26 @@
 using namespace ls;
 
 namespace {
+    // try to match a profile by name
+    std::optional<GameConf> matchByName(const std::vector<GameConf>& profiles, const std::string& id) {
+        for (const auto& profile : profiles)
+            if (profile.name == id)
+                return profile;
+        return std::nullopt;
+    }
     // try to match a profile by id
-    std::optional<GameConf> match(const std::vector<GameConf>& profiles, const std::string& id) {
+    std::optional<GameConf> matchById(const std::vector<GameConf>& profiles, const std::string& id) {
         for (const auto& profile : profiles)
             for (const auto& activation : profile.active_in)
-                if (activation == id)
+                if (id == activation)
+                    return profile;
+        return std::nullopt;
+    }
+    // try to match a profile by id
+    std::optional<GameConf> matchEndsWithId(const std::vector<GameConf>& profiles, const std::string& id) {
+        for (const auto& profile : profiles)
+            for (const auto& activation : profile.active_in)
+                if (activation.ends_with(id))
                     return profile;
         return std::nullopt;
     }
@@ -53,13 +68,12 @@ Identification ls::identify() {
             if (!line.ends_with(".exe"))
                 continue;
 
-            size_t pos = line.find_last_of('/');
+            size_t pos = line.find_first_of('/');
             if (pos == std::string::npos) {
                 pos = line.find_last_of(' ');
                 if (pos == std::string::npos)
                     continue;
             }
-            pos += 1; // skip slash or space
 
             const std::string wine_executable = line.substr(pos);
             if (wine_executable.empty())
@@ -94,26 +108,26 @@ std::optional<std::pair<IdentType, GameConf>> ls::findProfile(
 
     // then override first
     if (id.override.has_value()) {
-        const auto profile = match(profiles, id.override.value());
+        const auto profile = matchByName(profiles, id.override.value());
         if (profile.has_value())
             return std::make_pair(IdentType::OVERRIDE, profile.value());
     }
 
     // then check executable
-    const auto exe_profile = match(profiles, id.executable);
+    const auto exe_profile = matchEndsWithId(profiles, id.executable);
     if (exe_profile.has_value())
         return std::make_pair(IdentType::EXECUTABLE, exe_profile.value());
 
     // if present, check wine executable next
     if (id.wine_executable.has_value()) {
-        const auto wine_profile = match(profiles, id.wine_executable.value());
+        const auto wine_profile = matchEndsWithId(profiles, id.wine_executable.value());
         if (wine_profile.has_value())
             return std::make_pair(IdentType::WINE_EXECUTABLE, wine_profile.value());
     }
 
     // finally, fallback to process name
     if (!id.process_name.empty()) {
-        const auto proc_profile = match(profiles, id.process_name);
+        const auto proc_profile = matchById(profiles, id.process_name);
         if (proc_profile.has_value())
             return std::make_pair(IdentType::PROCESS_NAME, proc_profile.value());
     }

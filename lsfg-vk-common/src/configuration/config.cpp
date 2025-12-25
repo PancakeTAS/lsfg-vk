@@ -271,7 +271,7 @@ WatchedConfig::WatchedConfig() : path(findConfigurationFile()) {
     if (std::getenv("LSFGVK_ENV")) {
         auto& config = this->configFile;
         config.global() = parseGlobalConfFromEnv();
-        config.profiles().push_back(parseGameConfFromEnv());
+        config.profiles() = { parseGameConfFromEnv() };
 
         return;
     }
