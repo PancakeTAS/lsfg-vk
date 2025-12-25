@@ -36,6 +36,10 @@ namespace lsfgvk::layer {
     void context_ModifySwapchainCreateInfo(const ls::GameConf& profile, uint32_t maxImages,
         VkSwapchainCreateInfoKHR& createInfo);
 
+#ifdef LSFGVK_LAYER_MANGOHUD
+    using PFN_MangoHud_notify = void(*)(uint64_t, VkSwapchainKHR, bool);
+#endif
+
     /// swapchain context for a layer instance
     class Swapchain {
     public:
@@ -79,6 +83,10 @@ namespace lsfgvk::layer {
 
         ls::GameConf profile;
         SwapchainInfo info;
+
+#ifdef LSFGVK_LAYER_MANGOHUD
+        PFN_MangoHud_notify mangohud_notify{nullptr};
+#endif
     };
 
 }

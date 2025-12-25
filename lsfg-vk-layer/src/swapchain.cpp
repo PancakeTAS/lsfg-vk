@@ -21,10 +21,15 @@
 
 #include <vulkan/vulkan_core.h>
 
+#ifdef LSFGVK_LAYER_MANGOHUD
+#include <dlfcn.h>
+#endif
+
 using namespace lsfgvk;
 using namespace lsfgvk::layer;
 
 namespace {
+    /// helper to create an image memory barrier
     VkImageMemoryBarrier barrierHelper(VkImage handle,
             VkAccessFlags srcAccessMask,
             VkAccessFlags dstAccessMask,
@@ -48,6 +53,21 @@ namespace {
             }
         };
     }
+#ifdef LSFGVK_LAYER_MANGOHUD
+    /// load MangoHud integration
+    PFN_MangoHud_notify loadMangoHudIntegration() {
+        void* module = dlopen("libMangoHud.so", RTLD_NOW | RTLD_NOLOAD);
+        if (!module)
+            return nullptr;
+
+        auto func = reinterpret_cast<PFN_MangoHud_notify>(
+            dlsym(module, "notify_extra_frame"));
+        if (!func)
+            return nullptr;
+
+        return func;
+    }
+#endif
 }
 
 void layer::context_ModifySwapchainCreateInfo(const ls::GameConf& profile, uint32_t maxImages,
@@ -124,6 +144,10 @@ Swapchain::Swapchain(const vk::Vulkan& vk, backend::Instance& backend,
             vk::Semaphore(vk)
         );
     }
+
+#ifdef LSFGVK_LAYER_MANGOHUD
+    this->mangohud_notify = loadMangoHudIntegration();
+#endif
 }
 
 VkResult Swapchain::present(const vk::Vulkan& vk,
@@ -281,6 +305,11 @@ VkResult Swapchain::present(const vk::Vulkan& vk,
         if (res != VK_SUCCESS && res != VK_SUBOPTIMAL_KHR)
             throw ls::vulkan_error(res, "vkQueuePresentKHR() failed");
 
+#ifdef LSFGVK_LAYER_MANGOHUD
+        if (this->mangohud_notify)
+            this->mangohud_notify(this->fidx, swapchain, true);
+#endif
+
         this->idx++;
     }
 
@@ -297,6 +326,11 @@ VkResult Swapchain::present(const vk::Vulkan& vk,
     auto res = vk.df().QueuePresentKHR(queue, &presentInfo);
     if (res != VK_SUCCESS && res != VK_SUBOPTIMAL_KHR)
         throw ls::vulkan_error(res, "vkQueuePresentKHR() failed");
+
+#ifdef LSFGVK_LAYER_MANGOHUD
+    if (this->mangohud_notify)
+        this->mangohud_notify(this->fidx, swapchain, false);
+#endif
 
     this->fidx++;
     return res;
