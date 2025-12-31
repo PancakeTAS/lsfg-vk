@@ -1,7 +1,10 @@
 set(LAYER_SOURCES
-    "src/entrypoint.cpp"
-    "src/instance.cpp"
-    "src/swapchain.cpp")
+    "src/hooks/device.cpp"
+    "src/hooks/instance.cpp"
+    "src/hooks/layer.cpp"
+    "src/hooks/swapchain.cpp"
+    "src/generator.cpp"
+    "src/entrypoint.cpp")
 
 add_library(lsfg-vk-layer SHARED ${LAYER_SOURCES})
 

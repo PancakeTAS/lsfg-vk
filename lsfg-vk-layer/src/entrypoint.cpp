@@ -1,16 +1,16 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 
-#include "instance.hpp"
+#include "hooks/device.hpp"
+#include "hooks/instance.hpp"
+#include "hooks/layer.hpp"
+#include "hooks/swapchain.hpp"
 #include "lsfg-vk-common/helpers/errors.hpp"
-#include "lsfg-vk-common/helpers/pointers.hpp"
-#include "lsfg-vk-common/vulkan/vulkan.hpp"
-#include "swapchain.hpp"
 
-#include <algorithm>
-#include <cstddef>
 #include <cstdint>
 #include <exception>
 #include <iostream>
+#include <memory>
+#include <mutex>
 #include <string>
 #include <unordered_map>
 #include <utility>
@@ -24,27 +24,25 @@ using namespace lsfgvk::layer;
 namespace {
     // global layer info initialized at layer negotiation
     struct LayerInfo {
-        std::unordered_map<std::string, PFN_vkVoidFunction> map; //!< function pointer override map
-        PFN_vkGetInstanceProcAddr GetInstanceProcAddr;
+        std::unordered_map<std::string, PFN_vkVoidFunction> map; // layer override map
 
-        Root root;
+        PFN_vkGetInstanceProcAddr GetInstanceProcAddr; // next layer functions
+        PFN_vkGetDeviceProcAddr GetDeviceProcAddr;
+        PFN_vkQueueSubmit QueueSubmit;
+
+        MyVkLayer layer; // managed instances
+        std::unordered_map<VkInstance, std::unique_ptr<MyVkInstance>> instances;
+        std::unordered_map<VkDevice, std::unique_ptr<MyVkDevice>> devices;
+        std::unordered_map<VkSwapchainKHR, std::unique_ptr<MyVkSwapchain>> swapchains;
     }* layer_info; // NOLINT (global variable)
-
-    // instance-wide info initialized at instance creation(s)
-    struct InstanceInfo {
-        std::vector<VkInstance> handles; // there may be several instances
-        vk::VulkanInstanceFuncs funcs;
-
-        std::unordered_map<VkDevice, vk::Vulkan> devices;
-        std::unordered_map<VkSwapchainKHR, ls::R<vk::Vulkan>> swapchains;
-        std::unordered_map<VkSwapchainKHR, SwapchainInfo> swapchainInfos;
-    }* instance_info; // NOLINT (global variable)
 
     // create instance
     VkResult myvkCreateInstance(
             const VkInstanceCreateInfo* info,
             const VkAllocationCallbacks* alloc,
             VkInstance* instance) {
+        auto& myvk_layer = layer_info->layer;
+
         // apply layer chaining
         auto* layerInfo = reinterpret_cast<VkLayerInstanceCreateInfo*>(const_cast<void*>(info->pNext));
         while (layerInfo && (layerInfo->sType != VK_STRUCTURE_TYPE_LOADER_INSTANCE_CREATE_INFO
@@ -83,29 +81,32 @@ namespace {
         }
 
         try {
-            VkInstanceCreateInfo newInfo = *info;
-            layer_info->root.modifyInstanceCreateInfo(newInfo,
-                [=, newInfo = &newInfo]() {
-                    auto res = vkCreateInstance(newInfo, alloc, instance);
+            auto myvk_instance = std::make_unique<MyVkInstance>(myvk_layer,
+                *info,
+                layer_info->GetInstanceProcAddr,
+                [=](VkInstanceCreateInfo* info) {
+                    auto res = vkCreateInstance(info, alloc, instance);
                     if (res != VK_SUCCESS)
                         throw ls::vulkan_error(res, "vkCreateInstance() failed");
+
+                    return *instance;
                 }
             );
-
-            if (!instance_info)
-                instance_info = new InstanceInfo{ // NOLINT (memory management)
-                    .funcs = vk::initVulkanInstanceFuncs(*instance,
-                        layer_info->GetInstanceProcAddr, true),
-                };
-
-            instance_info->handles.push_back(*instance);
+            layer_info->instances.emplace(*instance, std::move(myvk_instance));
 
             return VK_SUCCESS;
         } catch (const ls::vulkan_error& e) {
             if (e.error() == VK_ERROR_EXTENSION_NOT_PRESENT)
                 std::cerr << "lsfg-vk: required Vulkan instance extensions are not present. "
                     "Your GPU driver is not supported.\n";
+            else
+                std::cerr << "lsfg-vk: something went wrong during lsfg-vk instance initialization:\n"
+                    "- " << e.what() << '\n';
             return e.error();
+        } catch (const std::exception& e) {
+            std::cerr << "lsfg-vk: something went wrong during lsfg-vk instance initialization:\n"
+                "- " << e.what() << '\n';
+            return VK_ERROR_INITIALIZATION_FAILED;
         }
     }
 
@@ -115,6 +116,9 @@ namespace {
             const VkDeviceCreateInfo* info,
             const VkAllocationCallbacks* alloc,
             VkDevice* device) {
+        auto& myvk_layer = layer_info->layer;
+        auto& myvk_instance = *layer_info->instances.begin()->second;
+
         // apply layer chaining
         auto* layerInfo = reinterpret_cast<VkLayerDeviceCreateInfo*>(const_cast<void*>(info->pNext));
         while (layerInfo && (layerInfo->sType != VK_STRUCTURE_TYPE_LOADER_DEVICE_CREATE_INFO
@@ -134,7 +138,7 @@ namespace {
             return VK_ERROR_INITIALIZATION_FAILED;
         }
 
-        instance_info->funcs.GetDeviceProcAddr = linkInfo->pfnNextGetDeviceProcAddr;
+        layer_info->GetDeviceProcAddr = linkInfo->pfnNextGetDeviceProcAddr;
         if (!linkInfo->pfnNextGetDeviceProcAddr) {
             std::cerr << "lsfg-vk: next layer's vkGetDeviceProcAddr is null, "
                 "the previous layer does not follow spec\n";
@@ -161,51 +165,59 @@ namespace {
         }
 
         // create device
+        auto* vkCreateDevice = reinterpret_cast<PFN_vkCreateDevice>(
+            layer_info->GetInstanceProcAddr(myvk_instance.instance(), "vkCreateDevice"));
+        if (!vkCreateDevice) {
+            std::cerr << "lsfg-vk: failed to get next layer's vkCreateDevice, "
+                "the previous layer does not follow spec\n";
+            return VK_ERROR_INITIALIZATION_FAILED;
+        }
+
         try {
-            VkDeviceCreateInfo newInfo = *info;
-            layer_info->root.modifyDeviceCreateInfo(newInfo,
-                [=, newInfo = &newInfo]() {
-                    auto res = instance_info->funcs.CreateDevice(physdev, newInfo, alloc, device);
+            auto myvk_device = std::make_unique<MyVkDevice>(myvk_layer, myvk_instance,
+                physdev, *info,
+                layer_info->GetDeviceProcAddr, setLoaderData,
+                [=](VkDeviceCreateInfo* info) {
+                    auto res = vkCreateDevice(physdev, info, alloc, device);
                     if (res != VK_SUCCESS)
                         throw ls::vulkan_error(res, "vkCreateDevice() failed");
+
+                    return *device;
                 }
             );
+            layer_info->devices.emplace(*device, std::move(myvk_device));
+
+            return VK_SUCCESS;
         } catch (const ls::vulkan_error& e) {
             if (e.error() == VK_ERROR_EXTENSION_NOT_PRESENT)
                 std::cerr << "lsfg-vk: required Vulkan device extensions are not present. "
                     "Your GPU driver is not supported.\n";
+            else
+                std::cerr << "lsfg-vk: something went wrong during lsfg-vk device initialization:\n"
+                    "- " << e.what() << '\n';
             return e.error();
-        }
-
-        // create layer instance
-        try {
-            instance_info->devices.emplace(
-                *device,
-                vk::Vulkan(
-                    instance_info->handles.front(), *device, physdev,
-                    instance_info->funcs, vk::initVulkanDeviceFuncs(instance_info->funcs, *device,
-                        true),
-                    true, setLoaderData
-                )
-            );
         } catch (const std::exception& e) {
-            std::cerr << "lsfg-vk: something went wrong during lsfg-vk initialization:\n";
-            std::cerr << "- " << e.what() << '\n';
+            std::cerr << "lsfg-vk: something went wrong during lsfg-vk device initialization:\n"
+                "- " << e.what() << '\n';
+            return VK_ERROR_INITIALIZATION_FAILED;
         }
+    }
 
-        return VK_SUCCESS;
+    VkResult myvkDeviceWaitIdle(VkDevice device) {
+        auto it = layer_info->devices.find(device);
+        if (it == layer_info->devices.end())
+            return VK_ERROR_DEVICE_LOST;
+
+        const std::scoped_lock<std::mutex> lock(it->second->offload().mutex);
+        return it->second->funcs().DeviceWaitIdle(device);
     }
 
     // destroy device
     void myvkDestroyDevice(VkDevice device, const VkAllocationCallbacks* alloc) {
-        // destroy layer instance
-        auto it = instance_info->devices.find(device);
-        if (it != instance_info->devices.end())
-            instance_info->devices.erase(it);
+        layer_info->devices.erase(device);
 
-        // destroy device
         auto vkDestroyDevice = reinterpret_cast<PFN_vkDestroyDevice>(
-            instance_info->funcs.GetDeviceProcAddr(device, "vkDestroyDevice"));
+            layer_info->GetDeviceProcAddr(device, "vkDestroyDevice"));
         if (!vkDestroyDevice) {
             std::cerr << "lsfg-vk: failed to get next layer's vkDestroyDevice, "
                 "the previous layer does not follow spec\n";
@@ -217,18 +229,8 @@ namespace {
 
     // destroy instance
     void myvkDestroyInstance(VkInstance instance, const VkAllocationCallbacks* alloc) {
-        // remove instance handle
-        auto it = std::ranges::find(instance_info->handles, instance);
-        if (it != instance_info->handles.end())
-            instance_info->handles.erase(it);
+        layer_info->instances.erase(instance);
 
-        // destroy instance info if no handles remain
-        if (instance_info->handles.empty()) {
-            delete instance_info; // NOLINT (memory management)
-            instance_info = nullptr;
-        }
-
-        // destroy instance
         auto vkDestroyInstance = reinterpret_cast<PFN_vkDestroyInstance>(
             layer_info->GetInstanceProcAddr(instance, "vkDestroyInstance"));
         if (!vkDestroyInstance) {
@@ -266,8 +268,8 @@ namespace {
         auto func = getProcAddr(name);
         if (func) return func;
 
-        if (!instance_info->funcs.GetDeviceProcAddr) return nullptr;
-        return instance_info->funcs.GetDeviceProcAddr(device, name);
+        if (!layer_info->GetDeviceProcAddr) return nullptr;
+        return layer_info->GetDeviceProcAddr(device, name);
     }
 }
 
@@ -277,138 +279,129 @@ namespace {
             const VkSwapchainCreateInfoKHR* info,
             const VkAllocationCallbacks* alloc,
             VkSwapchainKHR* swapchain) {
-        const auto& it = instance_info->devices.find(device);
-        if (it == instance_info->devices.end())
-            return VK_ERROR_INITIALIZATION_FAILED;
+        auto& myvk_layer = layer_info->layer;
+        auto& myvk_instance = *layer_info->instances.begin()->second;
+        auto& myvk_device = *layer_info->devices.find(device)->second;
+
+        auto* vkCreateSwapchainKHR = myvk_device.funcs().CreateSwapchainKHR;
+        layer_info->QueueSubmit = myvk_device.funcs().QueueSubmit;
 
         try {
-            // retire old swapchain
-            if (info->oldSwapchain) {
-                const auto& info_mapping = instance_info->swapchainInfos.find(info->oldSwapchain);
-                if (info_mapping != instance_info->swapchainInfos.end())
-                    instance_info->swapchainInfos.erase(info_mapping);
+            myvk_layer.update(); // ensure config is up to date
 
-                const auto& mapping = instance_info->swapchains.find(info->oldSwapchain);
-                if (mapping != instance_info->swapchains.end())
-                    instance_info->swapchains.erase(mapping);
+            // remove old managed swapchain
+            if (info->oldSwapchain)
+                layer_info->swapchains.erase(info->oldSwapchain);
 
-                layer_info->root.removeSwapchainContext(info->oldSwapchain);
-            }
-
-            layer_info->root.update(); // ensure config is up to date
-
-            // create swapchain
-            VkSwapchainCreateInfoKHR newInfo = *info;
-            layer_info->root.modifySwapchainCreateInfo(it->second, newInfo,
-                [=, newInfo = &newInfo]() {
-                    auto res = it->second.df().CreateSwapchainKHR(
-                        device, newInfo, alloc, swapchain);
+            // create managed swapchain
+            auto myvk_swapchain = std::make_unique<MyVkSwapchain>(myvk_layer, myvk_instance, myvk_device,
+                *info,
+                [=](VkSwapchainCreateInfoKHR* info) {
+                    auto res = vkCreateSwapchainKHR(device, info, alloc, swapchain);
                     if (res != VK_SUCCESS)
                         throw ls::vulkan_error(res, "vkCreateSwapchainKHR() failed");
+
+                    return *swapchain;
                 }
             );
+            layer_info->swapchains.emplace(*swapchain, std::move(myvk_swapchain));
 
-            // get all swapchain images
-            uint32_t imageCount{};
-            auto res = it->second.df().GetSwapchainImagesKHR(device, *swapchain,
-                &imageCount, VK_NULL_HANDLE);
-            if (res != VK_SUCCESS || imageCount == 0)
-                throw ls::vulkan_error(res, "vkGetSwapchainImagesKHR() failed");
-
-            std::vector<VkImage> swapchainImages(imageCount);
-            res = it->second.df().GetSwapchainImagesKHR(device, *swapchain,
-                &imageCount, swapchainImages.data());
-            if (res != VK_SUCCESS)
-                throw ls::vulkan_error(res, "vkGetSwapchainImagesKHR() failed");
-
-            auto& info = instance_info->swapchainInfos.emplace(*swapchain, SwapchainInfo {
-                .images = std::move(swapchainImages),
-                .format = newInfo.imageFormat,
-                .colorSpace = newInfo.imageColorSpace,
-                .extent = newInfo.imageExtent,
-                .presentMode = newInfo.presentMode
-            }).first->second;
-
-            // create lsfg-vk swapchain
-            layer_info->root.createSwapchainContext(it->second, *swapchain, info);
-
-            instance_info->swapchains.emplace(*swapchain,
-                ls::R<vk::Vulkan>(it->second));
-
-            return res;
+            return VK_SUCCESS;
         } catch (const ls::vulkan_error& e) {
-            std::cerr << "lsfg-vk: something went wrong during lsfg-vk swapchain creation:\n";
-            std::cerr << "- " << e.what() << '\n';
+            std::cerr << "lsfg-vk: something went wrong during lsfg-vk swapchain creation:\n"
+                "- " << e.what() << '\n';
             return e.error();
         } catch (const std::exception& e) {
-            std::cerr << "lsfg-vk: something went wrong during lsfg-vk swapchain creation:\n";
-            std::cerr << "- " << e.what() << '\n';
-            return VK_ERROR_INITIALIZATION_FAILED;
+            std::cerr << "lsfg-vk: something went wrong during lsfg-vk swapchain creation:\n"
+                "- " << e.what() << '\n';
+            return VK_ERROR_UNKNOWN;
         }
     }
 
-    VkResult myvkQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR* info) {
+    VkResult myvkQueuePresentKHR(VkQueue queue,
+            const VkPresentInfoKHR* info) {
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wunknown-warning-option"
 #pragma clang diagnostic ignored "-Wunsafe-buffer-usage"
         VkResult result = VK_SUCCESS;
 
-        // ensure layer config is up to date
-        bool reload{};
+        // re-create out-of-date managed swapchains
         try {
-            reload = layer_info->root.update();
-        } catch (const std::exception&) {
-            reload = false; // ignore parse errors
-        }
-
-        if (reload) {
-            try {
-                for (const auto& [swapchain, vk] : instance_info->swapchains) {
-                    auto& info = instance_info->swapchainInfos.at(swapchain);
-
-                    layer_info->root.removeSwapchainContext(swapchain);
-                    layer_info->root.createSwapchainContext(vk, swapchain, info);
-                }
-
-                std::cerr << "lsfg-vk: updated lsfg-vk configuration\n";
-            } catch (const std::exception& e) {
-                std::cerr << "lsfg-vk: something went wrong during lsfg-vk configuration update:\n";
-                std::cerr << "- " << e.what() << '\n';
+            if (layer_info->layer.update()) {
+                for (auto& [handle, myswapchain] : layer_info->swapchains)
+                    myswapchain->reinitialize();
             }
+        } catch (const std::exception& e) {
+            std::cerr << "lsfg-vk: something went wrong during lsfg-vk swapchain re-creation:\n"
+                "- " << e.what() << '\n';
+            // ignore error: return VK_ERROR_UNKNOWN;
         }
 
-        // present each swapchain
-        for (size_t i = 0; i < info->swapchainCount; i++) {
-            const auto& swapchain = info->pSwapchains[i];
+        // collect semaphores and values
+        std::vector<uint64_t> waitValues(info->waitSemaphoreCount);
+        std::vector<VkSemaphore> signalSemaphores;
+        std::vector<uint64_t> signalValues;
 
-            const auto& it = instance_info->swapchains.find(swapchain);
-            if (it == instance_info->swapchains.end())
-                return VK_ERROR_INITIALIZATION_FAILED;
+        for (uint32_t i = 0; i < info->swapchainCount; i++) {
+            const auto& handle = info->pSwapchains[i];
+
+            const auto& it = layer_info->swapchains.find(handle);
+            if (it == layer_info->swapchains.end())
+                return VK_ERROR_SURFACE_LOST_KHR;
+
+            const auto& sync = it->second->sync();
+            signalSemaphores.push_back(sync.first);
+            signalValues.push_back(sync.second);
+        }
+
+        // submit the present operation
+        const VkTimelineSemaphoreSubmitInfo timelineInfo{
+            .sType = VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO,
+            .waitSemaphoreValueCount = static_cast<uint32_t>(waitValues.size()),
+            .pWaitSemaphoreValues = waitValues.data(),
+            .signalSemaphoreValueCount = static_cast<uint32_t>(signalValues.size()),
+            .pSignalSemaphoreValues = signalValues.data()
+        };
+        std::vector<VkPipelineStageFlags> stages(info->waitSemaphoreCount,
+            VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+        const VkSubmitInfo submitInfo{
+            .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
+            .pNext = &timelineInfo,
+            .waitSemaphoreCount = info->waitSemaphoreCount,
+            .pWaitSemaphores = info->pWaitSemaphores,
+            .pWaitDstStageMask = stages.data(),
+            .signalSemaphoreCount = static_cast<uint32_t>(signalSemaphores.size()),
+            .pSignalSemaphores = signalSemaphores.data()
+        };
+        auto res = layer_info->QueueSubmit(queue, 1, &submitInfo, VK_NULL_HANDLE);
+        if (res != VK_SUCCESS) {
+            std::cerr << "lsfg-vk: something went wrong during lsfg-vk present submission:\n"
+                "- vkQueueSubmit() failed with error " << res << '\n';
+            return res;
+        }
+
+        // present all managed swapchains
+        for (uint32_t i = 0; i < info->swapchainCount; i++) {
+            const auto& handle = info->pSwapchains[i];
+
+            const auto& it = layer_info->swapchains.find(handle);
+            if (it == layer_info->swapchains.end())
+                return VK_ERROR_SURFACE_LOST_KHR;
 
             try {
-                std::vector<VkSemaphore> waitSemaphores;
-                waitSemaphores.reserve(info->waitSemaphoreCount);
-
-                for (size_t j = 0; j < info->waitSemaphoreCount; j++)
-                    waitSemaphores.push_back(info->pWaitSemaphores[j]);
-
-                auto& context = layer_info->root.getSwapchainContext(swapchain);
-                result = context.present(it->second,
-                    queue, swapchain,
+                result = it->second->present(queue,
                     const_cast<void*>(info->pNext),
-                    info->pImageIndices[i],
-                    { waitSemaphores.begin(), waitSemaphores.end() }
+                    info->pImageIndices[i]
                 );
             } catch (const ls::vulkan_error& e) {
-                if (e.error() != VK_ERROR_OUT_OF_DATE_KHR) {
-                    std::cerr << "lsfg-vk: something went wrong during lsfg-vk swapchain presentation:\n";
-                    std::cerr << "- " << e.what() << '\n';
-                } // silently swallow out-of-date errors
-
+                if (e.error() != VK_ERROR_OUT_OF_DATE_KHR) { // swallow out-of-date errors
+                    std::cerr << "lsfg-vk: something went wrong during lsfg-vk swapchain presentation:\n"
+                        "- " << e.what() << '\n';
+                }
                 result = e.error();
             } catch (const std::exception& e) {
-                std::cerr << "lsfg-vk: something went wrong during lsfg-vk swapchain presentation:\n";
-                std::cerr << "- " << e.what() << '\n';
+                std::cerr << "lsfg-vk: something went wrong during lsfg-vk swapchain presentation:\n"
+                    "- " << e.what() << '\n';
                 result = VK_ERROR_UNKNOWN;
             }
 
@@ -424,23 +417,19 @@ namespace {
             VkDevice device,
             VkSwapchainKHR swapchain,
             const VkAllocationCallbacks* alloc) {
-        const auto& it = instance_info->devices.find(device);
-        if (it == instance_info->devices.end())
+        layer_info->swapchains.erase(swapchain);
+
+        auto it = layer_info->devices.find(device);
+        if (it == layer_info->devices.end())
             return;
 
-        const auto& info_mapping = instance_info->swapchainInfos.find(swapchain);
-        if (info_mapping != instance_info->swapchainInfos.end())
-            instance_info->swapchainInfos.erase(info_mapping);
-
-        const auto& mapping = instance_info->swapchains.find(swapchain);
-        if (mapping != instance_info->swapchains.end())
-            instance_info->swapchains.erase(mapping);
-
-        layer_info->root.removeSwapchainContext(swapchain);
-
-        // destroy swapchain
-        it->second.df().DestroySwapchainKHR(device, swapchain, alloc);
+        auto vkDestroySwapchainKHR = it->second->funcs().DestroySwapchainKHR;
+        vkDestroySwapchainKHR(device, swapchain, alloc);
     }
+}
+
+namespace {
+
 }
 
 /// Vulkan layer entrypoint
@@ -468,25 +457,25 @@ VkResult vkNegotiateLoaderLayerInterfaceVersion(VkNegotiateLayerInterface* pVers
 #define VKPTR(name) reinterpret_cast<PFN_vkVoidFunction>(name)
                 { "vkCreateInstance", VKPTR(myvkCreateInstance) },
                 { "vkCreateDevice", VKPTR(myvkCreateDevice) },
+                { "vkDeviceWaitIdle", VKPTR(myvkDeviceWaitIdle) },
                 { "vkDestroyDevice", VKPTR(myvkDestroyDevice) },
                 { "vkDestroyInstance", VKPTR(myvkDestroyInstance) },
                 { "vkCreateSwapchainKHR", VKPTR(myvkCreateSwapchainKHR) },
                 { "vkQueuePresentKHR", VKPTR(myvkQueuePresentKHR) },
                 { "vkDestroySwapchainKHR", VKPTR(myvkDestroySwapchainKHR) }
 #undef VKPTR
-            },
-            .root = Root()
+            }
         };
 
-        if (!layer_info->root.active()) { // skip inactive
+        if (!layer_info->layer.isActive()) { // skip inactive
             delete layer_info; // NOLINT (memory management)
             layer_info = nullptr;
 
             return VK_ERROR_INITIALIZATION_FAILED;
         }
     } catch (const std::exception& e) {
-        std::cerr << "lsfg-vk: something went wrong during lsfg-vk layer initialization:\n";
-        std::cerr << "- " << e.what() << '\n';
+        std::cerr << "lsfg-vk: something went wrong during lsfg-vk layer initialization:\n"
+            "- " << e.what() << '\n';
 
         return VK_ERROR_INITIALIZATION_FAILED;
     }
