@@ -51,6 +51,7 @@ namespace vk {
     /// vulkan device function pointers
     struct VulkanDeviceFuncs {
         PFN_vkGetDeviceQueue GetDeviceQueue;
+        PFN_vkQueueWaitIdle QueueWaitIdle;
         PFN_vkDeviceWaitIdle DeviceWaitIdle;
         PFN_vkCreateCommandPool CreateCommandPool;
         PFN_vkDestroyCommandPool DestroyCommandPool;
@@ -119,11 +120,11 @@ namespace vk {
     };
 
     /// initialize vulkan device function pointers
-    /// @param fi instance function pointers
+    /// @param f function to get device proc addresses
     /// @param device logical device handle
     /// @param graphical whether the device is graphical (rather than compute)
     /// @return initialized function pointers
-    VulkanDeviceFuncs initVulkanDeviceFuncs(const VulkanInstanceFuncs& fi, VkDevice device,
+    VulkanDeviceFuncs initVulkanDeviceFuncs(PFN_vkGetDeviceProcAddr f, VkDevice device,
         bool graphical);
 
     /// vulkan version wrapper

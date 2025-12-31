@@ -51,9 +51,8 @@ namespace {
 
 namespace {
     template<typename T>
-    T ipa(PFN_vkGetInstanceProcAddr mpa, VkInstance instance, const char* name) {
-        T func = reinterpret_cast<T>(
-            mpa(instance, name));
+    T ipa(PFN_vkGetInstanceProcAddr vkGetInstanceProcAddr, VkInstance instance, const char* name) {
+        T func = reinterpret_cast<T>(vkGetInstanceProcAddr(instance, name));
         if (!func)
             throw ls::vulkan_error("failed to get instance proc addr for " + std::string(name));
         return func;
@@ -86,8 +85,7 @@ namespace {
         if (res != VK_SUCCESS)
             throw ls::vulkan_error(res, "vkCreateInstance() failed");
 
-        auto defunc =
-            ipa<PFN_vkDestroyInstance>(get_mpa(), handle, "vkDestroyInstance");
+        auto defunc = ipa<PFN_vkDestroyInstance>(get_mpa(), handle, "vkDestroyInstance");
         if (!defunc)
             throw ls::vulkan_error("failed to get vkDestroyInstance symbol");
         return ls::owned_ptr<VkInstance>(
@@ -150,9 +148,8 @@ namespace {
     }
 
     template<typename T>
-    T dpa(const VulkanInstanceFuncs& funcs, VkDevice device, const char* name) {
-        T func = reinterpret_cast<T>(
-            funcs.GetDeviceProcAddr(device, name));
+    T dpa(PFN_vkGetDeviceProcAddr vkGetDeviceProcAddr, VkDevice device, const char* name) {
+        T func = reinterpret_cast<T>(vkGetDeviceProcAddr(device, name));
         if (!func)
             throw ls::vulkan_error("failed to get device proc addr for " + std::string(name));
         return func;
@@ -192,8 +189,7 @@ namespace {
         if (res != VK_SUCCESS)
             throw ls::vulkan_error(res, "vkCreateDevice() failed");
 
-        auto defunc =
-            dpa<PFN_vkDestroyDevice>(fi, handle, "vkDestroyDevice");
+        auto defunc = dpa<PFN_vkDestroyDevice>(fi.GetDeviceProcAddr, handle, "vkDestroyDevice");
         if (!defunc)
             throw ls::vulkan_error("failed to get vkDestroyDevice symbol");
         return ls::owned_ptr<VkDevice>(
@@ -312,10 +308,11 @@ VulkanInstanceFuncs vk::initVulkanInstanceFuncs(VkInstance i, PFN_vkGetInstanceP
 }
 
 /// initialize vulkan device function pointers
-VulkanDeviceFuncs vk::initVulkanDeviceFuncs(const VulkanInstanceFuncs& f, VkDevice d,
+VulkanDeviceFuncs vk::initVulkanDeviceFuncs(PFN_vkGetDeviceProcAddr f, VkDevice d,
         bool graphical) {
     return {
         .GetDeviceQueue = dpa<PFN_vkGetDeviceQueue>(f, d, "vkGetDeviceQueue"),
+        .QueueWaitIdle = dpa<PFN_vkQueueWaitIdle>(f, d, "vkQueueWaitIdle"),
         .DeviceWaitIdle = dpa<PFN_vkDeviceWaitIdle>(f, d, "vkDeviceWaitIdle"),
         .CreateCommandPool = dpa<PFN_vkCreateCommandPool>(f, d, "vkCreateCommandPool"),
         .DestroyCommandPool = dpa<PFN_vkDestroyCommandPool>(f, d, "vkDestroyCommandPool"),
@@ -420,7 +417,7 @@ Vulkan::Vulkan(const std::string& appName, version appVersion,
     )),
     setLoaderData(setLoaderData),
     device_funcs(initVulkanDeviceFuncs(
-        this->instance_funcs,
+        this->instance_funcs.GetDeviceProcAddr,
         *this->device, false
     )),
     computeQueue(getQueue(this->device_funcs, *this->device,
