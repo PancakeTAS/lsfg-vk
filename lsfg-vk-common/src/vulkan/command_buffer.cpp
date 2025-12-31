@@ -204,7 +204,7 @@ void CommandBuffer::submit(const vk::Vulkan& vk,
         VkSemaphore waitTimelineSemaphore, uint64_t waitValue,
         std::vector<VkSemaphore> signalSemaphores,
         VkSemaphore signalTimelineSemaphore, uint64_t signalValue,
-        VkFence fence) const {
+        VkFence fence, VkQueue queue) const {
     // create arrays of semaphores and values
     if (waitTimelineSemaphore)
         waitSemaphores.push_back(waitTimelineSemaphore);
@@ -239,7 +239,7 @@ void CommandBuffer::submit(const vk::Vulkan& vk,
         .signalSemaphoreCount = static_cast<uint32_t>(signalSemaphores.size()),
         .pSignalSemaphores = signalSemaphores.data()
     };
-    auto res = vk.df().QueueSubmit(vk.queue(), 1, &submitInfo, fence);
+    auto res = vk.df().QueueSubmit(queue ? queue : vk.queue(), 1, &submitInfo, fence);
     if (res != VK_SUCCESS)
         throw ls::vulkan_error(res, "vkQueueSubmit() failed");
 }
