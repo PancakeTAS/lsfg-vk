@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <cassert>
 #include <functional>
 #include <optional>
 #include <stdexcept>
@@ -84,10 +85,8 @@ namespace ls {
             : ptr(ptr), deleter(std::move(deleter)) {}
 
         /// get reference to owned object
-        /// @throws std::runtime_error if no object is owned
         T& get() const {
-            if (!ptr)
-                throw std::runtime_error("owned_ptr: no object owned");
+            assert(ptr != nullptr && "owned_ptr: no object owned");
             return *ptr;
         }
 
