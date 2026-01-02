@@ -117,6 +117,10 @@ namespace vk {
         PFN_vkAcquireNextImageKHR AcquireNextImageKHR;
         PFN_vkQueuePresentKHR QueuePresentKHR;
         PFN_vkDestroySwapchainKHR DestroySwapchainKHR;
+
+        // optional extension functions
+        PFN_vkWaitForPresentKHR WaitForPresentKHR;
+        PFN_vkWaitForPresent2KHR WaitForPresent2KHR;
     };
 
     /// initialize vulkan device function pointers

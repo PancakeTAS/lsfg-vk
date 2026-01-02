@@ -5,7 +5,8 @@
 #include <cassert>
 #include <functional>
 #include <optional>
-#include <stdexcept>
+
+#include <vulkan/vulkan_core.h>
 
 namespace ls {
     /// helper alias for std::reference_wrapper
@@ -25,8 +26,7 @@ namespace ls {
         /// @throws std::logic_error if value already present
         template<typename... Args>
         T& emplace(Args&&... args) {
-            if (this->opt.has_value())
-                throw std::logic_error("lazy: value already present");
+            assert(!this->opt.has_value() && "lazy: value already present");
 
             this->opt.emplace(std::forward<Args>(args)...);
             return *this->opt;
@@ -40,8 +40,7 @@ namespace ls {
         /// @return reference to value
         /// @throws std::logic_error if no value present
         const T& operator*() const {
-            if (!this->opt.has_value())
-                throw std::logic_error("lazy: no value present");
+            assert(this->opt.has_value() && "lazy: no value present");
             return *this->opt;
         }
 
@@ -49,8 +48,7 @@ namespace ls {
         /// @return pointer to value
         /// @throws std::logic_error if no value present
         const T* operator->() const {
-            if (!this->opt.has_value())
-                throw std::logic_error("lazy: no value present");
+            assert(this->opt.has_value() && "lazy: no value present");
             return &(*this->opt);
         }
 
@@ -58,8 +56,7 @@ namespace ls {
         /// @return mutable reference to value
         /// @throws std::logic_error if no value present
         T& mut() {
-            if (!this->opt.has_value())
-                throw std::logic_error("lazy: no value present");
+            assert(this->opt.has_value() && "lazy: no value present");
             return *this->opt;
         }
     private:
@@ -130,4 +127,21 @@ namespace ls {
         T* ptr{};
         std::function<void(T&)> deleter{};
     };
+
+    /// find a structure in a pNext chain
+    /// @param type the structure type to find
+    /// @param chain the pNext chain
+    /// @return pointer to the found structure, or nullptr
+    template<typename T>
+    T* find_structure(VkStructureType type, const void* chain) noexcept {
+        auto* next = reinterpret_cast<VkBaseInStructure*>(const_cast<void*>(chain));
+        while (next) {
+            if (next->sType == type)
+                return reinterpret_cast<T*>(next);
+
+            next = const_cast<VkBaseInStructure*>(next->pNext);
+        }
+
+        return nullptr;
+    }
 }

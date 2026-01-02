@@ -28,3 +28,5 @@ Checks:
 - -cppcoreguidelines-pro-bounds-pointer-arithmetic
 - -cppcoreguidelines-pro-type-union-access
 - -clang-diagnostic-unsafe-buffer-usage
+# Vulkan layers override methods, where not all parameters are needed
+- -readability-named-parameter

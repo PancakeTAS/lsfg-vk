@@ -20,13 +20,16 @@ namespace vk {
         /// @param usage usage flags
         /// @param importFd optional file descriptor for shared memory
         /// @param exportFd optional pointer to an integer where the file descriptor will be stored
+        /// @param flags additional flags for image creation
+        /// @param chain optional pNext chain for image creation
         /// @throws ls::vulkan_error on failure
         Image(const vk::Vulkan& vk,
             VkExtent2D extent,
             VkFormat format = VK_FORMAT_R8G8B8A8_UNORM,
             VkImageUsageFlags usage = VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
             std::optional<int> importFd = std::nullopt,
-            std::optional<int*> exportFd = std::nullopt);
+            std::optional<int*> exportFd = std::nullopt,
+            VkImageCreateFlags flags = 0, const void* chain = nullptr);
 
         /// get the image handle
         /// @return the image handle

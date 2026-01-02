@@ -16,16 +16,18 @@ namespace {
     /// create a image
     ls::owned_ptr<VkImage> createImage(const vk::Vulkan& vk,
             VkExtent2D extent, VkFormat format, VkImageUsageFlags usage,
-            bool external) {
+            bool external, VkImageCreateFlags flags, const void* chain) {
         VkImage handle{};
 
         const VkExternalMemoryImageCreateInfo externalInfo{
             .sType = VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO,
+            .pNext = chain,
             .handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT_KHR
         };
         const VkImageCreateInfo imageInfo{
             .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
-            .pNext = external ? &externalInfo : nullptr,
+            .pNext = external ? &externalInfo : chain,
+            .flags = flags,
             .imageType = VK_IMAGE_TYPE_2D,
             .format = format,
             .extent = {
@@ -155,10 +157,12 @@ Image::Image(const vk::Vulkan& vk,
             VkFormat format,
             VkImageUsageFlags usage,
             std::optional<int> importFd,
-            std::optional<int*> exportFd) :
+            std::optional<int*> exportFd,
+            VkImageCreateFlags flags, const void* chain) :
         image(createImage(vk,
             extent, format, usage,
-            importFd.has_value() || exportFd.has_value()
+            importFd.has_value() || exportFd.has_value(),
+            flags, chain
         )),
         memory(allocateMemory(vk,
             *this->image,

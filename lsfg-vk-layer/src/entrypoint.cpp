@@ -5,12 +5,14 @@
 #include "hooks/layer.hpp"
 #include "hooks/swapchain.hpp"
 #include "lsfg-vk-common/helpers/errors.hpp"
+#include "lsfg-vk-common/helpers/pointers.hpp"
 
 #include <cstdint>
 #include <exception>
 #include <iostream>
 #include <memory>
 #include <mutex>
+#include <optional>
 #include <string>
 #include <unordered_map>
 #include <utility>
@@ -318,11 +320,78 @@ namespace {
         }
     }
 
+    VkResult myvkGetSwapchainImagesKHR(
+            VkDevice,
+            VkSwapchainKHR swapchain,
+            uint32_t* count,
+            VkImage* images) {
+        const auto& it = layer_info->swapchains.find(swapchain);
+        if (it == layer_info->swapchains.end())
+            return VK_ERROR_SURFACE_LOST_KHR;
+
+        return it->second->GetSwapchainImagesKHR(count, images);
+    }
+
+    VkResult myvkAcquireNextImageKHR(
+            VkDevice,
+            VkSwapchainKHR swapchain,
+            uint64_t timeout,
+            VkSemaphore semaphore,
+            VkFence fence,
+            uint32_t* idx) {
+        const auto& it = layer_info->swapchains.find(swapchain);
+        if (it == layer_info->swapchains.end())
+            return VK_ERROR_SURFACE_LOST_KHR;
+
+        return it->second->AcquireNextImageKHR(timeout, semaphore, fence, idx);
+    }
+
+    VkResult myvkAcquireNextImage2KHR(
+            VkDevice,
+            const VkAcquireNextImageInfoKHR* info,
+            uint32_t* idx) {
+        const auto& it = layer_info->swapchains.find(info->swapchain);
+        if (it == layer_info->swapchains.end())
+            return VK_ERROR_SURFACE_LOST_KHR;
+
+        return it->second->AcquireNextImage2KHR(info, idx);
+    }
+
+    VkResult myvkReleaseSwapchainImagesKHR(
+            VkDevice,
+            const VkReleaseSwapchainImagesInfoKHR* info) {
+        const auto& it = layer_info->swapchains.find(info->swapchain);
+        if (it == layer_info->swapchains.end())
+            return VK_ERROR_SURFACE_LOST_KHR;
+
+        return it->second->ReleaseSwapchainImagesKHR(info);
+    }
+
+    VkResult myvkWaitForPresentKHR(
+            VkDevice,
+            VkSwapchainKHR swapchain,
+            uint64_t id,
+            uint64_t timeout) {
+        const auto& it = layer_info->swapchains.find(swapchain);
+        if (it == layer_info->swapchains.end())
+            return VK_ERROR_SURFACE_LOST_KHR;
+
+        return it->second->WaitForPresentKHR(id, timeout);
+    }
+
+    VkResult myvkWaitForPresent2KHR(
+            VkDevice,
+            VkSwapchainKHR swapchain,
+            const VkPresentWait2InfoKHR* info) {
+        const auto& it = layer_info->swapchains.find(swapchain);
+        if (it == layer_info->swapchains.end())
+            return VK_ERROR_SURFACE_LOST_KHR;
+
+        return it->second->WaitForPresent2KHR(info);
+    }
+
     VkResult myvkQueuePresentKHR(VkQueue queue,
             const VkPresentInfoKHR* info) {
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wunknown-warning-option"
-#pragma clang diagnostic ignored "-Wunsafe-buffer-usage"
         VkResult result = VK_SUCCESS;
 
         // re-create out-of-date managed swapchains
@@ -335,6 +404,49 @@ namespace {
             std::cerr << "lsfg-vk: something went wrong during lsfg-vk swapchain re-creation:\n"
                 "- " << e.what() << '\n';
             // ignore error: return VK_ERROR_UNKNOWN;
+        }
+
+        // check for VK_KHR_swapchain_maintenance1
+        std::vector<VkFence> fences(info->swapchainCount, VK_NULL_HANDLE);
+        std::vector<std::optional<VkPresentModeKHR>> modes(info->swapchainCount, std::nullopt);
+
+        const auto* fenceInfo = ls::find_structure<VkSwapchainPresentFenceInfoKHR>(
+            VK_STRUCTURE_TYPE_SWAPCHAIN_PRESENT_FENCE_INFO_KHR,
+            info->pNext
+        );
+        if (fenceInfo) {
+            for (uint32_t i = 0; i < fenceInfo->swapchainCount; i++)
+                fences[i] = fenceInfo->pFences[i];
+        }
+
+        const auto* presentModeInfo = ls::find_structure<VkSwapchainPresentModeInfoKHR>(
+            VK_STRUCTURE_TYPE_SWAPCHAIN_PRESENT_MODE_INFO_KHR,
+            info->pNext
+        );
+        if (presentModeInfo) {
+            for (uint32_t i = 0; i < presentModeInfo->swapchainCount; i++)
+                modes[i] = presentModeInfo->pPresentModes[i];
+        }
+
+        // check for VK_KHR_present_id(2)
+        std::vector<std::optional<uint64_t>> presentIds(info->swapchainCount, std::nullopt);
+
+        const auto* presentIdInfo = ls::find_structure<VkPresentIdKHR>(
+            VK_STRUCTURE_TYPE_PRESENT_ID_KHR,
+            info->pNext
+        );
+        if (presentIdInfo) {
+            for (uint32_t i = 0; i < presentIdInfo->swapchainCount; i++)
+                presentIds[i] = presentIdInfo->pPresentIds[i];
+        }
+
+        const auto* presentId2Info = ls::find_structure<VkPresentId2KHR>(
+            VK_STRUCTURE_TYPE_PRESENT_ID_2_KHR,
+            info->pNext
+        );
+        if (presentId2Info) {
+            for (uint32_t i = 0; i < presentId2Info->swapchainCount; i++)
+                presentIds[i] = presentId2Info->pPresentIds[i];
         }
 
         // collect semaphores and values
@@ -352,6 +464,42 @@ namespace {
             const auto& sync = it->second->sync();
             signalSemaphores.push_back(sync.first);
             signalValues.push_back(sync.second);
+        }
+
+        // present all managed swapchains
+        for (uint32_t i = 0; i < info->swapchainCount; i++) {
+            const auto& handle = info->pSwapchains[i];
+
+            const auto& it = layer_info->swapchains.find(handle);
+            if (it == layer_info->swapchains.end())
+                return VK_ERROR_SURFACE_LOST_KHR;
+
+            try {
+                const auto& fence = fences[i];
+                const auto& present_mode = modes[i];
+                const auto& present_id = presentIds[i];
+
+                const MyVkPresentInfo mypresentinfo{
+                    .idx = info->pImageIndices[i],
+                    .fence = fence,
+                    .present_mode = present_mode,
+                    .id = present_id
+                };
+                result = it->second->partial_QueuePresentKHR(mypresentinfo);
+            } catch (const ls::vulkan_error& e) {
+                if (e.error() != VK_ERROR_OUT_OF_DATE_KHR) { // swallow out-of-date errors
+                    std::cerr << "lsfg-vk: something went wrong during lsfg-vk swapchain presentation:\n"
+                        "- " << e.what() << '\n';
+                }
+                result = e.error();
+            } catch (const std::exception& e) {
+                std::cerr << "lsfg-vk: something went wrong during lsfg-vk swapchain presentation:\n"
+                    "- " << e.what() << '\n';
+                result = VK_ERROR_UNKNOWN;
+            }
+
+            if (result != VK_SUCCESS && info->pResults)
+                info->pResults[i] = result;
         }
 
         // submit the present operation
@@ -380,37 +528,7 @@ namespace {
             return res;
         }
 
-        // present all managed swapchains
-        for (uint32_t i = 0; i < info->swapchainCount; i++) {
-            const auto& handle = info->pSwapchains[i];
-
-            const auto& it = layer_info->swapchains.find(handle);
-            if (it == layer_info->swapchains.end())
-                return VK_ERROR_SURFACE_LOST_KHR;
-
-            try {
-                result = it->second->present(queue,
-                    const_cast<void*>(info->pNext),
-                    info->pImageIndices[i]
-                );
-            } catch (const ls::vulkan_error& e) {
-                if (e.error() != VK_ERROR_OUT_OF_DATE_KHR) { // swallow out-of-date errors
-                    std::cerr << "lsfg-vk: something went wrong during lsfg-vk swapchain presentation:\n"
-                        "- " << e.what() << '\n';
-                }
-                result = e.error();
-            } catch (const std::exception& e) {
-                std::cerr << "lsfg-vk: something went wrong during lsfg-vk swapchain presentation:\n"
-                    "- " << e.what() << '\n';
-                result = VK_ERROR_UNKNOWN;
-            }
-
-            if (result != VK_SUCCESS && info->pResults)
-                info->pResults[i] = result;
-        }
-
         return result;
-#pragma clang diagnostic pop
     }
 
     void myvkDestroySwapchainKHR(
@@ -461,6 +579,13 @@ VkResult vkNegotiateLoaderLayerInterfaceVersion(VkNegotiateLayerInterface* pVers
                 { "vkDestroyDevice", VKPTR(myvkDestroyDevice) },
                 { "vkDestroyInstance", VKPTR(myvkDestroyInstance) },
                 { "vkCreateSwapchainKHR", VKPTR(myvkCreateSwapchainKHR) },
+                { "vkGetSwapchainImagesKHR", VKPTR(myvkGetSwapchainImagesKHR) },
+                { "vkAcquireNextImageKHR", VKPTR(myvkAcquireNextImageKHR) },
+                { "vkAcquireNextImage2KHR", VKPTR(myvkAcquireNextImage2KHR) },
+                { "vkReleaseSwapchainImagesKHR", VKPTR(myvkReleaseSwapchainImagesKHR) },
+                { "vkReleaseSwapchainImagesEXT", VKPTR(myvkReleaseSwapchainImagesKHR) },
+                { "vkWaitForPresentKHR", VKPTR(myvkWaitForPresentKHR) },
+                { "vkWaitForPresent2KHR", VKPTR(myvkWaitForPresent2KHR) },
                 { "vkQueuePresentKHR", VKPTR(myvkQueuePresentKHR) },
                 { "vkDestroySwapchainKHR", VKPTR(myvkDestroySwapchainKHR) }
 #undef VKPTR

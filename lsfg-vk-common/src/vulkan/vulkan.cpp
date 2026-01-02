@@ -388,7 +388,12 @@ VulkanDeviceFuncs vk::initVulkanDeviceFuncs(PFN_vkGetDeviceProcAddr f, VkDevice 
         .QueuePresentKHR = graphical ?
             dpa<PFN_vkQueuePresentKHR>(f, d, "vkQueuePresentKHR") : nullptr,
         .DestroySwapchainKHR = graphical ?
-            dpa<PFN_vkDestroySwapchainKHR>(f, d, "vkDestroySwapchainKHR") : nullptr
+            dpa<PFN_vkDestroySwapchainKHR>(f, d, "vkDestroySwapchainKHR") : nullptr,
+
+        .WaitForPresentKHR = reinterpret_cast<PFN_vkWaitForPresentKHR>(
+            f(d, "vkWaitForPresentKHR")),
+        .WaitForPresent2KHR = reinterpret_cast<PFN_vkWaitForPresent2KHR>(
+            f(d, "vkWaitForPresent2KHR"))
     };
 }
 
