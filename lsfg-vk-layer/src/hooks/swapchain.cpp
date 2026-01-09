@@ -15,6 +15,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <ctime>
+#include <exception>
 #include <functional>
 #include <iostream>
 #include <mutex>
@@ -140,50 +141,24 @@ void MyVkSwapchain::thread_main() noexcept {
         });
     }
 
+    try { // FIXME: indentation and stuff
+
     uint64_t counter{1};
     while (this->running.load()) {
         // wait for present signal and fetch the image index
-        if (!this->presentSemaphore.wait(vk, counter, 100'1000))
+        const auto ppi = this->virtual_FetchUPresent(100'1000, counter);
+        if (!ppi.has_value())
             continue; // timeout after 100us
-        counter++;
-
-        if (this->presents.empty()) {
-            // NOTE: the timeline semaphore is only hooked up
-            // after the partial present call, which means this
-            // queue must be filled. no mutex is necessary.
-
-            std::cerr << "lsfg-vk: virtual swapchain encountered an impossible state\n";
-            break;
-        }
-
-        const auto ppi = this->presents.front();
-        this->presents.pop();
 
         // acquire a real swapchain image
         const auto& pass = passes[counter % passes.size()];
-
-        uint32_t real_idx{};
-        {
-            const std::scoped_lock<std::mutex> lock(this->swapchainMutex);
-
-            auto res = vk.df().AcquireNextImageKHR(vk.dev(),
-                this->handle, UINT64_MAX,
-                pass.acquireSemaphore.handle(), VK_NULL_HANDLE,
-                &real_idx
-            );
-            if (res != VK_SUCCESS) {
-                status.store(res);
-
-                if (res != VK_SUBOPTIMAL_KHR)
-                    break;
-            }
-        }
+        const uint32_t real_idx = this->virtual_AcquireNext(pass.acquireSemaphore);
 
         // copy virtual image into real swapchain image
         const auto& cmdbuf = pass.commandBuffer;
         cmdbuf.begin(vk);
 
-        auto& virtualImage = this->images.at(ppi.idx);
+        auto& virtualImage = this->images.at(ppi->idx);
         auto& swapchainImage = this->swapchainImages.at(real_idx);
 
         cmdbuf.blitImage(vk,
@@ -231,74 +206,134 @@ void MyVkSwapchain::thread_main() noexcept {
         }
 
         // present the real swapchain image
-        const uint64_t presentId = ppi.id.value_or(0);
-        const VkPresentIdKHR presentIdInfo{
-            .sType = VK_STRUCTURE_TYPE_PRESENT_ID_KHR,
-            .swapchainCount = 1,
-            .pPresentIds = &presentId
-        };
-        const auto mode = ppi.present_mode.value_or(VK_PRESENT_MODE_FIFO_KHR);
-        const VkSwapchainPresentModeInfoKHR presentModeInfo{
-            .sType = VK_STRUCTURE_TYPE_SWAPCHAIN_PRESENT_MODE_INFO_KHR,
-            .pNext = ppi.id.has_value() ? &presentIdInfo : nullptr,
-            .swapchainCount = 1,
-            .pPresentModes = &mode
-        };
-
-        const void* chain{};
-        if (ppi.present_mode.has_value())
-            chain = &presentModeInfo;
-        else if (ppi.id.has_value())
-            chain = &presentIdInfo;
-        const VkPresentInfoKHR presentInfo{
-            .sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
-            .pNext = chain,
-            .waitSemaphoreCount = 1,
-            .pWaitSemaphores = &pass.presentSemaphore.handle(),
-            .swapchainCount = 1,
-            .pSwapchains = &this->handle,
-            .pImageIndices = &real_idx,
-        };
-        {
-            const std::scoped_lock<std::mutex> lock(offload.mutex);
-            const std::scoped_lock<std::mutex> lock2(this->swapchainMutex);
-            auto res = vk.df().QueuePresentKHR(offload.queue, &presentInfo);
-            if (res != VK_SUCCESS) {
-                status.store(res);
-
-                if (res != VK_SUBOPTIMAL_KHR)
-                    break;
-            }
-        }
-
-        if (ppi.id.has_value()) {
-            this->doneSemaphore->signal(vk, presentId + 1);
-        }
+        this->virtual_PresentLinked(*ppi, pass.presentSemaphore, real_idx);
 
         // wait for the copy to finish
-        if (!pass.copyFence.wait(vk, UINT64_MAX)) {
-            std::cerr << "lsfg-vk: virtual swapchain encountered an impossible timeout\n";
-            break;
-        }
+        if (!pass.copyFence.wait(vk, UINT64_MAX))
+            throw ls::error("virtual swapchain copy fence wait timed out");
         pass.copyFence.reset(vk);
 
         // mark image as available again
-        {
-            const std::scoped_lock<std::mutex> lock(this->availabilityMutex);
-            this->availableImages.at(ppi.idx) = true;
-        }
+        this->virtual_CompleteUPresent(*ppi);
+    }
 
-        // signal the fence
-        if (ppi.fence != VK_NULL_HANDLE) {
-            auto res = vk.df().QueueSubmit(offload.queue, 0, nullptr, ppi.fence);
-            if (res != VK_SUCCESS)
-                status.store(res);
-        }
+    } catch (const std::exception& e) {
+        std::cerr << "lsfg-vk: virtual swapchain encountered an error:\n"
+            "- " << e.what() << "\n";
     }
 
     if (offload.mutex.try_lock()) { // must be in vkDeviceWaitIdle if locked
         vk.df().QueueWaitIdle(offload.queue);
         offload.mutex.unlock();
+    }
+}
+
+std::optional<MyVkPresentInfo> MyVkSwapchain::virtual_FetchUPresent(uint64_t timeout,
+        uint64_t& counter) {
+    const auto& vk = this->device.get().vkd();
+
+    if (!this->presentSemaphore.wait(vk, counter, timeout))
+        return std::nullopt;
+    counter++;
+
+    if (this->presents.empty())
+        throw ls::error("virtual_FetchUPresent() encountered an impossible state");
+
+    const auto info = this->presents.front();
+    this->presents.pop();
+
+    return info;
+}
+
+uint32_t MyVkSwapchain::virtual_AcquireNext(const vk::Semaphore& semaphore) {
+    const auto& vk = this->device.get().vkd();
+
+    uint32_t idx{};
+    {
+        const std::scoped_lock<std::mutex> lock(this->swapchainMutex);
+
+        auto res = vk.df().AcquireNextImageKHR(vk.dev(),
+            this->handle, UINT64_MAX,
+            semaphore.handle(), VK_NULL_HANDLE,
+            &idx
+        );
+        if (res != VK_SUCCESS) {
+            this->status.store(res);
+
+            if (res != VK_SUBOPTIMAL_KHR)
+                throw ls::error("vkAcquireNextImageKHR() failed");
+        }
+
+    }
+
+    return idx;
+}
+
+void MyVkSwapchain::virtual_PresentLinked(const MyVkPresentInfo& original_info,
+        const vk::Semaphore& semaphore, uint32_t idx) {
+    const auto& vk = this->device.get().vkd();
+
+    const uint64_t presentId = original_info.id.value_or(0);
+    const VkPresentIdKHR presentIdInfo{
+        .sType = VK_STRUCTURE_TYPE_PRESENT_ID_KHR,
+        .swapchainCount = 1,
+        .pPresentIds = &presentId
+    };
+    const auto mode = original_info.present_mode.value_or(VK_PRESENT_MODE_FIFO_KHR);
+    const VkSwapchainPresentModeInfoKHR presentModeInfo{
+        .sType = VK_STRUCTURE_TYPE_SWAPCHAIN_PRESENT_MODE_INFO_KHR,
+        .pNext = original_info.id.has_value() ? &presentIdInfo : nullptr,
+        .swapchainCount = 1,
+        .pPresentModes = &mode
+    };
+
+    const void* chain{};
+    if (original_info.present_mode.has_value())
+        chain = &presentModeInfo;
+    else if (original_info.id.has_value())
+        chain = &presentIdInfo;
+    const VkPresentInfoKHR presentInfo{
+        .sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
+        .pNext = chain,
+        .waitSemaphoreCount = 1,
+        .pWaitSemaphores = &semaphore.handle(),
+        .swapchainCount = 1,
+        .pSwapchains = &this->handle,
+        .pImageIndices = &idx,
+    };
+    {
+        auto& offload = this->device.get().offload();
+
+        const std::scoped_lock<std::mutex> lock(offload.mutex);
+        const std::scoped_lock<std::mutex> lock2(this->swapchainMutex);
+
+        auto res = vk.df().QueuePresentKHR(offload.queue, &presentInfo);
+        if (res != VK_SUCCESS) {
+            this->status.store(res);
+
+            if (res != VK_SUBOPTIMAL_KHR)
+                throw ls::error("vkQueuePresentKHR() failed");
+        }
+    }
+
+    if (original_info.id.has_value())
+        this->doneSemaphore->signal(vk, presentId + 1);
+}
+
+void MyVkSwapchain::virtual_CompleteUPresent(const MyVkPresentInfo& info) {
+    const auto& vk = this->device.get().vkd();
+
+    {
+        const std::scoped_lock<std::mutex> lock(this->availabilityMutex);
+        this->availableImages.at(info.idx) = true;
+    }
+
+    if (info.fence != VK_NULL_HANDLE) {
+        auto& offload = this->device.get().offload();
+
+        auto res = vk.df().QueueSubmit(offload.queue, 0, nullptr, info.fence);
+        if (res != VK_SUCCESS)
+            this->status.store(res);
     }
 }
 

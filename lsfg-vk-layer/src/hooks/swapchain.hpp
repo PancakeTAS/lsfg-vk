@@ -6,6 +6,7 @@
 #include "instance.hpp"
 #include "lsfg-vk-common/helpers/pointers.hpp"
 #include "lsfg-vk-common/vulkan/image.hpp"
+#include "lsfg-vk-common/vulkan/semaphore.hpp"
 #include "lsfg-vk-common/vulkan/timeline_semaphore.hpp"
 
 #include <atomic>
@@ -80,6 +81,30 @@ namespace lsfgvk::layer {
         MyVkSwapchain(MyVkSwapchain&&) = delete;
         MyVkSwapchain& operator=(MyVkSwapchain&&) = delete;
         ~MyVkSwapchain() noexcept;
+    protected: // for use exclusively inside the offload thread
+        /// wait for a present from the underlying swapchain, incrementing the counter on success
+        /// @param timeout timeout in nanoseconds
+        /// @return the optional present information
+        /// @throws ls::error on critical failure
+        std::optional<MyVkPresentInfo> virtual_FetchUPresent(uint64_t timeout, uint64_t& counter);
+
+        /// acquire a swapchain image from the virtual swapchain
+        /// @param semaphore semaphore to signal when the image is available
+        /// @return the index of the acquired image
+        /// @throws ls::error on critical failure
+        uint32_t virtual_AcquireNext(const vk::Semaphore& semaphore);
+
+        /// present an image to the virtual swapchain linked to the original present call
+        /// @param original_info original present information
+        /// @param semaphore semaphore to wait on before presenting
+        /// @param idx index of the image to present
+        /// @throws ls::error on critical failure
+        void virtual_PresentLinked(const MyVkPresentInfo& original_info,
+            const vk::Semaphore& semaphore, uint32_t idx);
+
+        /// mark a present from the underlying swapchain as complete
+        /// @param info present information
+        void virtual_CompleteUPresent(const MyVkPresentInfo& info);
     private:
         ls::R<MyVkLayer> layer;
         ls::R<MyVkInstance> instance;
