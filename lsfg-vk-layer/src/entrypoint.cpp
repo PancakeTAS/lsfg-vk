@@ -176,6 +176,13 @@ namespace {
         }
 
         try {
+            // Get physical device name for backend GPU selection
+            VkPhysicalDeviceProperties2 props{
+                .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2
+            };
+            myvk_instance.funcs().GetPhysicalDeviceProperties2(physdev, &props);
+            myvk_layer.setActiveGpu(props.properties.deviceName);
+
             auto myvk_device = std::make_unique<MyVkDevice>(myvk_layer, myvk_instance,
                 physdev, *info,
                 layer_info->GetDeviceProcAddr, setLoaderData,

@@ -4,6 +4,7 @@
 
 #include "device.hpp"
 #include "instance.hpp"
+#include "../generator.hpp"
 #include "lsfg-vk-common/helpers/pointers.hpp"
 #include "lsfg-vk-common/vulkan/image.hpp"
 #include "lsfg-vk-common/vulkan/semaphore.hpp"
@@ -12,6 +13,7 @@
 #include <atomic>
 #include <cstdint>
 #include <functional>
+#include <memory>
 #include <mutex>
 #include <optional>
 #include <queue>
@@ -105,10 +107,19 @@ namespace lsfgvk::layer {
         /// mark a present from the underlying swapchain as complete
         /// @param info present information
         void virtual_CompleteUPresent(const MyVkPresentInfo& info);
+
+        /// present a generated frame to the real swapchain
+        /// @param semaphore semaphore to wait on before presenting
+        /// @param idx index of the real swapchain image to present
+        void virtual_PresentGenerated(const vk::Semaphore& semaphore, uint32_t idx);
     private:
         ls::R<MyVkLayer> layer;
         ls::R<MyVkInstance> instance;
         ls::R<MyVkDevice> device;
+
+        std::unique_ptr<Generator> generator;
+        VkExtent2D extent;
+        VkFormat format;
 
         vk::TimelineSemaphore presentSemaphore;
         uint64_t presentIndex;

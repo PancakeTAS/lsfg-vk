@@ -72,6 +72,10 @@ MyVkSwapchain::MyVkSwapchain(MyVkLayer& layer, MyVkInstance& instance, MyVkDevic
     this->handle = createFunc(&info);
     this->swapchainImages = getSwapchainImages(vk, this->handle);
 
+    // store for reinitialize
+    this->extent = info.imageExtent;
+    this->format = info.imageFormat;
+
     // create virtual swapchain images
     this->images.reserve(this->swapchainImages.size());
     this->availableImages = std::vector<bool>(this->swapchainImages.size(), true);
@@ -86,16 +90,21 @@ MyVkSwapchain::MyVkSwapchain(MyVkLayer& layer, MyVkInstance& instance, MyVkDevic
         );
     }
 
+    // create frame generator
+    this->generator = std::make_unique<Generator>(layer, device, this->extent, this->format);
+
     // create thread
     this->doneSemaphore.emplace(vk, 0);
     this->thread = std::thread(&MyVkSwapchain::thread_main, this);
-
-    // this->reinitialize();
 }
 
-// void MyVkSwapchain::reinitialize() {
-//     // ...
-// }
+void MyVkSwapchain::reinitialize() {
+    // recreate the generator with potentially new profile settings
+    this->generator = std::make_unique<Generator>(
+        this->layer.get(), this->device.get(),
+        this->extent, this->format
+    );
+}
 
 MyVkSwapchain::~MyVkSwapchain() noexcept {
     this->running.store(false);
@@ -130,9 +139,12 @@ void MyVkSwapchain::thread_main() noexcept {
         vk::Semaphore presentSemaphore;
     };
 
+    // allocate enough passes for generated frames + original frame
+    const size_t generatedCount = this->generator->count();
+    const size_t passCount = (this->swapchainImages.size() + 1) * (generatedCount + 1);
     std::vector<Pass> passes;
-    passes.reserve(this->swapchainImages.size() + 1);
-    for (size_t i = 0; i < this->swapchainImages.size() + 1; i++) {
+    passes.reserve(passCount);
+    for (size_t i = 0; i < passCount; i++) {
         passes.emplace_back(Pass {
             .acquireSemaphore = vk::Semaphore(vk),
             .commandBuffer = vk::CommandBuffer(vk),
@@ -141,24 +153,82 @@ void MyVkSwapchain::thread_main() noexcept {
         });
     }
 
-    try { // FIXME: indentation and stuff
-
+    try {
+    size_t passIdx{0};
     uint64_t counter{1};
     while (this->running.load()) {
         // wait for present signal and fetch the image index
-        const auto ppi = this->virtual_FetchUPresent(100'1000, counter);
+        const auto ppi = this->virtual_FetchUPresent(100'000, counter);
         if (!ppi.has_value())
             continue; // timeout after 100us
 
-        // acquire a real swapchain image
-        const auto& pass = passes[counter % passes.size()];
+        auto& virtualImage = this->images.at(ppi->idx);
+
+        // 1. PREPARE: Copy virtual image to backend source for frame generation
+        if (generatedCount > 0) {
+            const auto& preparePass = passes[passIdx++ % passes.size()];
+            const auto& prepareCmdbuf = preparePass.commandBuffer;
+
+            prepareCmdbuf.begin(vk);
+            const auto [prepareSem, prepareVal] = this->generator->prepare(
+                const_cast<vk::CommandBuffer&>(prepareCmdbuf), virtualImage.handle());
+            prepareCmdbuf.end(vk);
+
+            {
+                const std::scoped_lock<std::mutex> lock(offload.mutex);
+                prepareCmdbuf.submit(vk,
+                    {}, VK_NULL_HANDLE, 0,
+                    {}, prepareSem, prepareVal,
+                    preparePass.copyFence.handle(), offload.queue
+                );
+            }
+
+            // 2. SCHEDULE: Trigger backend frame generation
+            this->generator->schedule();
+
+            // wait for prepare to finish before generating frames
+            if (!preparePass.copyFence.wait(vk, UINT64_MAX))
+                throw ls::error("prepare fence wait timed out");
+            preparePass.copyFence.reset(vk);
+
+            // 3. GENERATED FRAMES: Present each generated frame
+            for (size_t frame = 0; frame < generatedCount; frame++) {
+                const auto& genPass = passes[passIdx++ % passes.size()];
+                const uint32_t gen_idx = this->virtual_AcquireNext(genPass.acquireSemaphore);
+
+                const auto& genCmdbuf = genPass.commandBuffer;
+                genCmdbuf.begin(vk);
+                const auto [obtainSem, obtainVal] = this->generator->obtain(
+                    const_cast<vk::CommandBuffer&>(genCmdbuf),
+                    this->swapchainImages.at(gen_idx));
+                genCmdbuf.end(vk);
+
+                {
+                    const std::scoped_lock<std::mutex> lock(offload.mutex);
+                    genCmdbuf.submit(vk,
+                        { genPass.acquireSemaphore.handle() }, obtainSem, obtainVal,
+                        { genPass.presentSemaphore.handle() }, VK_NULL_HANDLE, 0,
+                        genPass.copyFence.handle(), offload.queue
+                    );
+                }
+
+                // present the generated frame
+                this->virtual_PresentGenerated(genPass.presentSemaphore, gen_idx);
+
+                // wait for copy completion
+                if (!genPass.copyFence.wait(vk, UINT64_MAX))
+                    throw ls::error("generated frame copy fence wait timed out");
+                genPass.copyFence.reset(vk);
+            }
+        }
+
+        // 4. ORIGINAL FRAME: Acquire real swapchain image and copy virtual -> real
+        const auto& pass = passes[passIdx++ % passes.size()];
         const uint32_t real_idx = this->virtual_AcquireNext(pass.acquireSemaphore);
 
-        // copy virtual image into real swapchain image
         const auto& cmdbuf = pass.commandBuffer;
         cmdbuf.begin(vk);
 
-        auto& virtualImage = this->images.at(ppi->idx);
         auto& swapchainImage = this->swapchainImages.at(real_idx);
 
         cmdbuf.blitImage(vk,
@@ -205,7 +275,7 @@ void MyVkSwapchain::thread_main() noexcept {
             );
         }
 
-        // present the real swapchain image
+        // present the original frame (linked to app's present call)
         this->virtual_PresentLinked(*ppi, pass.presentSemaphore, real_idx);
 
         // wait for the copy to finish
@@ -213,7 +283,7 @@ void MyVkSwapchain::thread_main() noexcept {
             throw ls::error("virtual swapchain copy fence wait timed out");
         pass.copyFence.reset(vk);
 
-        // mark image as available again
+        // mark virtual image as available again
         this->virtual_CompleteUPresent(*ppi);
     }
 
@@ -318,6 +388,42 @@ void MyVkSwapchain::virtual_PresentLinked(const MyVkPresentInfo& original_info,
 
     if (original_info.id.has_value())
         this->doneSemaphore->signal(vk, presentId + 1);
+}
+
+void MyVkSwapchain::virtual_PresentGenerated(const vk::Semaphore& semaphore, uint32_t idx) {
+    const auto& vk = this->device.get().vkd();
+
+    // use FIFO for proper frame pacing of generated frames
+    const VkPresentModeKHR mode = VK_PRESENT_MODE_FIFO_KHR;
+    const VkSwapchainPresentModeInfoKHR presentModeInfo{
+        .sType = VK_STRUCTURE_TYPE_SWAPCHAIN_PRESENT_MODE_INFO_KHR,
+        .swapchainCount = 1,
+        .pPresentModes = &mode
+    };
+
+    const VkPresentInfoKHR presentInfo{
+        .sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
+        .pNext = &presentModeInfo,
+        .waitSemaphoreCount = 1,
+        .pWaitSemaphores = &semaphore.handle(),
+        .swapchainCount = 1,
+        .pSwapchains = &this->handle,
+        .pImageIndices = &idx,
+    };
+    {
+        auto& offload = this->device.get().offload();
+
+        const std::scoped_lock<std::mutex> lock(offload.mutex);
+        const std::scoped_lock<std::mutex> lock2(this->swapchainMutex);
+
+        auto res = vk.df().QueuePresentKHR(offload.queue, &presentInfo);
+        if (res != VK_SUCCESS) {
+            this->status.store(res);
+
+            if (res != VK_SUBOPTIMAL_KHR)
+                throw ls::error("vkQueuePresentKHR() failed for generated frame");
+        }
+    }
 }
 
 void MyVkSwapchain::virtual_CompleteUPresent(const MyVkPresentInfo& info) {

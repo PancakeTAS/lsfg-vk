@@ -15,6 +15,38 @@
 #include <vulkan/vulkan_core.h>
 #include <vulkan/vk_layer.h>
 
+// Compatibility shim for VK_KHR_present_wait2 (proposed extension, not yet in SDK)
+#ifndef VK_KHR_present_wait2
+#define VK_KHR_present_wait2 1
+#define VK_STRUCTURE_TYPE_PRESENT_WAIT_2_INFO_KHR ((VkStructureType)1000572000)
+#define VK_STRUCTURE_TYPE_PRESENT_ID_2_KHR ((VkStructureType)1000572001)
+
+typedef struct VkPresentWait2InfoKHR {
+    VkStructureType    sType;
+    const void*        pNext;
+    uint64_t           presentId;
+    uint64_t           timeout;
+} VkPresentWait2InfoKHR;
+
+typedef struct VkPresentId2KHR {
+    VkStructureType    sType;
+    const void*        pNext;
+    uint32_t           swapchainCount;
+    const uint64_t*    pPresentIds;
+} VkPresentId2KHR;
+
+typedef VkResult (VKAPI_PTR *PFN_vkWaitForPresent2KHR)(VkDevice device, VkSwapchainKHR swapchain, const VkPresentWait2InfoKHR* pPresentWaitInfo);
+#endif
+
+// Compatibility shim for VK_KHR_swapchain_maintenance1 (uses EXT naming in older SDKs)
+#ifndef VK_STRUCTURE_TYPE_SWAPCHAIN_PRESENT_MODE_INFO_KHR
+#define VK_STRUCTURE_TYPE_SWAPCHAIN_PRESENT_MODE_INFO_KHR VK_STRUCTURE_TYPE_SWAPCHAIN_PRESENT_MODE_INFO_EXT
+#define VK_STRUCTURE_TYPE_SWAPCHAIN_PRESENT_FENCE_INFO_KHR VK_STRUCTURE_TYPE_SWAPCHAIN_PRESENT_FENCE_INFO_EXT
+typedef VkSwapchainPresentModeInfoEXT VkSwapchainPresentModeInfoKHR;
+typedef VkSwapchainPresentFenceInfoEXT VkSwapchainPresentFenceInfoKHR;
+typedef VkReleaseSwapchainImagesInfoEXT VkReleaseSwapchainImagesInfoKHR;
+#endif
+
 namespace vk {
 
     /// vulkan instance function pointers

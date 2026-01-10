@@ -64,6 +64,7 @@ MyVkDevice::MyVkDevice(MyVkLayer& layer, MyVkInstance& instance,
         info.ppEnabledExtensionNames,
         info.enabledExtensionCount,
         {
+            "VK_KHR_swapchain",
             "VK_KHR_external_memory",
             "VK_KHR_external_memory_fd",
             "VK_KHR_external_semaphore",

@@ -210,13 +210,15 @@ void CommandBuffer::submit(const vk::Vulkan& vk,
         waitSemaphores.push_back(waitTimelineSemaphore);
 
     std::vector<uint64_t> waitValues(waitSemaphores.size(), 0);
-    waitValues.back() = waitValue;
+    if (!waitValues.empty())
+        waitValues.back() = waitValue;
 
     if (signalTimelineSemaphore)
         signalSemaphores.push_back(signalTimelineSemaphore);
 
     std::vector<uint64_t> signalValues(signalSemaphores.size(), 0);
-    signalValues.back() = signalValue;
+    if (!signalValues.empty())
+        signalValues.back() = signalValue;
 
     // create submit info
     const VkTimelineSemaphoreSubmitInfo timelineInfo{

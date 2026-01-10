@@ -72,18 +72,23 @@ backend::Instance& MyVkLayer::backend() {
         else
             dll = ls::findShaderDll();
 
+        // Use profile.gpu if set, otherwise use the active GPU from layer device
+        const std::optional<std::string> gpuFilter = profile.gpu.has_value()
+            ? profile.gpu
+            : (this->active_gpu.empty() ? std::nullopt : std::optional<std::string>(this->active_gpu));
+
         this->backend_instance.emplace(
-            [gpu = profile.gpu](
+            [gpuFilter](
                 const std::string& deviceName,
                 std::pair<const std::string&, const std::string&> ids,
                 const std::optional<std::string>& pci
             ) {
-                if (!gpu)
+                if (!gpuFilter)
                     return true;
 
-                return (deviceName == *gpu)
-                    || (ids.first + ":" + ids.second == *gpu)
-                    || (pci && *pci == *gpu);
+                return (deviceName == *gpuFilter)
+                    || (ids.first + ":" + ids.second == *gpuFilter)
+                    || (pci && *pci == *gpuFilter);
             },
             dll, global.allow_fp16
         );

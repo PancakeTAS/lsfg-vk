@@ -6,6 +6,8 @@
 #include "lsfg-vk-common/configuration/config.hpp"
 #include "lsfg-vk-common/helpers/pointers.hpp"
 
+#include <string>
+
 #include <vulkan/vk_layer.h>
 #include <vulkan/vulkan_core.h>
 
@@ -38,6 +40,10 @@ namespace lsfgvk::layer {
         /// @throws ls::error if an error occured during backend creation
         [[nodiscard]] backend::Instance& backend();
 
+        /// set the active GPU name for backend device selection
+        /// @param name the GPU device name
+        void setActiveGpu(const std::string& name) { this->active_gpu = name; }
+
         // non-moveable, non-copyable
         MyVkLayer(const MyVkLayer&) = delete;
         MyVkLayer& operator=(const MyVkLayer&) = delete;
@@ -48,6 +54,7 @@ namespace lsfgvk::layer {
         ls::WatchedConfig config;
         std::optional<ls::GameConf> current_profile;
 
+        std::string active_gpu;
         ls::lazy<backend::Instance> backend_instance;
     };
 
