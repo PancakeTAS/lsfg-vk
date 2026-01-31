@@ -21,11 +21,11 @@ namespace {
             const std::unordered_map<uint32_t, std::vector<uint8_t>>& resources) {
         const size_t BASE_OFFSET = 49;
         const size_t OFFSET_PERF = 23;
-        const size_t OFFSET_FP16 = 49;
+        const size_t OFFSET_FP32 = 49;
 
         auto it = resources.find(BASE_OFFSET + id +
             (perf ? OFFSET_PERF : 0) +
-            (fp16 ? OFFSET_FP16 : 0));
+            (fp16 ? 0 : OFFSET_FP32));
         if (it == resources.end())
             throw ls::error("unable to find shader with id: " + std::to_string(id));
 
