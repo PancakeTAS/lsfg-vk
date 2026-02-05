@@ -26,6 +26,9 @@ If lsfg-vk is loaded, but frame generation is not working:
 - Disable in-game upscaling options (e.g. DLSS, FSR, etc).
 - Disable other Vulkan layers (e.g. VkBasalt, MangoHud)
 
+If games do not open at all with lsfg-vk enabled for them (stuck at black screen):
+- Ensure you configured the correct `gpu` for this profile, in case you have multiple GPUs and/or drivers (lsfg-vk-ui will show all available GPUs in a dropdown), lsfg-vk might be defaulting to a different one than the game is using
+
 Should none of the above help, please proceed to the bug reporting section.
 
 ### Performance Overlays
