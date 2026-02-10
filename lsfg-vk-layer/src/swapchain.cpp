@@ -90,13 +90,10 @@ Swapchain::Swapchain(const vk::Vulkan& vk, backend::Instance& backend,
             VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
             std::nullopt, &fd);
 
-    int syncFd{};
-    this->syncSemaphore.emplace(vk, 0, std::nullopt, &syncFd);
-
     try {
         this->ctx = ls::owned_ptr<ls::R<backend::Context>>(
             new ls::R<backend::Context>(backend.openContext(
-                { sourceFds.at(0), sourceFds.at(1) }, destinationFds, syncFd,
+                { sourceFds.at(0), sourceFds.at(1) }, destinationFds,
                 extent.width, extent.height,
                 hdr, 1.0F / this->profile.flow_scale, this->profile.performance_mode
             )),
@@ -134,13 +131,6 @@ VkResult Swapchain::present(const vk::Vulkan& vk,
         const std::vector<VkSemaphore>& semaphores) {
     const auto& swapchainImage = this->info.images.at(imageIdx);
     const auto& sourceImage = this->sourceImages.at(this->fidx % 2);
-
-    // schedule frame generation
-    try {
-        this->instance.get().scheduleFrames(this->ctx.get());
-    } catch (const std::exception& e) {
-        throw ls::error("failed to schedule frames", e);
-    }
 
     // update present mode when not using pacing
     if (this->profile.pacing == ls::Pacing::None) {
@@ -196,11 +186,28 @@ VkResult Swapchain::present(const vk::Vulkan& vk,
         }
     );
 
+    this->syncSemaphore.emplace(vk, std::nullopt, true);
+
     cmdbuf.end(vk);
     cmdbuf.submit(vk,
         semaphores, VK_NULL_HANDLE, 0,
-        {}, this->syncSemaphore->handle(), this->idx++
+        { this->syncSemaphore->handle() }, VK_NULL_HANDLE, 0
     );
+
+    this->idx++;
+
+    // schedule frame generation
+    std::vector<int> waitFds;
+
+    try {
+        this->instance.get().scheduleFrames(
+            this->ctx.get(),
+            this->syncSemaphore->exportToFd(vk),
+            waitFds
+        );
+    } catch (const std::exception& e) {
+        throw ls::error("failed to schedule frames", e);
+    }
 
     for (size_t i = 0; i < this->destinationImages.size(); i++) {
         auto& pcs = this->postCopySemaphores.at(this->idx % this->postCopySemaphores.size());
@@ -250,7 +257,12 @@ VkResult Swapchain::present(const vk::Vulkan& vk,
             }
         );
 
-        std::vector<VkSemaphore> waitSemaphores{ pass.acquireSemaphore.handle() };
+        pass.sync2Semaphore.emplace(vk, waitFds.at(i));
+
+        std::vector<VkSemaphore> waitSemaphores{
+            pass.acquireSemaphore.handle(),
+            pass.sync2Semaphore->handle()
+        };
         if (i) { // non-first pass
             const auto& prevPCS = this->postCopySemaphores.at((this->idx - 1) % this->postCopySemaphores.size());
             waitSemaphores.push_back(prevPCS.second.handle());
@@ -263,7 +275,7 @@ VkResult Swapchain::present(const vk::Vulkan& vk,
 
         cmdbuf.end(vk);
         cmdbuf.submit(vk,
-            waitSemaphores, this->syncSemaphore->handle(), this->idx,
+            waitSemaphores, VK_NULL_HANDLE, 0,
             signalSemaphores, VK_NULL_HANDLE, 0,
             i == this->destinationImages.size() - 1 ? this->renderFence->handle() : VK_NULL_HANDLE
         );

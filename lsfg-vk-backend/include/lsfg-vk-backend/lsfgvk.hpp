@@ -79,17 +79,8 @@ namespace lsfgvk::backend {
         /// - false: VK_FORMAT_R8G8B8A8_UNORM
         /// - true: VK_FORMAT_R16G16B16A16_SFLOAT
         ///
-        /// The application and library must keep track of the frame index. When the next frame
-        /// is ready, signal the syncFd with one increment (with the first trigger being 1).
-        /// Each generated frame will increment the semaphore by one:
-        /// - Application signals 1 -> Start generating with (curr, next) source images
-        /// - Library signals 1 -> First frame between (curr, next) is ready
-        /// - Library signals N -> N-th frame between (curr, next) is ready
-        /// - Application signals N+1 -> Start generating with (next, curr) source images
-        ///
         /// @param sourceFds Pair of file descriptors for the source images alternated between.
         /// @param destFds Vector with file descriptors to import output images from.
-        /// @param syncFd File descriptor for the timeline semaphore used for synchronization.
         /// @param width Width of the images.
         /// @param height Height of the images.
         /// @param hdr Whether the images are HDR.
@@ -101,7 +92,6 @@ namespace lsfgvk::backend {
         Context& openContext(
             std::pair<int, int> sourceFds,
             const std::vector<int>& destFds,
-            int syncFd,
             uint32_t width, uint32_t height,
             bool hdr, float flow, bool perf
         );
@@ -110,9 +100,11 @@ namespace lsfgvk::backend {
         /// Schedule a new set of generated frames.
         ///
         /// @param context Context to use.
+        /// @param waitFd File descriptor to wait on before starting frame generation.
+        /// @param syncFds Vector of file descriptors to emplace, signalled when generated frames are ready.
         /// @throws backend::error on failure
         ///
-        void scheduleFrames(Context& context);
+        void scheduleFrames(Context& context, int waitFd, std::vector<int>& syncFds);
 
         ///
         /// Close a frame generation context

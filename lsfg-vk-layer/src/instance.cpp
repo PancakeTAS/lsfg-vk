@@ -120,31 +120,7 @@ void Root::modifyDeviceCreateInfo(VkDeviceCreateInfo& createInfo,
     );
     createInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
     createInfo.ppEnabledExtensionNames = extensions.data();
-
-    bool isFeatureEnabled = false;
-    auto* featureInfo = reinterpret_cast<VkBaseInStructure*>(const_cast<void*>(createInfo.pNext));
-    while (featureInfo) {
-        if (featureInfo->sType == VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES) {
-            auto* features = reinterpret_cast<VkPhysicalDeviceVulkan12Features*>(featureInfo);
-            features->timelineSemaphore = VK_TRUE;
-            isFeatureEnabled = true;
-        } else if (featureInfo->sType == VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_FEATURES) {
-            auto* features = reinterpret_cast<VkPhysicalDeviceTimelineSemaphoreFeatures*>(featureInfo);
-            features->timelineSemaphore = VK_TRUE;
-            isFeatureEnabled = true;
-        }
-
-        featureInfo = const_cast<VkBaseInStructure*>(featureInfo->pNext);
-    }
-
-    VkPhysicalDeviceTimelineSemaphoreFeatures timelineFeatures{
-        .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_FEATURES,
-        .pNext = const_cast<void*>(createInfo.pNext),
-        .timelineSemaphore = VK_TRUE
-    };
-    if (!isFeatureEnabled)
-        createInfo.pNext = &timelineFeatures;
-
+    
     finish();
 }
 

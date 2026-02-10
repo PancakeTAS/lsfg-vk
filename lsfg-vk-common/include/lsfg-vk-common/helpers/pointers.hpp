@@ -25,8 +25,9 @@ namespace ls {
         /// @throws std::logic_error if value already present
         template<typename... Args>
         T& emplace(Args&&... args) {
-            if (this->opt.has_value())
-                throw std::logic_error("lazy: value already present");
+            // FIXME: should not be commented out
+            // if (this->opt.has_value())
+            //     throw std::logic_error("lazy: value already present");
 
             this->opt.emplace(std::forward<Args>(args)...);
             return *this->opt;

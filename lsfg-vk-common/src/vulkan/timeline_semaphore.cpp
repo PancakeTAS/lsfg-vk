@@ -20,11 +20,11 @@ namespace {
 
         const VkExportSemaphoreCreateInfo exportInfo{
             .sType = VK_STRUCTURE_TYPE_EXPORT_SEMAPHORE_CREATE_INFO,
-            .handleTypes = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_FD_BIT
+            .handleTypes = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SYNC_FD_BIT
         };
         const VkSemaphoreTypeCreateInfo typeInfo{
             .sType = VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO,
-            .pNext = ( importFd.has_value() || exportFd.has_value() ) ? &exportInfo : nullptr,
+            .pNext = (importFd.has_value() || exportFd.has_value()) ? &exportInfo : nullptr,
             .semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE,
             .initialValue = initial
         };
@@ -41,7 +41,7 @@ namespace {
             const VkImportSemaphoreFdInfoKHR importInfo{
                 .sType = VK_STRUCTURE_TYPE_IMPORT_SEMAPHORE_FD_INFO_KHR,
                 .semaphore = handle,
-                .handleType = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_FD_BIT,
+                .handleType = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SYNC_FD_BIT,
                 .fd = *importFd // closes the fd
             };
             res = vk.df().ImportSemaphoreFdKHR(vk.dev(), &importInfo);
@@ -54,7 +54,7 @@ namespace {
             const VkSemaphoreGetFdInfoKHR getFdInfo{
                 .sType = VK_STRUCTURE_TYPE_SEMAPHORE_GET_FD_INFO_KHR,
                 .semaphore = handle,
-                .handleType = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_FD_BIT
+                .handleType = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SYNC_FD_BIT
             };
             int fd{};
             res = vk.df().GetSemaphoreFdKHR(vk.dev(), &getFdInfo, &fd);

@@ -13,28 +13,30 @@ using namespace vk;
 
 namespace {
     /// create a semaphore
-    ls::owned_ptr<VkSemaphore> createSemaphore(const vk::Vulkan& vk, std::optional<int> fd) {
+    ls::owned_ptr<VkSemaphore> createSemaphore(const vk::Vulkan& vk,
+            std::optional<int> importFd, bool markExport) {
         VkSemaphore handle{};
 
         const VkExportSemaphoreCreateInfo exportInfo{
             .sType = VK_STRUCTURE_TYPE_EXPORT_SEMAPHORE_CREATE_INFO,
-            .handleTypes = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_FD_BIT
+            .handleTypes = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SYNC_FD_BIT
         };
         const VkSemaphoreCreateInfo semaphoreInfo{
             .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
-            .pNext = fd.has_value() ? &exportInfo : nullptr
+            .pNext = (importFd.has_value() || markExport) ? &exportInfo : nullptr,
         };
         auto res = vk.df().CreateSemaphore(vk.dev(), &semaphoreInfo, VK_NULL_HANDLE, &handle);
         if (res != VK_SUCCESS)
             throw ls::vulkan_error(res, "vkCreateSemaphore() failed");
 
-        if (fd.has_value()) {
+        if (importFd.has_value()) {
             // import semaphore from fd
             const VkImportSemaphoreFdInfoKHR importInfo{
                 .sType = VK_STRUCTURE_TYPE_IMPORT_SEMAPHORE_FD_INFO_KHR,
                 .semaphore = handle,
-                .handleType = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_FD_BIT,
-                .fd = *fd // closes the fd
+                .flags = VK_SEMAPHORE_IMPORT_TEMPORARY_BIT,
+                .handleType = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SYNC_FD_BIT,
+                .fd = *importFd // closes the fd
             };
             res = vk.df().ImportSemaphoreFdKHR(vk.dev(), &importInfo);
             if (res != VK_SUCCESS)
@@ -50,5 +52,20 @@ namespace {
     }
 }
 
-Semaphore::Semaphore(const vk::Vulkan& vk, std::optional<int> fd)
-    : semaphore(createSemaphore(vk, fd)) {}
+Semaphore::Semaphore(const vk::Vulkan& vk,
+        std::optional<int> importFd, bool markExport)
+    : semaphore(createSemaphore(vk, importFd, markExport)) {}
+
+int Semaphore::exportToFd(const vk::Vulkan& vk) const {
+    int fd{};
+    const VkSemaphoreGetFdInfoKHR getFdInfo{
+        .sType = VK_STRUCTURE_TYPE_SEMAPHORE_GET_FD_INFO_KHR,
+        .semaphore = *this->semaphore,
+        .handleType = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SYNC_FD_BIT
+    };
+    auto res = vk.df().GetSemaphoreFdKHR(vk.dev(), &getFdInfo, &fd);
+    if (res != VK_SUCCESS)
+        throw ls::vulkan_error(res, "vkGetSemaphoreFdKHR() failed");
+
+    return fd;
+}

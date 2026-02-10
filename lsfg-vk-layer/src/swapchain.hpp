@@ -61,11 +61,12 @@ namespace lsfgvk::layer {
     private:
         std::vector<vk::Image> sourceImages;
         std::vector<vk::Image> destinationImages;
-        ls::lazy<vk::TimelineSemaphore> syncSemaphore;
+        ls::lazy<vk::Semaphore> syncSemaphore;
 
         ls::lazy<vk::CommandBuffer> renderCommandBuffer;
         ls::lazy<vk::Fence> renderFence;
         struct RenderPass {
+            ls::lazy<vk::Semaphore> sync2Semaphore;
             vk::CommandBuffer commandBuffer;
             vk::Semaphore acquireSemaphore;
         };

@@ -11,6 +11,7 @@
 #include "lsfg-vk-common/vulkan/command_buffer.hpp"
 #include "lsfg-vk-common/vulkan/fence.hpp"
 #include "lsfg-vk-common/vulkan/image.hpp"
+#include "lsfg-vk-common/vulkan/semaphore.hpp"
 #include "lsfg-vk-common/vulkan/timeline_semaphore.hpp"
 #include "lsfg-vk-common/vulkan/vulkan.hpp"
 #include "shaderchains/alpha0.hpp"
@@ -99,18 +100,18 @@ namespace lsfgvk::backend {
         /// create a context
         /// (see lsfg-vk documentation)
         ContextImpl(const InstanceImpl& instance,
-            std::pair<int, int> sourceFds, const std::vector<int>& destFds, int syncFd,
+            std::pair<int, int> sourceFds, const std::vector<int>& destFds,
             VkExtent2D extent, bool hdr, float flow, bool perf);
 
         /// schedule frames
         /// (see lsfg-vk documentation)
-        void scheduleFrames();
+        void scheduleFrames(int waitFd, std::vector<int>& syncFds);
     private:
         std::pair<vk::Image, vk::Image> sourceImages;
         std::vector<vk::Image> destImages;
         vk::Image blackImage;
 
-        vk::TimelineSemaphore syncSemaphore; // imported
+        ls::lazy<vk::Semaphore> syncSemaphore; // imported
         vk::TimelineSemaphore prepassSemaphore;
         size_t idx{1};
         size_t fidx{0}; // real frame index
@@ -126,6 +127,8 @@ namespace lsfgvk::backend {
         Beta0 beta0;
         Beta1 beta1;
         struct Pass {
+            ls::lazy<vk::Semaphore> sync2Semaphore; // imported
+
             std::vector<Gamma0> gamma0;
             std::vector<Gamma1> gamma1;
 
@@ -274,11 +277,11 @@ InstanceImpl::InstanceImpl(vk::PhysicalDeviceSelector selectPhysicalDevice,
 }
 
 Context& Instance::openContext(std::pair<int, int> sourceFds, const std::vector<int>& destFds,
-        int syncFd, uint32_t width, uint32_t height,
+        uint32_t width, uint32_t height,
         bool hdr, float flow, bool perf) {
     const VkExtent2D extent{ width, height };
     return *this->m_contexts.emplace_back(std::make_unique<ContextImpl>(*this->m_impl,
-        sourceFds, destFds, syncFd,
+        sourceFds, destFds,
         extent, hdr, flow, perf
     )).get();
 }
@@ -324,14 +327,6 @@ namespace {
             };
         } catch (const std::exception& e) {
             throw backend::error("Unable to create black image", e);
-        }
-    }
-    /// import timeline semaphore
-    vk::TimelineSemaphore importTimelineSemaphore(const vk::Vulkan& vk, int syncFd) {
-        try {
-            return{vk, 0, syncFd};
-        } catch (const std::exception& e) {
-            throw backend::error("Unable to import timeline semaphore", e);
         }
     }
     /// create prepass semaphores
@@ -400,14 +395,13 @@ namespace {
 }
 
 ContextImpl::ContextImpl(const InstanceImpl& instance,
-            std::pair<int, int> sourceFds, const std::vector<int>& destFds, int syncFd,
+            std::pair<int, int> sourceFds, const std::vector<int>& destFds,
             VkExtent2D extent, bool hdr, float flow, bool perf) :
         sourceImages(importImages(instance.getVulkan(), sourceFds,
             extent, hdr ? VK_FORMAT_R16G16B16A16_SFLOAT : VK_FORMAT_R8G8B8A8_UNORM)),
         destImages(importImages(instance.getVulkan(), destFds,
             extent, hdr ? VK_FORMAT_R16G16B16A16_SFLOAT : VK_FORMAT_R8G8B8A8_UNORM)),
         blackImage(createBlackImage(instance.getVulkan())),
-        syncSemaphore(importTimelineSemaphore(instance.getVulkan(), syncFd)),
         prepassSemaphore(createPrepassSemaphore(instance.getVulkan())),
         cmdbufs(createCommandBuffers(instance.getVulkan(), destFds.size() + 1)),
         cmdbufFence(instance.getVulkan()),
@@ -549,7 +543,7 @@ ContextImpl::ContextImpl(const InstanceImpl& instance,
     cmdbuf.submit(ctx.vk); // wait for completion
 }
 
-void Instance::scheduleFrames(Context& context) {
+void Instance::scheduleFrames(Context& context, int waitFd, std::vector<int>& syncFds) {
 #ifdef LSFGVK_TESTING_RENDERDOC
     const auto& impl = this->m_impl;
     if (impl->getRenderDocAPI()) {
@@ -559,7 +553,7 @@ void Instance::scheduleFrames(Context& context) {
     }
 #endif
     try {
-        context.scheduleFrames();
+        context.scheduleFrames(waitFd, syncFds);
     } catch (const std::exception& e) {
         throw backend::error("Unable to schedule frames", e);
     }
@@ -573,11 +567,16 @@ void Instance::scheduleFrames(Context& context) {
 #endif
 }
 
-void Context::scheduleFrames() {
+void Context::scheduleFrames(int waitFd, std::vector<int>& syncFds) {
     // wait for previous pre-pass to complete
     if (this->fidx && !this->cmdbufFence.wait(this->ctx.vk))
         throw backend::error("Timeout waiting for previous frame to complete");
     this->cmdbufFence.reset(this->ctx.vk);
+
+    // import sync semaphore
+    this->syncSemaphore.emplace(ctx.vk, waitFd);
+    for (size_t i = 0; i < this->destImages.size(); ++i)
+        this->passes.at(i).sync2Semaphore.emplace(ctx.vk, std::nullopt, true);
 
     // schedule pre-pass
     const auto& cmdbuf = this->cmdbufs.at(0);
@@ -593,13 +592,15 @@ void Context::scheduleFrames() {
 
     cmdbuf.end(ctx.vk);
     cmdbuf.submit(this->ctx.vk,
-        {}, this->syncSemaphore.handle(), this->idx,
+        { this->syncSemaphore->handle() }, VK_NULL_HANDLE, 0,
         {}, this->prepassSemaphore.handle(), this->idx
     );
 
     this->idx++;
 
     // schedule main passes
+    syncFds.clear();
+
     for (size_t i = 0; i < this->destImages.size(); i++) {
         const auto& cmdbuf = this->cmdbufs.at(i + 1);
         cmdbuf.begin(ctx.vk);
@@ -618,9 +619,11 @@ void Context::scheduleFrames() {
         cmdbuf.end(ctx.vk);
         cmdbuf.submit(this->ctx.vk,
             {}, this->prepassSemaphore.handle(), this->idx - 1,
-            {}, this->syncSemaphore.handle(), this->idx + i,
+            { pass.sync2Semaphore->handle() }, VK_NULL_HANDLE, 0,
             i == this->destImages.size() - 1 ? this->cmdbufFence.handle() : VK_NULL_HANDLE
         );
+
+        syncFds.push_back(pass.sync2Semaphore->exportToFd(ctx.vk));
     }
 
     this->idx += this->destImages.size();
