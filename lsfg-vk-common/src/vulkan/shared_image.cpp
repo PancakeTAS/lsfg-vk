@@ -98,8 +98,13 @@ namespace {
             throw ls::vulkan_error(VK_ERROR_UNKNOWN, "no suitable memory type found");
 
         // create VkDeviceMemory
+        const VkMemoryDedicatedAllocateInfoKHR dedicatedInfo{
+            .sType = VK_STRUCTURE_TYPE_MEMORY_DEDICATED_ALLOCATE_INFO_KHR,
+            .image = image,
+        };
         const VkImportMemoryFdInfoKHR importInfo{
             .sType = VK_STRUCTURE_TYPE_IMPORT_MEMORY_FD_INFO_KHR,
+            .pNext = &dedicatedInfo,
             .handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_DMA_BUF_BIT_EXT,
             .fd = fd
         };
@@ -189,13 +194,18 @@ namespace {
             throw ls::vulkan_error(VK_ERROR_UNKNOWN, "no suitable memory type found");
 
         // create VkDeviceMemory
-        const VkExportMemoryAllocateInfoKHR importInfo{
-            .sType = VK_STRUCTURE_TYPE_IMPORT_MEMORY_FD_INFO_KHR,
+        const VkMemoryDedicatedAllocateInfoKHR dedicatedInfo{
+            .sType = VK_STRUCTURE_TYPE_MEMORY_DEDICATED_ALLOCATE_INFO_KHR,
+            .image = image,
+        };
+        const VkExportMemoryAllocateInfoKHR exportInfo{
+            .sType = VK_STRUCTURE_TYPE_EXPORT_MEMORY_ALLOCATE_INFO_KHR,
+            .pNext = &dedicatedInfo,
             .handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_DMA_BUF_BIT_EXT
         };
         const VkMemoryAllocateInfo memoryInfo{
             .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
-            .pNext = &importInfo,
+            .pNext = &exportInfo,
             .allocationSize = reqs.size,
             .memoryTypeIndex = *mti
         };
@@ -209,12 +219,12 @@ namespace {
             throw ls::vulkan_error(res, "vkBindImageMemory() failed");
 
         // export dma-buf fd
-        const VkMemoryGetFdInfoKHR exportInfo{
+        const VkMemoryGetFdInfoKHR getInfo{
             .sType = VK_STRUCTURE_TYPE_MEMORY_GET_FD_INFO_KHR,
             .memory = handle,
             .handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_DMA_BUF_BIT_EXT
         };
-        res = vk.df().GetMemoryFdKHR(vk.dev(), &exportInfo, &fd);
+        res = vk.df().GetMemoryFdKHR(vk.dev(), &getInfo, &fd);
         if (res != VK_SUCCESS)
             throw ls::vulkan_error(res, "vkGetMemoryFdKHR() failed");
 
@@ -268,23 +278,23 @@ namespace {
     }
     /// get the drm offsets and row pitches of an image
     std::vector<std::pair<uint64_t, uint64_t>> getImageLayouts(const vk::Vulkan& vk,
-            VkImage image, uint64_t drmModifier) {
+            VkImage image, VkFormat format, uint64_t drmModifier) {
         std::vector<std::pair<uint64_t, uint64_t>> result;
 
         // fetch drm modifier information
         VkDrmFormatModifierPropertiesList2EXT formats{
             .sType = VK_STRUCTURE_TYPE_DRM_FORMAT_MODIFIER_PROPERTIES_LIST_2_EXT,
         };
-        VkPhysicalDeviceProperties2 props{
-            .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2,
+        VkFormatProperties2KHR props{
+            .sType = VK_STRUCTURE_TYPE_FORMAT_PROPERTIES_2_KHR,
             .pNext = &formats
         };
-        vk.fi().GetPhysicalDeviceProperties2(vk.physdev(), &props);
+        vk.fi().GetPhysicalDeviceFormatProperties2(vk.physdev(), format, &props);
 
         std::vector<VkDrmFormatModifierProperties2EXT> formatProps(formats.drmFormatModifierCount);
         formats.pDrmFormatModifierProperties = formatProps.data();
 
-        vk.fi().GetPhysicalDeviceProperties2(vk.physdev(), &props);
+        vk.fi().GetPhysicalDeviceFormatProperties2(vk.physdev(), format, &props);
 
         // find plane count for the modifier
         std::optional<size_t> planeCount;
@@ -345,7 +355,7 @@ SharedImage::SharedImage(const vk::Vulkan& vk,
         )),
         extent(extent),
         modifier(getImageDrmModifier(vk, *this->image)),
-        layouts(getImageLayouts(vk, *this->image, this->modifier)) {
+        layouts(getImageLayouts(vk, *this->image, format, this->modifier)) {
 }
 
 
@@ -370,5 +380,5 @@ SharedImage::SharedImage(const vk::Vulkan& vk,
         )),
         extent(extent),
         modifier(getImageDrmModifier(vk, *this->image)),
-        layouts(getImageLayouts(vk, *this->image, this->modifier)) {
+        layouts(getImageLayouts(vk, *this->image, format, this->modifier)) {
 }

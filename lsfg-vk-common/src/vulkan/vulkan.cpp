@@ -78,9 +78,14 @@ namespace {
             .engineVersion = engineVersion.into(),
             .apiVersion = VK_API_VERSION_1_2 // seems 1.2 is supported on all Vulkan-capable GPUs
         };
+        const std::vector<const char*> requestedExtensions{
+            VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME,
+        };
         const VkInstanceCreateInfo instanceInfo{
             .sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
-            .pApplicationInfo = &appInfo
+            .pApplicationInfo = &appInfo,
+            .enabledExtensionCount = static_cast<uint32_t>(requestedExtensions.size()),
+            .ppEnabledExtensionNames = requestedExtensions.data()
         };
         auto res = vkCreateInstance(&instanceInfo, VK_NULL_HANDLE, &handle);
         if (res != VK_SUCCESS)
@@ -297,6 +302,8 @@ VulkanInstanceFuncs vk::initVulkanInstanceFuncs(VkInstance i, PFN_vkGetInstanceP
             "vkEnumerateDeviceExtensionProperties"),
         .GetPhysicalDeviceProperties2 = ipa<PFN_vkGetPhysicalDeviceProperties2>(mpa, i,
             "vkGetPhysicalDeviceProperties2"),
+        .GetPhysicalDeviceFormatProperties2 = reinterpret_cast<PFN_vkGetPhysicalDeviceFormatProperties2>(mpa(i,
+            "vkGetPhysicalDeviceFormatProperties2KHR")),
         .GetPhysicalDeviceQueueFamilyProperties =
             ipa<PFN_vkGetPhysicalDeviceQueueFamilyProperties>(mpa, i,
                 "vkGetPhysicalDeviceQueueFamilyProperties"),

@@ -22,7 +22,8 @@ namespace vk {
         PFN_vkDestroyInstance DestroyInstance;
         PFN_vkEnumeratePhysicalDevices EnumeratePhysicalDevices;
         PFN_vkEnumerateDeviceExtensionProperties EnumerateDeviceExtensionProperties;
-        PFN_vkGetPhysicalDeviceProperties2 GetPhysicalDeviceProperties2;
+        PFN_vkGetPhysicalDeviceProperties2KHR GetPhysicalDeviceProperties2;
+        PFN_vkGetPhysicalDeviceFormatProperties2KHR GetPhysicalDeviceFormatProperties2;
         PFN_vkGetPhysicalDeviceQueueFamilyProperties GetPhysicalDeviceQueueFamilyProperties;
         PFN_vkGetPhysicalDeviceFeatures2 GetPhysicalDeviceFeatures2;
         PFN_vkGetPhysicalDeviceMemoryProperties GetPhysicalDeviceMemoryProperties;

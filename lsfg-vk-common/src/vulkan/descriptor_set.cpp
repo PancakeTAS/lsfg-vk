@@ -101,19 +101,6 @@ DescriptorSet::DescriptorSet(const vk::Vulkan& vk,
         });
 
     size_t sampledIdx{32};
-    for (const auto& img : sampledImages)
-        entries.push_back({
-            .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-            .dstSet = *this->descriptorSet,
-            .dstBinding = static_cast<uint32_t>(sampledIdx++),
-            .descriptorCount = 1,
-            .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
-            .pImageInfo = &(imageInfos.emplace_back(VkDescriptorImageInfo{
-                .imageView = img.get().imageview(),
-                .imageLayout = VK_IMAGE_LAYOUT_GENERAL
-            }))
-        });
-
     for (const auto& img : sampledImagesSh)
         entries.push_back({
             .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
@@ -127,8 +114,21 @@ DescriptorSet::DescriptorSet(const vk::Vulkan& vk,
             }))
         });
 
+    for (const auto& img : sampledImages)
+        entries.push_back({
+            .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+            .dstSet = *this->descriptorSet,
+            .dstBinding = static_cast<uint32_t>(sampledIdx++),
+            .descriptorCount = 1,
+            .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+            .pImageInfo = &(imageInfos.emplace_back(VkDescriptorImageInfo{
+                .imageView = img.get().imageview(),
+                .imageLayout = VK_IMAGE_LAYOUT_GENERAL
+            }))
+        });
+
     size_t storageIdx{48};
-    for (const auto& img : storageImages)
+    for (const auto& img : storageImagesSh)
         entries.push_back({
             .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
             .dstSet = *this->descriptorSet,
@@ -141,7 +141,7 @@ DescriptorSet::DescriptorSet(const vk::Vulkan& vk,
             }))
         });
 
-    for (const auto& img : storageImagesSh)
+    for (const auto& img : storageImages)
         entries.push_back({
             .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
             .dstSet = *this->descriptorSet,
