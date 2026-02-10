@@ -12,6 +12,7 @@
 #include "lsfg-vk-common/vulkan/fence.hpp"
 #include "lsfg-vk-common/vulkan/image.hpp"
 #include "lsfg-vk-common/vulkan/semaphore.hpp"
+#include "lsfg-vk-common/vulkan/shared_image.hpp"
 #include "lsfg-vk-common/vulkan/timeline_semaphore.hpp"
 #include "lsfg-vk-common/vulkan/vulkan.hpp"
 #include "shaderchains/alpha0.hpp"
@@ -100,15 +101,16 @@ namespace lsfgvk::backend {
         /// create a context
         /// (see lsfg-vk documentation)
         ContextImpl(const InstanceImpl& instance,
-            std::pair<int, int> sourceFds, const std::vector<int>& destFds,
+            const std::pair<DmaBufFD, DmaBufFD>& sourceFds,
+            const std::vector<DmaBufFD>& destFds,
             VkExtent2D extent, bool hdr, float flow, bool perf);
 
         /// schedule frames
         /// (see lsfg-vk documentation)
         void scheduleFrames(int waitFd, std::vector<int>& syncFds);
     private:
-        std::pair<vk::Image, vk::Image> sourceImages;
-        std::vector<vk::Image> destImages;
+        std::pair<vk::SharedImage, vk::SharedImage> sourceImages;
+        std::vector<vk::SharedImage> destImages;
         vk::Image blackImage;
 
         ls::lazy<vk::Semaphore> syncSemaphore; // imported
@@ -276,7 +278,9 @@ InstanceImpl::InstanceImpl(vk::PhysicalDeviceSelector selectPhysicalDevice,
     vk.persistPipelineCache(); // will silently fail
 }
 
-Context& Instance::openContext(std::pair<int, int> sourceFds, const std::vector<int>& destFds,
+Context& Instance::openContext(
+        const std::pair<DmaBufFD, DmaBufFD>& sourceFds,
+        const std::vector<DmaBufFD>& destFds,
         uint32_t width, uint32_t height,
         bool hdr, float flow, bool perf) {
     const VkExtent2D extent{ width, height };
@@ -288,31 +292,41 @@ Context& Instance::openContext(std::pair<int, int> sourceFds, const std::vector<
 
 namespace {
     /// import source images
-    std::pair<vk::Image, vk::Image> importImages(const vk::Vulkan& vk,
-            const std::pair<int, int>& sourceFds,
+    std::pair<vk::SharedImage, vk::SharedImage> importImages(
+            const vk::Vulkan& vk,
+            const std::pair<DmaBufFD, DmaBufFD>& sourceFds,
             VkExtent2D extent, VkFormat format) {
         try {
             return {
-                vk::Image(vk, extent, format,
-                    VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, sourceFds.first),
-                vk::Image(vk, extent, format,
-                    VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, sourceFds.second)
+                vk::SharedImage(vk, extent, format,
+                    VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+                    sourceFds.first.modifier,
+                    sourceFds.first.layouts,
+                    sourceFds.first.fd),
+                vk::SharedImage(vk, extent, format,
+                    VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+                    sourceFds.second.modifier,
+                    sourceFds.second.layouts,
+                    sourceFds.second.fd)
             };
         } catch (const std::exception& e) {
             throw backend::error("Unable to import destination images", e);
         }
     }
     /// import destination images
-    std::vector<vk::Image> importImages(const vk::Vulkan& vk,
-            const std::vector<int>& destFds,
+    std::vector<vk::SharedImage> importImages(const vk::Vulkan& vk,
+            const std::vector<DmaBufFD>& destFds,
             VkExtent2D extent, VkFormat format) {
         try {
-            std::vector<vk::Image> destImages;
+            std::vector<vk::SharedImage> destImages;
             destImages.reserve(destFds.size());
 
             for (const auto& fd : destFds)
                 destImages.emplace_back(vk, extent, format,
-                    VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, fd);
+                    VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+                    fd.modifier,
+                    fd.layouts,
+                    fd.fd);
 
             return destImages;
         } catch (const std::exception& e) {
@@ -395,7 +409,8 @@ namespace {
 }
 
 ContextImpl::ContextImpl(const InstanceImpl& instance,
-            std::pair<int, int> sourceFds, const std::vector<int>& destFds,
+            const std::pair<DmaBufFD, DmaBufFD>& sourceFds,
+            const std::vector<DmaBufFD>& destFds,
             VkExtent2D extent, bool hdr, float flow, bool perf) :
         sourceImages(importImages(instance.getVulkan(), sourceFds,
             extent, hdr ? VK_FORMAT_R16G16B16A16_SFLOAT : VK_FORMAT_R8G8B8A8_UNORM)),

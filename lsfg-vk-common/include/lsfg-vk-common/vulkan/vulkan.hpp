@@ -109,6 +109,7 @@ namespace vk {
         PFN_vkSignalSemaphoreKHR SignalSemaphoreKHR;
         PFN_vkWaitSemaphoresKHR WaitSemaphoresKHR;
         PFN_vkGetMemoryFdKHR GetMemoryFdKHR;
+        PFN_vkGetMemoryFdPropertiesKHR GetMemoryFdPropertiesKHR;
         PFN_vkImportSemaphoreFdKHR ImportSemaphoreFdKHR;
         PFN_vkGetSemaphoreFdKHR GetSemaphoreFdKHR;
         PFN_vkCreateSwapchainKHR CreateSwapchainKHR;
@@ -116,6 +117,9 @@ namespace vk {
         PFN_vkAcquireNextImageKHR AcquireNextImageKHR;
         PFN_vkQueuePresentKHR QueuePresentKHR;
         PFN_vkDestroySwapchainKHR DestroySwapchainKHR;
+
+        PFN_vkGetImageDrmFormatModifierPropertiesEXT GetImageDrmFormatModifierPropertiesEXT;
+        PFN_vkGetImageSubresourceLayout GetImageSubresourceLayout;
     };
 
     /// initialize vulkan device function pointers

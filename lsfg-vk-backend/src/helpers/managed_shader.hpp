@@ -7,6 +7,7 @@
 #include "lsfg-vk-common/vulkan/descriptor_pool.hpp"
 #include "lsfg-vk-common/vulkan/descriptor_set.hpp"
 #include "lsfg-vk-common/vulkan/shader.hpp"
+#include "lsfg-vk-common/vulkan/shared_image.hpp"
 
 #include <cstddef>
 #include <vector>
@@ -60,6 +61,16 @@ namespace lsfgvk::backend {
         [[nodiscard]] ManagedShaderBuilder& sampleds(const std::vector<vk::Image>& images,
             size_t offset = 0, size_t count = 0);
 
+        // add a sampled shared image
+        /// @param image image to add
+        [[nodiscard]] ManagedShaderBuilder& sampled(const vk::SharedImage& image);
+        /// add multiple sampled shared images
+        /// @param images images to add
+        /// @param offset offset into images
+        /// @param count number of images to add (0 = all)
+        [[nodiscard]] ManagedShaderBuilder& sampleds(const std::vector<vk::SharedImage>& images,
+            size_t offset = 0, size_t count = 0);
+
         /// add a storage image
         /// @param image image to add
         [[nodiscard]] ManagedShaderBuilder& storage(const vk::Image& image);
@@ -68,6 +79,16 @@ namespace lsfgvk::backend {
         /// @param offset offset into images
         /// @param count number of images to add (0 = all)
         [[nodiscard]] ManagedShaderBuilder& storages(const std::vector<vk::Image>& images,
+            size_t offset = 0, size_t count = 0);
+
+        /// add a storage shared image
+        /// @param image image to add
+        [[nodiscard]] ManagedShaderBuilder& storage(const vk::SharedImage& image);
+        /// add multiple storage shared images
+        /// @param images images to add
+        /// @param offset offset into images
+        /// @param count number of images to add (0 = all)
+        [[nodiscard]] ManagedShaderBuilder& storages(const std::vector<vk::SharedImage>& images,
             size_t offset = 0, size_t count = 0);
 
         /// add a sampler
@@ -90,7 +111,9 @@ namespace lsfgvk::backend {
             const vk::DescriptorPool& pool, const vk::Shader& shader) const;
     private:
         std::vector<ls::R<const vk::Image>> sampledImages;
+        std::vector<ls::R<const vk::SharedImage>> sampledImagesSh; // always goes first
         std::vector<ls::R<const vk::Image>> storageImages;
+        std::vector<ls::R<const vk::SharedImage>> storageImagesSh;
         std::vector<ls::R<const vk::Sampler>> imageSamplers;
         std::vector<ls::R<const vk::Buffer>> constantBuffers;
     };

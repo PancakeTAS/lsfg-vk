@@ -6,6 +6,7 @@
 #include "../helpers/utils.hpp"
 #include "lsfg-vk-common/vulkan/command_buffer.hpp"
 #include "lsfg-vk-common/vulkan/image.hpp"
+#include "lsfg-vk-common/vulkan/shared_image.hpp"
 #include "lsfg-vk-common/vulkan/vulkan.hpp"
 
 #include <cstddef>
@@ -27,11 +28,11 @@ namespace lsfgvk::backend {
         /// @param inputImage2 input image 2
         /// @param inputImage3 input image 3
         Generate(const Ctx& ctx, size_t idx,
-            const std::pair<vk::Image, vk::Image>& sourceImages,
+            const std::pair<vk::SharedImage, vk::SharedImage>& sourceImages,
             const vk::Image& inputImage1,
             const vk::Image& inputImage2,
             const vk::Image& inputImage3,
-            const vk::Image& outputImage);
+            const vk::SharedImage& outputImage);
 
         /// render the generate shaderchain
         /// @param vk the vulkan instance

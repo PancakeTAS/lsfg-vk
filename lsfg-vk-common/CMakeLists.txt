@@ -12,6 +12,7 @@ set(COMMON_SOURCES
     "src/vulkan/sampler.cpp"
     "src/vulkan/semaphore.cpp"
     "src/vulkan/shader.cpp"
+    "src/vulkan/shared_image.cpp"
     "src/vulkan/timeline_semaphore.cpp"
     "src/vulkan/vulkan.cpp")
 

@@ -6,6 +6,7 @@
 #include "../helpers/utils.hpp"
 #include "lsfg-vk-common/vulkan/command_buffer.hpp"
 #include "lsfg-vk-common/vulkan/image.hpp"
+#include "lsfg-vk-common/vulkan/shared_image.hpp"
 #include "lsfg-vk-common/vulkan/vulkan.hpp"
 
 #include <cstddef>
@@ -23,7 +24,7 @@ namespace lsfgvk::backend {
         /// @param ctx context
         /// @param sourceImages pair of source images
         Mipmaps(const Ctx& ctx,
-            const std::pair<vk::Image, vk::Image>& sourceImages);
+            const std::pair<vk::SharedImage, vk::SharedImage>& sourceImages);
 
         /// prepare the shaderchain initially
         /// @param images vector to fill with image handles

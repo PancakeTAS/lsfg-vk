@@ -8,6 +8,7 @@
 #include "lsfg-vk-common/vulkan/image.hpp"
 #include "lsfg-vk-common/vulkan/sampler.hpp"
 #include "lsfg-vk-common/vulkan/shader.hpp"
+#include "lsfg-vk-common/vulkan/shared_image.hpp"
 #include "lsfg-vk-common/vulkan/vulkan.hpp"
 
 #include <cstddef>
@@ -48,7 +49,9 @@ namespace {
 DescriptorSet::DescriptorSet(const vk::Vulkan& vk,
             const vk::DescriptorPool& pool, const vk::Shader& shader,
             const std::vector<ls::R<const vk::Image>>& sampledImages,
+            const std::vector<ls::R<const vk::SharedImage>>& sampledImagesSh,
             const std::vector<ls::R<const vk::Image>>& storageImages,
+            const std::vector<ls::R<const vk::SharedImage>>& storageImagesSh,
             const std::vector<ls::R<const vk::Sampler>>& samplers,
             const std::vector<ls::R<const vk::Buffer>>& buffers)
         : descriptorSet(createDescriptorSet(vk, pool, shader)) {
@@ -56,7 +59,9 @@ DescriptorSet::DescriptorSet(const vk::Vulkan& vk,
     const size_t bindingCount =
         samplers.size()
         + sampledImages.size()
+        + sampledImagesSh.size()
         + storageImages.size()
+        + storageImagesSh.size()
         + buffers.size();
 
     std::vector<VkWriteDescriptorSet> entries;
@@ -96,7 +101,7 @@ DescriptorSet::DescriptorSet(const vk::Vulkan& vk,
         });
 
     size_t sampledIdx{32};
-    for (const auto& img : sampledImages) {
+    for (const auto& img : sampledImages)
         entries.push_back({
             .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
             .dstSet = *this->descriptorSet,
@@ -108,10 +113,35 @@ DescriptorSet::DescriptorSet(const vk::Vulkan& vk,
                 .imageLayout = VK_IMAGE_LAYOUT_GENERAL
             }))
         });
-    }
+
+    for (const auto& img : sampledImagesSh)
+        entries.push_back({
+            .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+            .dstSet = *this->descriptorSet,
+            .dstBinding = static_cast<uint32_t>(sampledIdx++),
+            .descriptorCount = 1,
+            .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+            .pImageInfo = &(imageInfos.emplace_back(VkDescriptorImageInfo{
+                .imageView = img.get().imageview(),
+                .imageLayout = VK_IMAGE_LAYOUT_GENERAL
+            }))
+        });
 
     size_t storageIdx{48};
     for (const auto& img : storageImages)
+        entries.push_back({
+            .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+            .dstSet = *this->descriptorSet,
+            .dstBinding = static_cast<uint32_t>(storageIdx++),
+            .descriptorCount = 1,
+            .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+            .pImageInfo = &(imageInfos.emplace_back(VkDescriptorImageInfo{
+                .imageView = img.get().imageview(),
+                .imageLayout = VK_IMAGE_LAYOUT_GENERAL
+            }))
+        });
+
+    for (const auto& img : storageImagesSh)
         entries.push_back({
             .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
             .dstSet = *this->descriptorSet,

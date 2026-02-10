@@ -5,6 +5,7 @@
 #include "lsfg-vk-common/helpers/pointers.hpp"
 #include "lsfg-vk-common/vulkan/command_buffer.hpp"
 #include "lsfg-vk-common/vulkan/image.hpp"
+#include "lsfg-vk-common/vulkan/shared_image.hpp"
 #include "lsfg-vk-common/vulkan/vulkan.hpp"
 
 #include <cstddef>
@@ -17,7 +18,7 @@
 using namespace lsfgvk::backend;
 
 Mipmaps::Mipmaps(const Ctx& ctx,
-        const std::pair<vk::Image, vk::Image>& sourceImages) {
+        const std::pair<vk::SharedImage, vk::SharedImage>& sourceImages) {
     // create output images for base and 6 mips
     this->images.reserve(7);
     for (uint32_t i = 0; i < 7; i++)

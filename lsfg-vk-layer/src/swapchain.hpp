@@ -7,9 +7,8 @@
 #include "lsfg-vk-common/helpers/pointers.hpp"
 #include "lsfg-vk-common/vulkan/command_buffer.hpp"
 #include "lsfg-vk-common/vulkan/fence.hpp"
-#include "lsfg-vk-common/vulkan/image.hpp"
 #include "lsfg-vk-common/vulkan/semaphore.hpp"
-#include "lsfg-vk-common/vulkan/timeline_semaphore.hpp"
+#include "lsfg-vk-common/vulkan/shared_image.hpp"
 #include "lsfg-vk-common/vulkan/vulkan.hpp"
 
 #include <cstdint>
@@ -59,8 +58,8 @@ namespace lsfgvk::layer {
             void* next_chain, uint32_t imageIdx,
             const std::vector<VkSemaphore>& semaphores);
     private:
-        std::vector<vk::Image> sourceImages;
-        std::vector<vk::Image> destinationImages;
+        std::vector<vk::SharedImage> sourceImages;
+        std::vector<vk::SharedImage> destinationImages;
         ls::lazy<vk::Semaphore> syncSemaphore;
 
         ls::lazy<vk::CommandBuffer> renderCommandBuffer;

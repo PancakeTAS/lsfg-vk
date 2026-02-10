@@ -113,6 +113,13 @@ void Root::modifyDeviceCreateInfo(VkDeviceCreateInfo& createInfo,
         {
             "VK_KHR_external_memory",
             "VK_KHR_external_memory_fd",
+            "VK_EXT_external_memory_dma_buf",
+            "VK_KHR_image_format_list",
+            "VK_KHR_bind_memory2",
+            "VK_KHR_maintenance1",
+            "VK_KHR_get_memory_requirements2",
+            "VK_KHR_sampler_ycbcr_conversion",
+            "VK_EXT_image_drm_format_modifier",
             "VK_KHR_external_semaphore",
             "VK_KHR_external_semaphore_fd",
             "VK_KHR_timeline_semaphore"
@@ -120,7 +127,7 @@ void Root::modifyDeviceCreateInfo(VkDeviceCreateInfo& createInfo,
     );
     createInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
     createInfo.ppEnabledExtensionNames = extensions.data();
-    
+
     finish();
 }
 

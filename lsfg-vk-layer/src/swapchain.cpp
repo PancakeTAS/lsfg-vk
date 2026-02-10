@@ -6,13 +6,13 @@
 #include "lsfg-vk-common/helpers/errors.hpp"
 #include "lsfg-vk-common/helpers/pointers.hpp"
 #include "lsfg-vk-common/vulkan/command_buffer.hpp"
-#include "lsfg-vk-common/vulkan/image.hpp"
 #include "lsfg-vk-common/vulkan/semaphore.hpp"
 #include "lsfg-vk-common/vulkan/vulkan.hpp"
 
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
+#include <drm/drm_fourcc.h>
 #include <exception>
 #include <functional>
 #include <optional>
@@ -76,24 +76,46 @@ Swapchain::Swapchain(const vk::Vulkan& vk, backend::Instance& backend,
     std::vector<int> sourceFds(2);
     std::vector<int> destinationFds(this->profile.multiplier - 1);
 
+    const std::vector<uint64_t> modifiers = { DRM_FORMAT_MOD_LINEAR };
+
     this->sourceImages.reserve(sourceFds.size());
     for (int& fd : sourceFds)
         this->sourceImages.emplace_back(vk,
             extent, hdr ? VK_FORMAT_R16G16B16A16_SFLOAT : VK_FORMAT_R8G8B8A8_UNORM,
             VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-            std::nullopt, &fd);
+            modifiers, fd);
 
     this->destinationImages.reserve(destinationFds.size());
     for (int& fd : destinationFds)
         this->destinationImages.emplace_back(vk,
             extent, hdr ? VK_FORMAT_R16G16B16A16_SFLOAT : VK_FORMAT_R8G8B8A8_UNORM,
             VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-            std::nullopt, &fd);
+            modifiers, fd);
 
     try {
+        const backend::DmaBufFD fd0{
+            .fd = sourceFds.at(0),
+            .modifier = this->sourceImages.at(0).drmModifier(),
+            .layouts = this->sourceImages.at(0).drmLayouts()
+        };
+        const backend::DmaBufFD fd1{
+            .fd = sourceFds.at(1),
+            .modifier = this->sourceImages.at(1).drmModifier(),
+            .layouts = this->sourceImages.at(1).drmLayouts()
+        };
+
+        std::vector<backend::DmaBufFD> destFdNs;
+        destFdNs.reserve(this->destinationImages.size());
+        for (size_t i = 0; i < this->destinationImages.size(); i++)
+            destFdNs.push_back(backend::DmaBufFD{
+                .fd = destinationFds.at(i),
+                .modifier = this->destinationImages.at(i).drmModifier(),
+                .layouts = this->destinationImages.at(i).drmLayouts()
+            });
+
         this->ctx = ls::owned_ptr<ls::R<backend::Context>>(
             new ls::R<backend::Context>(backend.openContext(
-                { sourceFds.at(0), sourceFds.at(1) }, destinationFds,
+                { fd0, fd1 }, destFdNs,
                 extent.width, extent.height,
                 hdr, 1.0F / this->profile.flow_scale, this->profile.performance_mode
             )),

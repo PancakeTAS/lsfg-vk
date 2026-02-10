@@ -7,6 +7,7 @@
 #include "lsfg-vk-common/vulkan/image.hpp"
 #include "lsfg-vk-common/vulkan/sampler.hpp"
 #include "lsfg-vk-common/vulkan/shader.hpp"
+#include "lsfg-vk-common/vulkan/shared_image.hpp"
 #include "lsfg-vk-common/vulkan/vulkan.hpp"
 
 #include <cstddef>
@@ -35,6 +36,21 @@ ManagedShaderBuilder& ManagedShaderBuilder::sampleds(
     return *this;
 }
 
+ManagedShaderBuilder& ManagedShaderBuilder::sampled(const vk::SharedImage& image) {
+    this->sampledImagesSh.push_back(std::ref(image));
+    return *this;
+}
+
+ManagedShaderBuilder& ManagedShaderBuilder::sampleds(
+        const std::vector<vk::SharedImage>& images,
+        size_t offset, size_t count) {
+    if (count == 0 || offset + count > images.size())
+        count = images.size() - offset;
+
+    for (size_t i = 0; i < count; ++i)
+        this->sampledImagesSh.push_back(std::ref(images[offset + i]));
+    return *this;
+}
 
 ManagedShaderBuilder& ManagedShaderBuilder::storage(const vk::Image& image) {
     this->storageImages.push_back(std::ref(image));
@@ -49,6 +65,22 @@ ManagedShaderBuilder& ManagedShaderBuilder::storages(
 
     for (size_t i = 0; i < count; ++i)
         this->storageImages.push_back(std::ref(images[offset + i]));
+    return *this;
+}
+
+ManagedShaderBuilder& ManagedShaderBuilder::storage(const vk::SharedImage& image) {
+    this->storageImagesSh.push_back(std::ref(image));
+    return *this;
+}
+
+ManagedShaderBuilder& ManagedShaderBuilder::storages(
+        const std::vector<vk::SharedImage>& images,
+        size_t offset, size_t count) {
+    if (count == 0 || offset + count > images.size())
+        count = images.size() - offset;
+
+    for (size_t i = 0; i < count; ++i)
+        this->storageImagesSh.push_back(std::ref(images[offset + i]));
     return *this;
 }
 
@@ -72,13 +104,48 @@ ManagedShaderBuilder& ManagedShaderBuilder::buffer(const vk::Buffer& buffer) {
 ManagedShader ManagedShaderBuilder::build(const vk::Vulkan& vk,
         const vk::DescriptorPool& pool, const vk::Shader& shader) const {
     std::vector<vk::Barrier> barriers;
-    barriers.reserve(this->storageImages.size() + this->sampledImages.size());
+    barriers.reserve(
+        this->storageImages.size() + this->sampledImages.size()
+        + this->storageImagesSh.size() + this->sampledImagesSh.size()
+    );
 
+    for (const auto& img : this->sampledImagesSh)
+        barriers.push_back({
+            .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
+            .srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT,
+            .dstAccessMask = VK_ACCESS_SHADER_READ_BIT,
+            .oldLayout = VK_IMAGE_LAYOUT_GENERAL,
+            .newLayout = VK_IMAGE_LAYOUT_GENERAL,
+            .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+            .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+            .image = img.get().handle(),
+            .subresourceRange = {
+                .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+                .levelCount = 1,
+                .layerCount = 1
+            }
+        });
     for (const auto& img : this->sampledImages)
         barriers.push_back({
             .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
             .srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT,
             .dstAccessMask = VK_ACCESS_SHADER_READ_BIT,
+            .oldLayout = VK_IMAGE_LAYOUT_GENERAL,
+            .newLayout = VK_IMAGE_LAYOUT_GENERAL,
+            .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+            .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+            .image = img.get().handle(),
+            .subresourceRange = {
+                .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+                .levelCount = 1,
+                .layerCount = 1
+            }
+        });
+    for (const auto& img : this->storageImagesSh)
+        barriers.push_back({
+            .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
+            .srcAccessMask = VK_ACCESS_SHADER_READ_BIT,
+            .dstAccessMask = VK_ACCESS_SHADER_WRITE_BIT,
             .oldLayout = VK_IMAGE_LAYOUT_GENERAL,
             .newLayout = VK_IMAGE_LAYOUT_GENERAL,
             .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
@@ -112,7 +179,9 @@ ManagedShader ManagedShaderBuilder::build(const vk::Vulkan& vk,
         std::move(barriers),
         vk::DescriptorSet(vk, pool, shader,
             this->sampledImages,
+            this->sampledImagesSh,
             this->storageImages,
+            this->storageImagesSh,
             this->imageSamplers,
             this->constantBuffers)
     };

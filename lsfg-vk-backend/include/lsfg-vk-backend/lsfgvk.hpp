@@ -52,6 +52,13 @@ namespace lsfgvk::backend {
         const std::optional<std::string>& pci // (bus:slot.func) if available, no padded zeros
     )>;
 
+    /// Helper struct for importing DMA-BUF images
+    struct DmaBufFD {
+        int fd;
+        uint64_t modifier;
+        std::vector<std::pair<uint64_t, uint64_t>> layouts; // (offset, pitch) per plane
+    };
+
     ///
     /// Main entry point of the library
     ///
@@ -90,8 +97,8 @@ namespace lsfgvk::backend {
         /// @throws backend::error on failure
         ///
         Context& openContext(
-            std::pair<int, int> sourceFds,
-            const std::vector<int>& destFds,
+            const std::pair<DmaBufFD, DmaBufFD>& sourceFds,
+            const std::vector<DmaBufFD>& destFds,
             uint32_t width, uint32_t height,
             bool hdr, float flow, bool perf
         );

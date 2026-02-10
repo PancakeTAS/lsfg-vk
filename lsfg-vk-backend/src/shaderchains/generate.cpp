@@ -5,6 +5,7 @@
 #include "lsfg-vk-common/helpers/pointers.hpp"
 #include "lsfg-vk-common/vulkan/command_buffer.hpp"
 #include "lsfg-vk-common/vulkan/image.hpp"
+#include "lsfg-vk-common/vulkan/shared_image.hpp"
 #include "lsfg-vk-common/vulkan/vulkan.hpp"
 
 #include <cstddef>
@@ -16,11 +17,11 @@
 using namespace lsfgvk::backend;
 
 Generate::Generate(const Ctx& ctx, size_t idx,
-        const std::pair<vk::Image, vk::Image>& sourceImages,
+        const std::pair<vk::SharedImage, vk::SharedImage>& sourceImages,
         const vk::Image& inputImage1,
         const vk::Image& inputImage2,
         const vk::Image& inputImage3,
-        const vk::Image& outputImage) {
+        const vk::SharedImage& outputImage) {
     // create descriptor sets
     const auto& shader = ctx.hdr ?
         ctx.shaders.get().generate_hdr : ctx.shaders.get().generate;

@@ -177,6 +177,8 @@ namespace {
         };
         const std::vector<const char*> requestedExtensions{
             VK_KHR_EXTERNAL_MEMORY_FD_EXTENSION_NAME,
+            VK_EXT_EXTERNAL_MEMORY_DMA_BUF_EXTENSION_NAME,
+            VK_EXT_IMAGE_DRM_FORMAT_MODIFIER_EXTENSION_NAME,
             VK_KHR_EXTERNAL_SEMAPHORE_FD_EXTENSION_NAME,
             VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME
         };
@@ -379,6 +381,7 @@ VulkanDeviceFuncs vk::initVulkanDeviceFuncs(const VulkanInstanceFuncs& f, VkDevi
         .SignalSemaphoreKHR = dpa<PFN_vkSignalSemaphoreKHR>(f, d, "vkSignalSemaphoreKHR"),
         .WaitSemaphoresKHR = dpa<PFN_vkWaitSemaphoresKHR>(f, d, "vkWaitSemaphoresKHR"),
         .GetMemoryFdKHR = dpa<PFN_vkGetMemoryFdKHR>(f, d, "vkGetMemoryFdKHR"),
+        .GetMemoryFdPropertiesKHR = dpa<PFN_vkGetMemoryFdPropertiesKHR>(f, d, "vkGetMemoryFdPropertiesKHR"),
         .ImportSemaphoreFdKHR = dpa<PFN_vkImportSemaphoreFdKHR>(f, d, "vkImportSemaphoreFdKHR"),
         .GetSemaphoreFdKHR = dpa<PFN_vkGetSemaphoreFdKHR>(f, d, "vkGetSemaphoreFdKHR"),
 
@@ -391,7 +394,11 @@ VulkanDeviceFuncs vk::initVulkanDeviceFuncs(const VulkanInstanceFuncs& f, VkDevi
         .QueuePresentKHR = graphical ?
             dpa<PFN_vkQueuePresentKHR>(f, d, "vkQueuePresentKHR") : nullptr,
         .DestroySwapchainKHR = graphical ?
-            dpa<PFN_vkDestroySwapchainKHR>(f, d, "vkDestroySwapchainKHR") : nullptr
+            dpa<PFN_vkDestroySwapchainKHR>(f, d, "vkDestroySwapchainKHR") : nullptr,
+
+        .GetImageDrmFormatModifierPropertiesEXT = dpa<PFN_vkGetImageDrmFormatModifierPropertiesEXT>(f, d,
+            "vkGetImageDrmFormatModifierPropertiesEXT"),
+        .GetImageSubresourceLayout = dpa<PFN_vkGetImageSubresourceLayout>(f, d, "vkGetImageSubresourceLayout")
     };
 }
 
