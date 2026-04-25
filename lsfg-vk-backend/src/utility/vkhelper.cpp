@@ -7,6 +7,7 @@
 #include <iomanip>
 #include <ios>
 #include <iostream>
+#include <span>
 #include <sstream>
 #include <stdexcept>
 #include <string>
@@ -154,4 +155,18 @@ std::pair<vk::UniqueDevice, vk::Queue> vkhelper::createDevice(
         std::move(device),
         device->getQueue(qfi, 0, dld)
     };
+}
+
+/* Shader modules & pipelines */
+
+vk::UniqueShaderModule vkhelper::createShaderModule(
+    const vk::detail::DispatchLoaderDynamic& dld,
+    const vk::Device& device,
+    const std::span<const uint32_t>& code
+) {
+    const vk::ShaderModuleCreateInfo shaderInfo{
+        .codeSize = code.size() * sizeof(uint32_t),
+        .pCode = code.data()
+    };
+    return device.createShaderModuleUnique(shaderInfo, nullptr, dld);
 }

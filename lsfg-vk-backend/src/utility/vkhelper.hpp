@@ -17,6 +17,7 @@
 // IWYU pragma: end_exports
 
 #include <cstdint>
+#include <span>
 #include <string>
 #include <utility>
 
@@ -96,6 +97,23 @@ namespace vkhelper {
         const vk::PhysicalDevice& physdev,
         uint32_t qfi,
         bool fp16
+    );
+
+    /* Shader modules & pipelines */
+
+    ///
+    /// Create a Vulkan shader module from SPIR-V bytecode
+    ///
+    /// @param dld Dynamic dispatch loader
+    /// @param device Vulkan device
+    /// @param code SPIR-V bytecode
+    /// @return RAII-wrapped Vulkan shader module
+    /// @throws std::runtime_error on failure
+    ///
+    vk::UniqueShaderModule createShaderModule(
+        const vk::detail::DispatchLoaderDynamic& dld,
+        const vk::Device& device,
+        const std::span<const uint32_t>& code
     );
 
 }
