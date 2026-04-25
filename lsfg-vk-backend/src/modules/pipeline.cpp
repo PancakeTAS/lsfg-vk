@@ -794,6 +794,19 @@ vk::CommandBuffer Pipeline::buildTransCmdbuf(
             vk::CommandBufferUsageFlagBits::eOneTimeSubmit
     }, dld);
 
+    vk::BufferMemoryBarrier2KHR barrier{
+        .srcStageMask = vk::PipelineStageFlagBits2::eComputeShader,
+        .srcAccessMask = vk::AccessFlagBits2::eUniformRead,
+        .dstStageMask = vk::PipelineStageFlagBits2::eTransfer,
+        .dstAccessMask = vk::AccessFlagBits2::eTransferWrite,
+        .buffer = *this->m_descriptorSet.buffer.first,
+        .size = 4
+    };
+    cmdbuf->pipelineBarrier2KHR({
+        .bufferMemoryBarrierCount = 1,
+        .pBufferMemoryBarriers = &barrier
+    }, dld);
+
     const UniformBuffer buf{
         .timestamp = static_cast<float>(index + 1) / static_cast<float>(total + 1),
         .iteration = iteration
@@ -805,6 +818,19 @@ vk::CommandBuffer Pipeline::buildTransCmdbuf(
         static_cast<const void*>(&buf.timestamp),
         dld
     );
+
+    barrier = {
+        .srcStageMask = vk::PipelineStageFlagBits2::eTransfer,
+        .srcAccessMask = vk::AccessFlagBits2::eTransferWrite,
+        .dstStageMask = vk::PipelineStageFlagBits2::eComputeShader,
+        .dstAccessMask = vk::AccessFlagBits2::eUniformRead,
+        .buffer = *this->m_descriptorSet.buffer.first,
+        .size = 4
+    };
+    cmdbuf->pipelineBarrier2KHR({
+        .bufferMemoryBarrierCount = 1,
+        .pBufferMemoryBarriers = &barrier
+    }, dld);
 
     cmdbuf->end(dld);
 
