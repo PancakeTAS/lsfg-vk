@@ -273,6 +273,55 @@ namespace lsfgvk::pipeline {
                 }
             }
 
+            // Calculate usage timeline for each image
+            for (size_t i = 0; i < this->m_images.size(); i++) {
+                auto& image{this->m_images.at(i)};
+                if (image.flags & ImageFlag::Pinned)
+                    continue;
+
+                std::optional<size_t> writeIndex;
+                std::optional<size_t> readIndex;
+
+                // Find the first stage that writes to the image and last stage that reads from it
+                for (size_t j = 0; j < s.stages.size(); j++) {
+                    const auto& stage{s.stages.at(j)};
+
+                    for (const auto& passIdx : stage.passes) {
+                        const auto& pass{this->m_passes.at(passIdx)};
+
+                        const bool isRead{
+                            std::ranges::any_of(pass.inputs, [i](const auto& resource) {
+                                return resource.idx() && *resource.idx() == i;
+                            })
+                        };
+                        const bool isWritten{
+                            std::ranges::any_of(pass.outputs, [i](const auto& resource) {
+                                return resource.idx() && *resource.idx() == i;
+                            })
+                        };
+
+                        if (writeIndex && isWritten)
+                            throw "Image " + std::to_string(i) +
+                                " is written by multiple passes";
+                        if (isWritten && isRead)
+                            throw "Image " + std::to_string(i) +
+                                " is read & write in the same pass";
+
+                        if (isWritten)
+                            writeIndex.emplace(j);
+                        if (isRead)
+                            readIndex.emplace(std::max(readIndex.value_or(0), j));
+                    }
+                }
+
+                if (!writeIndex)
+                    throw "Image " + std::to_string(i) + " is not written to by any pass";
+                if (!readIndex)
+                    throw "Image " + std::to_string(i) + " is not read from by any pass";
+
+                image.lifetime = { *writeIndex, *readIndex };
+            }
+
             // Copy remaining resources into signature
             for (const auto& shader : shaderInfos)
                 s.shaders.emplace_back(shader.id, shader.hasHdrVariant);
