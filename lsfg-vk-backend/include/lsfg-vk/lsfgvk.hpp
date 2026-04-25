@@ -7,6 +7,10 @@
 #include <memory>
 #include <string>
 
+#ifdef LSFGVK_PRIV
+#include <vulkan/vulkan_core.h>
+#endif // LSFGVK_PRIV
+
 namespace lsfgvk {
 
     /// Forward declaration of implementation classes
@@ -39,6 +43,16 @@ namespace lsfgvk {
             const std::filesystem::path& lsfgvkDllPath,
             bool allowFP16
         );
+
+#ifdef LSFGVK_PRIV
+        /// Get the underlying Vulkan instance handle
+        /// @return Vulkan instance
+        [[nodiscard]] VkInstance _instance() const;
+
+        /// Get the underlying Vulkan device handle
+        /// @return Vulkan device
+        [[nodiscard]] VkDevice _device() const;
+#endif // LSFGVK_PRIV
 
         // Non-copyable, non-movable
         Instance(const Instance&) = delete;

@@ -1,6 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 
-#include "lsfg-vk/lsfgvk.hpp"
 #include "lsfgvk.hpp"
 #include "modules/library.hpp"
 #include "modules/pipeline.hpp"
@@ -226,6 +225,14 @@ Context::~Context() {
     } catch (...) { // NOLINT (empty catch)
         // Not much we can do here..
     }
+}
+
+VkInstance Instance::_instance() const {
+    return this->m_priv->vk.instance.get();
+}
+
+VkDevice Instance::_device() const {
+    return *this->m_priv->vk.device;
 }
 
 Instance::~Instance() = default;

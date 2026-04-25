@@ -2,6 +2,9 @@
 
 #pragma once
 
+#define LSFGVK_PRIV
+#include "lsfg-vk/lsfgvk.hpp" // IWYU pragma: export
+
 #include "modules/pipeline.hpp"
 #include "modules/library.hpp"
 #include "utility/vkhelper.hpp"
