@@ -3,7 +3,9 @@
 #include "vkhelper.hpp"
 
 #include <array>
+#include <cstddef>
 #include <cstdint>
+#include <cstdlib>
 #include <iomanip>
 #include <ios>
 #include <iostream>
@@ -12,6 +14,7 @@
 #include <stdexcept>
 #include <string>
 #include <utility>
+#include <vector>
 
 /* Device initialization */
 
@@ -169,4 +172,32 @@ vk::UniqueShaderModule vkhelper::createShaderModule(
         .pCode = code.data()
     };
     return device.createShaderModuleUnique(shaderInfo, nullptr, dld);
+}
+
+std::pair<vk::UniqueDescriptorSetLayout, vk::UniquePipelineLayout> vkhelper::createLayout(
+    const vk::detail::DispatchLoaderDynamic& dld,
+    const vk::Device& device,
+    const std::vector<vk::DescriptorSetLayoutBinding>& bindings,
+    size_t pushConstantSize
+) {
+    const vk::DescriptorSetLayoutCreateInfo layoutInfo{
+        .flags = vk::DescriptorSetLayoutCreateFlagBits::eUpdateAfterBindPool,
+        .bindingCount = static_cast<uint32_t>(bindings.size()),
+        .pBindings = bindings.data()
+    };
+    auto descriptorSetLayout{device.createDescriptorSetLayoutUnique(layoutInfo, nullptr, dld)};
+
+    const vk::PushConstantRange pushConstantRange{
+        .stageFlags = vk::ShaderStageFlagBits::eCompute,
+        .size = static_cast<uint32_t>(pushConstantSize)
+    };
+    const vk::PipelineLayoutCreateInfo pipelineLayoutInfo{
+        .setLayoutCount = 1,
+        .pSetLayouts = &*descriptorSetLayout,
+        .pushConstantRangeCount = 1,
+        .pPushConstantRanges = &pushConstantRange
+    };
+    auto pipelineLayout{device.createPipelineLayoutUnique(pipelineLayoutInfo, nullptr, dld)};
+
+    return { std::move(descriptorSetLayout), std::move(pipelineLayout) };
 }

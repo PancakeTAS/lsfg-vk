@@ -16,10 +16,12 @@
 #include <vulkan/vulkan_structs.hpp>
 // IWYU pragma: end_exports
 
+#include <cstddef>
 #include <cstdint>
 #include <span>
 #include <string>
 #include <utility>
+#include <vector>
 
 namespace vkhelper {
 
@@ -114,6 +116,23 @@ namespace vkhelper {
         const vk::detail::DispatchLoaderDynamic& dld,
         const vk::Device& device,
         const std::span<const uint32_t>& code
+    );
+
+    ///
+    /// Create a Vulkan descriptor set layout
+    ///
+    /// @param dld Dynamic dispatch loader
+    /// @param device Vulkan device
+    /// @param bindings List of descriptor set layout bindings
+    /// @param pushConstantSize Size of push constant range
+    /// @return RAII-wrapped Vulkan descriptor set & pipeline layout
+    /// @throws std::runtime_error on failure
+    ///
+    std::pair<vk::UniqueDescriptorSetLayout, vk::UniquePipelineLayout> createLayout(
+        const vk::detail::DispatchLoaderDynamic& dld,
+        const vk::Device& device,
+        const std::vector<vk::DescriptorSetLayoutBinding>& bindings,
+        size_t pushConstantSize
     );
 
 }
