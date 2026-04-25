@@ -129,7 +129,7 @@ namespace {
         fi.GetPhysicalDeviceQueueFamilyProperties(physdev, &queueCount, queues.data());
 
         for (uint32_t i = 0; i < queueCount; ++i) {
-            if ((queues[i].queueFlags & flags) == flags)
+            if ((queues.at(i).queueFlags & flags) == flags)
                 return i;
         }
 

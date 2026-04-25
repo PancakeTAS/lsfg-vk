@@ -51,22 +51,23 @@ namespace {
         const uint32_t SpvImageFormatRgba8 = 4;
 
         for (size_t i = 5; i < words.size();) {
-            const uint32_t& word = words[i];
+            const uint32_t& word = words[i]; // NOLINT ([]-usage)
             const uint16_t wc = (word >> 16);
             const uint16_t op = word & 0xFFFF;
 
             // remove write without format capability
             if (op == SpvOpCapability && wc >= 2) {
-                uint32_t& cap = words[i + 1];
+                uint32_t& cap = words[i + 1]; // NOLINT ([]-usage)
                 if (cap == SpvCapabilityStorageImageWriteWithoutFormat)
                     cap = SpvCapabilityShader;
             }
 
             // patch format in image instructions
             if (op == SpvOpTypeImage && wc >= 9) {
-                const uint32_t sampled = words[i + 7];
+                const uint32_t sampled = words[i + 7]; // NOLINT ([]-usage)
                 if (sampled == 2)
-                    words[i + 8] = hdr ? SpvImageFormatRgba16f : SpvImageFormatRgba8;
+                    words[i + 8] = // NOLINT ([]-usage)
+                        hdr ? SpvImageFormatRgba16f : SpvImageFormatRgba8;
             }
 
             i += wc ? wc : 1;

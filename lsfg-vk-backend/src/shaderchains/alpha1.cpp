@@ -50,5 +50,5 @@ void Alpha1::prepare(std::vector<VkImage>& images) const {
 }
 
 void Alpha1::render(const vk::Vulkan& vk, const vk::CommandBuffer& cmd, size_t idx) const {
-    this->sets[idx % this->sets.size()].dispatch(vk, cmd, dispatchExtent);
+    this->sets.at(idx % this->sets.size()).dispatch(vk, cmd, dispatchExtent);
 }

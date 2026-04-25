@@ -72,7 +72,7 @@ int benchmark::run(const Options& opts) {
 
                     auto& properties = props.properties;
                     std::array<char, 256> devname = std::to_array(properties.deviceName);
-                    devname[255] = '\0'; // ensure null-termination
+                    devname.at(255) = '\0'; // ensure null-termination
 
                     if (std::string(devname.data()) == *opts.gpu)
                         return device;

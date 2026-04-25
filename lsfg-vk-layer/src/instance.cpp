@@ -153,7 +153,7 @@ void Root::modifySwapchainCreateInfo(const vk::Vulkan& vk, VkSwapchainCreateInfo
     if (!this->active_profile.has_value())
         return;
 
-    VkSurfaceCapabilitiesKHR caps{};
+    VkSurfaceCapabilitiesKHR caps{}; // NOLINT (enum value 0)
     auto res = vk.fi().GetPhysicalDeviceSurfaceCapabilitiesKHR(
         vk.physdev(), createInfo.surface, &caps);
     if (res != VK_SUCCESS)

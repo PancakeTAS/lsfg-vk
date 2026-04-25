@@ -1,3 +1,4 @@
+UseColor: true
 Checks:
 # COMMON: Usually, we keep all checks enabled
 - "bugprone-*"
@@ -21,6 +22,9 @@ Checks:
 - -cppcoreguidelines-avoid-magic-numbers
 - -cppcoreguidelines-macro-usage
 - -bugprone-easily-swappable-parameters
+- -portability-avoid-pragma-once
 # Vulkan requires the use of reinterpret/const casts in many places
 - -cppcoreguidelines-pro-type-reinterpret-cast
 - -cppcoreguidelines-pro-type-const-cast
+CheckOptions:
+    cppcoreguidelines-pro-bounds-avoid-unchecked-container-access.ExcludeClasses: '::std::map;::std::unordered_map;::std::flat_map;::toml::table'

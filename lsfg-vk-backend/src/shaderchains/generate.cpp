@@ -53,5 +53,5 @@ Generate::Generate(const Ctx& ctx, size_t idx,
 }
 
 void Generate::render(const vk::Vulkan& vk, const vk::CommandBuffer& cmd, size_t idx) const {
-    this->sets[idx % 2].dispatch(vk, cmd, this->dispatchExtent);
+    this->sets.at(idx % 2).dispatch(vk, cmd, this->dispatchExtent);
 }

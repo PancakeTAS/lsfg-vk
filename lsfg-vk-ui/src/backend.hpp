@@ -56,7 +56,7 @@ namespace lsfgvk::ui {
 
 #define VALIDATE_AND_GET_PROFILE(default) \
     if (!isValidProfileIndex()) return default; \
-    auto& conf = this->m_profiles[static_cast<size_t>(this->m_profile_index)];
+    auto& conf = this->m_profiles.at(static_cast<size_t>(this->m_profile_index));
 
         [[nodiscard]] bool isValidProfileIndex() const {
             return this->m_profile_index >= 0 && std::cmp_less(this->m_profile_index, this->m_profiles.size());
@@ -131,7 +131,7 @@ namespace lsfgvk::ui {
 
 #define VALIDATE_AND_GET_PROFILE() \
     if (!isValidProfileIndex()) return; \
-    auto& conf = this->m_profiles[static_cast<size_t>(this->m_profile_index)];
+    auto& conf = this->m_profiles.at(static_cast<size_t>(this->m_profile_index));
 
         void multiplierUpdated(size_t multiplier) {
             VALIDATE_AND_GET_PROFILE()

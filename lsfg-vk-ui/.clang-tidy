@@ -1,3 +1,4 @@
+UseColor: true
 Checks:
 # COMMON: Usually, we keep all checks enabled
 - "bugprone-*"
@@ -21,5 +22,6 @@ Checks:
 - -cppcoreguidelines-avoid-magic-numbers
 - -cppcoreguidelines-macro-usage
 - -bugprone-easily-swappable-parameters
+- -portability-avoid-pragma-once
 # Qt requires use of raw pointers in many places
 - -cppcoreguidelines-owning-memory

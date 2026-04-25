@@ -70,6 +70,6 @@ void Delta0::prepare(std::vector<VkImage>& images) const {
 }
 
 void Delta0::render(const vk::Vulkan& vk, const vk::CommandBuffer& cmd, size_t idx) const {
-    this->sets0[idx % this->sets0.size()].dispatch(vk, cmd, dispatchExtent);
-    this->sets1[idx % this->sets1.size()].dispatch(vk, cmd, dispatchExtent);
+    this->sets0.at(idx % this->sets0.size()).dispatch(vk, cmd, dispatchExtent);
+    this->sets1.at(idx % this->sets1.size()).dispatch(vk, cmd, dispatchExtent);
 }

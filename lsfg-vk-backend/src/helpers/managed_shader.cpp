@@ -31,7 +31,7 @@ ManagedShaderBuilder& ManagedShaderBuilder::sampleds(
         count = images.size() - offset;
 
     for (size_t i = 0; i < count; ++i)
-        this->sampledImages.push_back(std::ref(images[offset + i]));
+        this->sampledImages.push_back(std::ref(images.at(offset + i)));
     return *this;
 }
 
@@ -48,7 +48,7 @@ ManagedShaderBuilder& ManagedShaderBuilder::storages(
         count = images.size() - offset;
 
     for (size_t i = 0; i < count; ++i)
-        this->storageImages.push_back(std::ref(images[offset + i]));
+        this->storageImages.push_back(std::ref(images.at(offset + i)));
     return *this;
 }
 

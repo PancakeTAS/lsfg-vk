@@ -85,7 +85,7 @@ namespace ls {
             : ptr(ptr), deleter(std::move(deleter)) {}
 
         /// get reference to owned object
-        T& get() const {
+        [[nodiscard]] T& get() const {
             assert(ptr != nullptr && "owned_ptr: no object owned");
             return *ptr;
         }

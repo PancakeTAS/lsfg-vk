@@ -4,6 +4,7 @@
 
 #include "config.hpp"
 
+#include <cstdint>
 #include <optional>
 #include <string>
 #include <utility>
@@ -23,7 +24,7 @@ namespace ls {
     };
 
     /// enum describing which identification method was used
-    enum class IdentType {
+    enum class IdentType : uint8_t {
         OVERRIDE, // identified by override
         EXECUTABLE, // identified by executable path
         WINE_EXECUTABLE, // identified by wine executable path

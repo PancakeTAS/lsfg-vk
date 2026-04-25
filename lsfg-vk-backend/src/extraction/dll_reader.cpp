@@ -20,59 +20,61 @@
 using namespace lsfgvk;
 using namespace lsfgvk::backend;
 
-/// DOS file header
-struct DOSHeader {
-    uint16_t magic; // 0x5A4D
-    std::array<uint16_t, 29> pad;
-    int32_t pe_offset; // file offset
-};
+namespace {
+    /// DOS file header
+    struct DOSHeader {
+        uint16_t magic; // 0x5A4D
+        std::array<uint16_t, 29> pad;
+        int32_t pe_offset; // file offset
+    };
 
-/// PE header
-struct PEHeader {
-    uint32_t signature; // "PE\0\0"
-    std::array<uint16_t, 1> pad1;
-    uint16_t sect_count;
-    std::array<uint16_t, 6> pad2;
-    uint16_t opt_hdr_size;
-    std::array<uint16_t, 1> pad3;
-};
+    /// PE header
+    struct PEHeader {
+        uint32_t signature; // "PE\0\0"
+        std::array<uint16_t, 1> pad1;
+        uint16_t sect_count;
+        std::array<uint16_t, 6> pad2;
+        uint16_t opt_hdr_size;
+        std::array<uint16_t, 1> pad3;
+    };
 
-/// (partial!) PE optional header
-struct PEOptionalHeader {
-    uint16_t magic; // 0x20B
-    std::array<uint16_t, 63> pad4;
-    std::pair<uint32_t, uint32_t> resource_table; // file offset/size
-};
+    /// (partial!) PE optional header
+    struct PEOptionalHeader {
+        uint16_t magic; // 0x20B
+        std::array<uint16_t, 63> pad4;
+        std::pair<uint32_t, uint32_t> resource_table; // file offset/size
+    };
 
-/// Section header
-struct SectionHeader {
-    std::array<uint16_t, 4> pad1;
-    uint32_t vsize; // virtual
-    uint32_t vaddress;
-    uint32_t fsize; // raw
-    uint32_t foffset;
-    std::array<uint16_t, 8> pad2;
-};
+    /// Section header
+    struct SectionHeader {
+        std::array<uint16_t, 4> pad1;
+        uint32_t vsize; // virtual
+        uint32_t vaddress;
+        uint32_t fsize; // raw
+        uint32_t foffset;
+        std::array<uint16_t, 8> pad2;
+    };
 
-/// Resource directory
-struct ResourceDirectory {
-    std::array<uint16_t, 6> pad;
-    uint16_t name_count;
-    uint16_t id_count;
-};
+    /// Resource directory
+    struct ResourceDirectory {
+        std::array<uint16_t, 6> pad;
+        uint16_t name_count;
+        uint16_t id_count;
+    };
 
-/// Resource directory entry
-struct ResourceDirectoryEntry {
-    uint32_t id;
-    uint32_t offset; // high bit = directory
-};
+    /// Resource directory entry
+    struct ResourceDirectoryEntry {
+        uint32_t id;
+        uint32_t offset; // high bit = directory
+    };
 
-/// Resource data entry
-struct ResourceDataEntry {
-    uint32_t offset;
-    uint32_t size;
-    std::array<uint32_t, 2> pad;
-};
+    /// Resource data entry
+    struct ResourceDataEntry {
+        uint32_t offset;
+        uint32_t size;
+        std::array<uint32_t, 2> pad;
+    };
+}
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wunknown-warning-option"

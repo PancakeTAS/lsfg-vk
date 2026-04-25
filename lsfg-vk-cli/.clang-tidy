@@ -1,3 +1,4 @@
+UseColor: true
 Checks:
 # COMMON: Usually, we keep all checks enabled
 - "bugprone-*"
@@ -21,5 +22,6 @@ Checks:
 - -cppcoreguidelines-avoid-magic-numbers
 - -cppcoreguidelines-macro-usage
 - -bugprone-easily-swappable-parameters
+- -portability-avoid-pragma-once
 # Pointer arithmetic is used plenty for parsing cli arguments
 - -cppcoreguidelines-pro-bounds-pointer-arithmetic

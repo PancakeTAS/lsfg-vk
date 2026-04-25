@@ -3,6 +3,7 @@
 #pragma once
 
 #include <chrono>
+#include <cstdint>
 #include <filesystem>
 #include <optional>
 #include <string>
@@ -15,11 +16,11 @@ namespace ls {
         /// optional dll override
         std::optional<std::string> dll;
         /// should fp16 be allowed
-        bool allow_fp16;
+        bool allow_fp16{};
     };
 
     /// pacing methods
-    enum class Pacing {
+    enum class Pacing : uint8_t {
         /// do not perform any pacing (vsync+novrr)
         None
     };

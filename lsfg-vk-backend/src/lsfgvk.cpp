@@ -168,7 +168,7 @@ Instance::Instance(
             funcs.GetPhysicalDeviceProperties2(device, &props);
 
             std::array<char, 256> devname = std::to_array(props.properties.deviceName);
-            devname[255] = '\0'; // ensure null-termination
+            devname.at(255) = '\0'; // ensure null-termination
 
             if (devicePicker(
                 std::string(devname.data()),
@@ -549,7 +549,7 @@ ContextImpl::ContextImpl(const InstanceImpl& instance,
     cmdbuf.submit(ctx.vk); // wait for completion
 }
 
-void Instance::scheduleFrames(Context& context) {
+void Instance::scheduleFrames(Context& context) { // NOLINT (static)
 #ifdef LSFGVK_TESTING_RENDERDOC
     const auto& impl = this->m_impl;
     if (impl->getRenderDocAPI()) {
