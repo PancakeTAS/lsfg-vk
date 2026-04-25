@@ -5,6 +5,7 @@
 #include "modules/pipeline/signature.hpp"
 #include "modules/pipeline/signature/helpers.hpp"
 #include "modules/pipeline/signature/image.hpp"
+#include "modules/pipeline/signature/pass.hpp"
 #include "utility/logger.hpp"
 #include "utility/vkhelper.hpp"
 
@@ -17,6 +18,7 @@
 #include <numeric>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 #include <unordered_map>
 #include <utility>
 #include <vector>
@@ -531,6 +533,43 @@ Pipeline::Pipeline(
     }
 
     LOG_DEBUG("  Created " << this->m_pipelines.size() << " pipelines")
+
+    // Build pipeline stages
+    std::unordered_map<std::string_view, uint32_t> indices;
+    for (const auto& stageSignature : signature.stages) {
+        auto& stage{this->m_stages.emplace_back()};
+        stage.substages.emplace_back();
+
+        for (const auto& passIdx : stageSignature.passes) { // (Sorted by shader)
+            const auto& pass{signature.passes.at(passIdx)};
+
+            for (const auto& resource : pass.inputs) {
+                if (!resource.idx())
+                    continue;
+                stage.sampledImages.push_back(*resource.idx());
+            }
+            for (const auto& resource : pass.outputs) {
+                if (!resource.idx())
+                    continue;
+                stage.storageImages.push_back(*resource.idx());
+            }
+
+            auto& lastPipeline{stage.substages.back().pipeline};
+            if (!lastPipeline.empty() && lastPipeline != pass.shader) {
+                stage.substages.emplace_back();
+            }
+
+            auto& substage{stage.substages.back()};
+            substage.pipeline = pass.shader;
+            substage.subiterations.push_back({
+                .iterationIndex = indices[substage.pipeline]++,
+                .dispatch = apply(extent, flowExtent, pass.dispatchOp),
+                .isSpecial = pass.flags & PassFlag::Special
+            });
+        }
+    }
+
+    LOG_DEBUG("  Built " << this->m_stages.size() << " pipeline stages")
 
     LOG_DEBUG("Finished building pipeline")
 }

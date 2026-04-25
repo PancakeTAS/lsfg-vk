@@ -170,6 +170,27 @@ namespace lsfgvk::pipeline {
 
         vk::UniquePipelineCache m_cache;
         std::unordered_map<std::string_view, vk::UniquePipeline> m_pipelines;
+
+        /// Single iteration of a sub-stage
+        struct SubIteration {
+            uint32_t iterationIndex{};
+            vk::Extent2D dispatch;
+            bool isSpecial{};
+        };
+
+        /// Sub-stage of an execution stage
+        struct SubStage {
+            std::string_view pipeline;
+            std::vector<SubIteration> subiterations;
+        };
+
+        /// Execution stage
+        struct Stage {
+            std::vector<SubStage> substages;
+            std::vector<size_t> sampledImages;
+            std::vector<size_t> storageImages;
+        };
+        std::vector<Stage> m_stages;
     };
 
 }
