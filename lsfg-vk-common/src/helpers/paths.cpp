@@ -22,7 +22,7 @@ std::filesystem::path ls::findShaderDll() {
         auto base = std::filesystem::path(xdgPath);
 
         for (const auto& frag : FRAGMENTS) {
-            auto full = base / frag / "Lossless Scaling" / "Lossless.dll";
+            auto full = base / frag / "Lossless Scaling" / "lsfg-vk.dll";
             if (std::filesystem::exists(full))
                 return full;
         }
@@ -34,16 +34,16 @@ std::filesystem::path ls::findShaderDll() {
         auto base = std::filesystem::path(homePath);
 
         for (const auto& frag : FRAGMENTS) {
-            auto full = base / frag / "Lossless Scaling" / "Lossless.dll";
+            auto full = base / frag / "Lossless Scaling" / "lsfg-vk.dll";
             if (std::filesystem::exists(full))
                 return full;
         }
     }
 
     // fallback to same directory
-    auto local = std::filesystem::current_path() / "Lossless.dll";
+    auto local = std::filesystem::current_path() / "lsfg-vk.dll";
     if (std::filesystem::exists(local))
         return local;
 
-    throw ls::error("unable to locate Lossless.dll, please set the path in the configuration");
+    throw ls::error("unable to locate lsfg-vk.dll, please set the path in the configuration");
 }

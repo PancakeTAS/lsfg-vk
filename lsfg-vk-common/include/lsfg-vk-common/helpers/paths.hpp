@@ -6,7 +6,7 @@
 
 namespace ls {
 
-    /// find the location of the Lossless.dll
+    /// find the location of the lsfg-vk.dll
     /// @returns the path to the DLL
     /// @throws ls::error if the DLL could not be found
     std::filesystem::path findShaderDll();

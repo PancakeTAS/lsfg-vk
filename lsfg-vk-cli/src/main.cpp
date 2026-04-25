@@ -37,7 +37,7 @@ SUBCOMMAND OPTIONS:
         -c, --config <PATH>             Optional path to the configuration file
 
     benchmark & debug
-        -d, --dll <PATH>                Path to Lossless.dll
+        -d, --dll <PATH>                Path to lsfg-vk.dll
         -a, --allow-fp16                Allow FP16 acceleration
         -w, --width <INT>               Width of the input frames
         -h, --height <INT>              Height of the input frames
