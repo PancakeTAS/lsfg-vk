@@ -4,13 +4,32 @@
 
 #include "library.hpp"
 #include "pipeline/signature.hpp"
+#include "pipeline/signature/image.hpp"
 #include "utility/vkhelper.hpp"
 
+#include <cstddef>
 #include <cstdint>
+#include <unordered_map>
+#include <vector>
 
 namespace lsfgvk::pipeline {
 
     // TODO: Improve API design
+
+    /// Handle to an external image
+    struct ExternalImage {
+        /// Image Extent
+        vk::Extent2D extent;
+        /// Image Format
+        vk::Format format;
+        /// Amount of layers in image
+        uint32_t layers;
+
+        /// Handle to the Vulkan image (not owned)
+        vk::Image image;
+        /// Handle to the Vulkan memory (not owned)
+        vk::DeviceMemory memory;
+    };
 
     /// Struct for the uniform buffer
     struct UniformBuffer {
@@ -63,6 +82,20 @@ namespace lsfgvk::pipeline {
             bool hdr
         );
 
+        ///
+        /// Get all external input images
+        ///
+        /// @return List of images
+        ///
+        [[nodiscard]] auto& getExternalInputs() const {
+            return this->m_externalInputs;
+        }
+
+        /// Get all external output images
+        [[nodiscard]] auto& getExternalOutputs() const {
+            return this->m_externalOutputs;
+        }
+
     private:
         /// Vulkan descriptor set & pipeline layout
         struct Layout {
@@ -70,6 +103,26 @@ namespace lsfgvk::pipeline {
             vk::UniquePipelineLayout pipelineLayout;
         };
         Layout m_layout;
+
+        /// Sub-image of a Vulkan image
+        struct SubImage {
+            vk::UniqueImage image;
+            vk::MemoryRequirements memory;
+            vk::UniqueImageView view;
+        };
+
+        /// Vulkan image created from an ImageSignature
+        struct Image {
+            ImageSignature signature;
+            std::vector<SubImage> subimages;
+            vk::DeviceSize size{};
+        };
+        std::vector<Image> m_images;
+
+        std::vector<ExternalImage> m_externalInputs;
+        std::vector<ExternalImage> m_externalOutputs;
+
+        std::unordered_map<size_t, vk::UniqueDeviceMemory> m_externalAllocations;
     };
 
 }

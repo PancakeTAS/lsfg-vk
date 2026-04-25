@@ -135,4 +135,63 @@ namespace vkhelper {
         size_t pushConstantSize
     );
 
+    /* Resources */
+
+    ///
+    /// Create a (unallocated) Vulkan image for lsfg-vk
+    ///
+    /// @param dld Dynamic dispatch loader
+    /// @param device Vulkan device
+    /// @param extent Image extent
+    /// @param format Image format
+    /// @param layers Amount of images
+    /// @param usage Image usage flags
+    /// @return RAII-wrapped Vulkan image
+    /// @throws std::runtime_error on failure
+    ///
+    vk::UniqueImage createImage(
+        const vk::detail::DispatchLoaderDynamic& dld,
+        const vk::Device& device,
+        vk::Extent2D extent,
+        vk::Format format,
+        uint32_t layers,
+        vk::ImageUsageFlags usage
+    );
+
+    ///
+    /// Align a memory allocation
+    ///
+    /// @param size Memory size
+    /// @param align Alignment
+    /// @return Aligned memory size
+    ///
+    inline vk::DeviceSize align(vk::DeviceSize size, vk::DeviceSize align) noexcept {
+        return (size + align - 1) & ~(align - 1);
+    }
+
+    /* External memory */
+
+    ///
+    /// Create a Vulkan image with a fd-exportable dedicated allocation
+    ///
+    /// @param dld Dynamic dispatch loader
+    /// @param device Vulkan device
+    /// @param physdev Physical device
+    /// @param extent Image extent
+    /// @param format Image format
+    /// @param layers Amount of images
+    /// @param usage Image usage flags
+    /// @return RAII-wrapped Vulkan image
+    /// @throws std::runtime_error on failure
+    ///
+    std::pair<vk::UniqueImage, vk::UniqueDeviceMemory> createExternalImage(
+        const vk::detail::DispatchLoaderDynamic& dld,
+        const vk::Device& device,
+        const vk::PhysicalDevice& physdev,
+        vk::Extent2D extent,
+        vk::Format format,
+        uint32_t layers,
+        vk::ImageUsageFlags usage
+    );
+
 }

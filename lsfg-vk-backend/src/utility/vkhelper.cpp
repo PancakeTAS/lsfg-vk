@@ -3,12 +3,14 @@
 #include "vkhelper.hpp"
 
 #include <array>
+#include <bitset>
 #include <cstddef>
 #include <cstdint>
 #include <cstdlib>
 #include <iomanip>
 #include <ios>
 #include <iostream>
+#include <optional>
 #include <span>
 #include <sstream>
 #include <stdexcept>
@@ -200,4 +202,103 @@ std::pair<vk::UniqueDescriptorSetLayout, vk::UniquePipelineLayout> vkhelper::cre
     auto pipelineLayout{device.createPipelineLayoutUnique(pipelineLayoutInfo, nullptr, dld)};
 
     return { std::move(descriptorSetLayout), std::move(pipelineLayout) };
+}
+
+/* Resources */
+
+vk::UniqueImage vkhelper::createImage(
+    const vk::detail::DispatchLoaderDynamic& dld,
+    const vk::Device& device,
+    vk::Extent2D extent,
+    vk::Format format,
+    uint32_t layers,
+    vk::ImageUsageFlags usage
+) {
+    const vk::ImageCreateInfo imageInfo{
+        .imageType = vk::ImageType::e2D,
+        .format = format,
+        .extent = {
+            .width = extent.width,
+            .height = extent.height,
+            .depth = 1
+        },
+        .mipLevels = 1,
+        .arrayLayers = layers,
+        .samples = vk::SampleCountFlagBits::e1,
+        .usage = usage
+    };
+    return device.createImageUnique(imageInfo, nullptr, dld);
+}
+
+/* External memory */
+
+std::pair<vk::UniqueImage, vk::UniqueDeviceMemory> vkhelper::createExternalImage(
+    const vk::detail::DispatchLoaderDynamic& dld,
+    const vk::Device& device,
+    const vk::PhysicalDevice& physdev,
+    vk::Extent2D extent,
+    vk::Format format,
+    uint32_t layers,
+    vk::ImageUsageFlags usage
+) {
+    const vk::ExternalMemoryImageCreateInfo externalInfo{
+        .handleTypes = vk::ExternalMemoryHandleTypeFlagBits::eOpaqueFd
+    };
+    const vk::ImageCreateInfo imageInfo{
+        .pNext = &externalInfo,
+        .imageType = vk::ImageType::e2D,
+        .format = format,
+        .extent = {
+            .width = extent.width,
+            .height = extent.height,
+            .depth = 1
+        },
+        .mipLevels = 1,
+        .arrayLayers = layers,
+        .samples = vk::SampleCountFlagBits::e1,
+        .usage = usage
+    };
+    auto image{device.createImageUnique(imageInfo, nullptr, dld)};
+
+    // Find a suitable memory type index
+    const auto memProps{physdev.getMemoryProperties2(dld)};
+    const auto requirements{device.getImageMemoryRequirements(*image, dld)};
+
+    std::optional<uint32_t> selectedTypeIdx{};
+    for (uint32_t i = 0; i < memProps.memoryProperties.memoryTypeCount; i++) {
+        if (!std::bitset<32>(requirements.memoryTypeBits).test(i))
+            continue;
+        const auto& memType{memProps.memoryProperties.memoryTypes.at(i)};
+
+        if (memType.propertyFlags & vk::MemoryPropertyFlagBits::eDeviceLocal) {
+            selectedTypeIdx = i;
+            break;
+        }
+    }
+
+    if (!selectedTypeIdx)
+        throw std::runtime_error("No suitable memory type found for allocation");
+
+    // Allocate memory
+    const vk::MemoryDedicatedAllocateInfo dedicatedInfo{
+        .image = *image,
+    };
+    const vk::ExportMemoryAllocateInfo exportInfo{
+        .pNext = &dedicatedInfo,
+        .handleTypes = vk::ExternalMemoryHandleTypeFlagBits::eOpaqueFd
+    };
+    const vk::MemoryAllocateInfo allocInfo{
+        .pNext = &exportInfo,
+        .allocationSize = requirements.size,
+        .memoryTypeIndex = *selectedTypeIdx
+    };
+    auto memory{device.allocateMemoryUnique(allocInfo, nullptr, dld)};
+
+    // Bind memory
+    device.bindImageMemory(*image, *memory, 0, dld);
+
+    return{
+        std::move(image),
+        std::move(memory)
+    };
 }
