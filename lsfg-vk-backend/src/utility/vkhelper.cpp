@@ -230,6 +230,51 @@ vk::UniqueImage vkhelper::createImage(
     return device.createImageUnique(imageInfo, nullptr, dld);
 }
 
+/* Memory allocations */
+
+vk::UniqueDeviceMemory vkhelper::allocateMemory(
+    const vk::detail::DispatchLoaderDynamic& dld,
+    const vk::Device& device,
+    const vk::PhysicalDevice& physdev,
+    size_t size,
+    std::bitset<32> types,
+    bool hostVisible
+) {
+    // Find a suitable memory type index
+    const auto memProps{physdev.getMemoryProperties2(dld)};
+
+    std::optional<uint32_t> selectedTypeIdx{};
+    for (uint32_t i = 0; i < memProps.memoryProperties.memoryTypeCount; i++) {
+        if (!types.test(i))
+            continue;
+        const auto& memType{memProps.memoryProperties.memoryTypes.at(i)};
+
+        const bool isHostVisible{
+            memType.propertyFlags & vk::MemoryPropertyFlagBits::eHostVisible &&
+            memType.propertyFlags & vk::MemoryPropertyFlagBits::eHostCoherent
+        };
+        if (hostVisible && !isHostVisible)
+            continue;
+
+        selectedTypeIdx = i;
+
+        if (memType.propertyFlags & vk::MemoryPropertyFlagBits::eDeviceLocal)
+            break;
+
+        // Fallback to host-visible memory if no device-local memory is available
+    }
+
+    if (!selectedTypeIdx)
+        throw std::runtime_error("No suitable memory type found for allocation");
+
+    // Allocate memory
+    const vk::MemoryAllocateInfo allocInfo{
+        .allocationSize = size,
+        .memoryTypeIndex = *selectedTypeIdx
+    };
+    return device.allocateMemoryUnique(allocInfo, nullptr, dld);
+}
+
 /* External memory */
 
 std::pair<vk::UniqueImage, vk::UniqueDeviceMemory> vkhelper::createExternalImage(

@@ -13,6 +13,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <ios>
+#include <numeric>
 #include <stdexcept>
 #include <unordered_map>
 #include <utility>
@@ -227,6 +228,129 @@ Pipeline::Pipeline(
 
     LOG_DEBUG("  Created " << this->m_images.size() << " images with common alignment "
         << alignment << " and memory type bits " << std::hex << types << std::dec)
+
+    // Fill in image sizes in respect to alignment
+    for (auto& image : this->m_images) {
+        if (image.signature.flags & (ImageFlag::ExternalInput | ImageFlag::ExternalOutput))
+            continue; // External inputs have dedicated allocations
+
+        for (const auto& subimage : image.subimages) {
+            image.size += vkhelper::align(subimage.memory.size, alignment);
+        }
+    }
+
+    // Calculate optimal-ish allocations using heuristics & greedy fit strategy
+    std::vector<size_t> images(signature.images.size());
+    std::iota(images.begin(), images.end(), 0);
+
+    std::ranges::sort(images, [&](const auto& a, const auto& b) {
+        return this->m_images.at(a).size > this->m_images.at(b).size;
+    });
+
+    std::vector<size_t> placements;
+    for (const auto& imageIdx : images) {
+        const auto& image{this->m_images.at(imageIdx)};
+        if (image.signature.flags & (ImageFlag::ExternalInput | ImageFlag::ExternalOutput))
+            continue;
+
+        auto& allocation{
+            (image.signature.flags & ImageFlag::Pinned)
+                ? this->m_allocations.at(1)
+                : this->m_allocations.at(0)
+        };
+        auto& segment{allocation.segments.emplace_back()};
+
+        vk::DeviceSize size{};
+        for (const auto& subimage : image.subimages) {
+            const vk::DeviceSize alignedSize{vkhelper::align(subimage.memory.size, alignment)};
+            segment.subsegments.push_back({
+                .size = alignedSize,
+                .offset = size
+            });
+
+            size += alignedSize;
+        }
+
+        if (image.signature.flags & ImageFlag::Pinned) {
+            segment = {
+                .imageIdx = imageIdx,
+                .subsegments = segment.subsegments,
+                .size = size,
+                .offset = allocation.size,
+            };
+            allocation.size += size;
+        } else {
+            const auto lifetime{image.signature.lifetime};
+
+            vk::DeviceSize offset{};
+            for (const auto& otherSegmentIdx : placements) {
+                const auto& otherSegment{allocation.segments.at(otherSegmentIdx)};
+                if (otherSegment.imageIdx == imageIdx)
+                    continue; // Skip self
+
+                const auto& otherImage{this->m_images.at(otherSegment.imageIdx)};
+                const auto& otherLifetime{otherImage.signature.lifetime};
+
+                if (lifetime.first > otherLifetime.second ||
+                    lifetime.second < otherLifetime.first)
+                    continue; // Skip horizontally non-overlapping
+
+                if (offset >= (otherSegment.offset + otherSegment.size) ||
+                    otherSegment.offset >= (offset + size))
+                    continue; // Skip vertically non-overlapping
+
+                offset = otherSegment.offset + otherSegment.size;
+            }
+
+            allocation.size = std::max(allocation.size, offset + size);
+            segment = {
+                .imageIdx = imageIdx,
+                .subsegments = segment.subsegments,
+                .size = size,
+                .offset = offset,
+            };
+
+            const size_t i{allocation.segments.size() - 1};
+            auto it{std::ranges::upper_bound(placements, i,
+                [&](const auto& a, const auto& b) {
+                    return allocation.segments.at(a).offset < allocation.segments.at(b).offset;
+                }
+            )};
+            placements.insert(it, i);
+        }
+    }
+
+    LOG_DEBUG("  Computed " << this->m_allocations.size() << " memory allocations")
+
+    // Allocate the memory & bind the images
+    for (auto& allocation : this->m_allocations) {
+        allocation.memory = vkhelper::allocateMemory(
+            dld,
+            device,
+            physdev,
+            allocation.size,
+            types
+        );
+
+        for (const auto& segment : allocation.segments) {
+            const auto& image{this->m_images.at(segment.imageIdx)};
+
+            for (size_t i = 0; i < image.subimages.size(); i++) {
+                const auto& subsegment{segment.subsegments.at(i)};
+                const auto& subimage{image.subimages.at(i)};
+
+                device.bindImageMemory(
+                    *subimage.image,
+                    *allocation.memory,
+                    segment.offset + subsegment.offset,
+                    dld
+                );
+            }
+        }
+
+        LOG_DEBUG("  Allocated memory of size " << allocation.size << " for "
+            << allocation.segments.size() << " segments")
+    }
 
     LOG_DEBUG("Finished building pipeline")
 }

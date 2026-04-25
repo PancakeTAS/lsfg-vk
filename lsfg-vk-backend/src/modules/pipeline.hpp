@@ -7,6 +7,7 @@
 #include "pipeline/signature/image.hpp"
 #include "utility/vkhelper.hpp"
 
+#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <unordered_map>
@@ -122,6 +123,27 @@ namespace lsfgvk::pipeline {
         std::vector<ExternalImage> m_externalInputs;
         std::vector<ExternalImage> m_externalOutputs;
 
+        /// Memory allocation sub-segment
+        struct MemorySubSegment {
+            vk::DeviceSize size{};
+            vk::DeviceSize offset{}; // Offset in memory segment
+        };
+
+        /// Memory allocation segment
+        struct MemorySegment {
+            size_t imageIdx{};
+            std::vector<MemorySubSegment> subsegments;
+            vk::DeviceSize size{};
+            vk::DeviceSize offset{}; // Offset in allocation
+        };
+
+        /// Memory allocation info
+        struct AllocationInfo {
+            vk::UniqueDeviceMemory memory;
+            std::vector<MemorySegment> segments;
+            vk::DeviceSize size{};
+        };
+        std::array<AllocationInfo, 2> m_allocations;
         std::unordered_map<size_t, vk::UniqueDeviceMemory> m_externalAllocations;
     };
 

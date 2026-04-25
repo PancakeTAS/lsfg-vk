@@ -16,6 +16,7 @@
 #include <vulkan/vulkan_structs.hpp>
 // IWYU pragma: end_exports
 
+#include <bitset>
 #include <cstddef>
 #include <cstdint>
 #include <span>
@@ -158,6 +159,29 @@ namespace vkhelper {
         vk::ImageUsageFlags usage
     );
 
+    /* Memory allocations */
+
+    ///
+    /// Create a Vulkan memory allocation
+    ///
+    /// @param dld Dynamic dispatch loader
+    /// @param device Vulkan device
+    /// @param physdev Physical device
+    /// @param size Allocation size
+    /// @param types Valid memory type bits
+    /// @param hostVisible Require host visible memory
+    /// @return RAII-wrapped Vulkan device memory
+    /// @throws std::runtime_error on failure
+    ///
+    vk::UniqueDeviceMemory allocateMemory(
+        const vk::detail::DispatchLoaderDynamic& dld,
+        const vk::Device& device,
+        const vk::PhysicalDevice& physdev,
+        size_t size,
+        std::bitset<32> types,
+        bool hostVisible = false
+    );
+
     ///
     /// Align a memory allocation
     ///
@@ -168,8 +192,6 @@ namespace vkhelper {
     inline vk::DeviceSize align(vk::DeviceSize size, vk::DeviceSize align) noexcept {
         return (size + align - 1) & ~(align - 1);
     }
-
-    /* External memory */
 
     ///
     /// Create a Vulkan image with a fd-exportable dedicated allocation
