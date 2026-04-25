@@ -571,5 +571,217 @@ Pipeline::Pipeline(
 
     LOG_DEBUG("  Built " << this->m_stages.size() << " pipeline stages")
 
+    // Transition all images into general layout
+    this->m_pool = vkhelper::createCommandPool(
+        dld,
+        device,
+        queueFamilyIndex
+    );
+
+    std::vector<vk::ImageMemoryBarrier2KHR> barriers;
+    for (const auto& image : this->m_images) {
+        for (const auto& subimage : image.subimages) {
+            barriers.push_back({
+                .newLayout = vk::ImageLayout::eGeneral,
+                .image = *subimage.image,
+                .subresourceRange = {
+                    .aspectMask = vk::ImageAspectFlagBits::eColor,
+                    .levelCount = 1,
+                    .layerCount = image.subimages.size() == 1 ? image.signature.count : 1
+                }
+            });
+        }
+    }
+
+    const auto layoutCmdbuf{
+        vkhelper::createCommandBuffer(dld, device, *this->m_pool)
+    };
+
+    layoutCmdbuf->begin({ .flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit }, dld);
+    layoutCmdbuf->pipelineBarrier2KHR({
+        .imageMemoryBarrierCount = static_cast<uint32_t>(barriers.size()),
+        .pImageMemoryBarriers = barriers.data()
+    }, dld);
+    layoutCmdbuf->end(dld);
+
+    const auto fence{device.createFenceUnique({}, nullptr, dld)};
+    queue.submit(
+        {{
+            .commandBufferCount = 1,
+            .pCommandBuffers = &*layoutCmdbuf
+        }},
+        *fence,
+        dld
+    );
+    if (device.waitForFences(*fence, VK_TRUE, 50'000'000, dld) != vk::Result::eSuccess) {
+        throw std::runtime_error("Failed to wait for image layout transition fence");
+    }
+
+    LOG_DEBUG("  Transitioned all " << this->m_images.size() << " images into general layout")
+
+    for (size_t i = 0; i < signature.splitIndices.size() + 1; i++) {
+        auto& cmdbuf{this->m_cmdbufs.emplace_back()};
+        cmdbuf = vkhelper::createCommandBuffer(dld, device, *this->m_pool);
+        cmdbuf->begin({ .flags = vk::CommandBufferUsageFlagBits::eSimultaneousUse }, dld);
+
+        cmdbuf->bindDescriptorSets(
+            vk::PipelineBindPoint::eCompute,
+            *this->m_layout.pipelineLayout,
+            0,
+            this->m_descriptorSet.set,
+            {},
+            dld
+        );
+    }
+
+    size_t currentStageIndex{0};
+    size_t currentStageBound{
+        signature.splitIndices.empty() ? signature.passes.size() : signature.splitIndices.front()
+    };
+
+    std::vector<vk::ImageMemoryBarrier2KHR> barrierVector;
+    barrierVector.reserve(16);
+
+    std::unordered_map<VkImage, vk::ImageMemoryBarrier2KHR> stageBarriers;
+    for (size_t i = 0; i < this->m_stages.size(); i++) {
+        if (i == currentStageBound) {
+            currentStageIndex++;
+            currentStageBound = currentStageIndex < signature.splitIndices.size() ?
+                signature.splitIndices.at(currentStageIndex) : signature.passes.size();
+        }
+
+        const auto& stage{this->m_stages.at(i)};
+        const auto& cmdbuf{this->m_cmdbufs.at(currentStageIndex)};
+
+        // Append barriers for this stage
+        for (const auto& sampledImage : stage.sampledImages) {
+            const auto& image = this->m_images.at(sampledImage);
+            for (const auto& subimage : image.subimages) {
+                const vk::Image& imageHandle{*subimage.image};
+                if (stageBarriers.contains(imageHandle)) {
+                    stageBarriers[imageHandle].dstAccessMask = vk::AccessFlagBits2::eShaderRead;
+                    continue;
+                }
+
+                stageBarriers[imageHandle] = {
+                    .srcStageMask = vk::PipelineStageFlagBits2::eComputeShader,
+                    .srcAccessMask = vk::AccessFlagBits2::eNone,
+                    .dstStageMask = vk::PipelineStageFlagBits2::eComputeShader,
+                    .dstAccessMask = vk::AccessFlagBits2::eShaderRead,
+                    .image = *subimage.image,
+                    .subresourceRange = {
+                        .aspectMask = vk::ImageAspectFlagBits::eColor,
+                        .levelCount = 1,
+                        .layerCount = image.subimages.size() == 1 ? image.signature.count : 1
+                    }
+                };
+            }
+        }
+        for (const auto& storageImage : stage.storageImages) {
+            const auto& image = this->m_images.at(storageImage);
+            for (const auto& subimage : image.subimages) {
+                const vk::Image& imageHandle{*subimage.image};
+                if (stageBarriers.contains(imageHandle)) {
+                    stageBarriers[imageHandle].dstAccessMask = vk::AccessFlagBits2::eShaderWrite;
+                    continue;
+                }
+
+                stageBarriers[imageHandle] = {
+                    .srcStageMask = vk::PipelineStageFlagBits2::eComputeShader,
+                    .srcAccessMask = vk::AccessFlagBits2::eNone,
+                    .dstStageMask = vk::PipelineStageFlagBits2::eComputeShader,
+                    .dstAccessMask = vk::AccessFlagBits2::eShaderWrite,
+                    .image = *subimage.image,
+                    .subresourceRange = {
+                        .aspectMask = vk::ImageAspectFlagBits::eColor,
+                        .levelCount = 1,
+                        .layerCount = image.subimages.size() == 1 ? image.signature.count : 1
+                    }
+                };
+            }
+        }
+
+
+        barrierVector.clear();
+        for (const auto& [_, barrier] : stageBarriers) // NOLINT (nondeterministic order)
+            barrierVector.push_back(barrier);
+        stageBarriers.clear();
+        cmdbuf->pipelineBarrier2KHR({
+            .imageMemoryBarrierCount = static_cast<uint32_t>(barrierVector.size()),
+            .pImageMemoryBarriers = barrierVector.data()
+        }, dld);
+
+        for (const auto& substage : stage.substages) {
+            // Bind shader pipeline for this stage
+            const auto& pipeline = this->m_pipelines.at(substage.pipeline);
+            cmdbuf->bindPipeline(vk::PipelineBindPoint::eCompute, *pipeline, dld);
+
+            // Dispatch all subiterations for this stage
+            for (const auto& subiteration : substage.subiterations) {
+                const PushConstants pushConstants{
+                    .specialFlag = subiteration.isSpecial ? 1U : 0U,
+                    .subiteration = subiteration.iterationIndex
+                };
+                cmdbuf->pushConstants(
+                    *this->m_layout.pipelineLayout,
+                    vk::ShaderStageFlagBits::eCompute,
+                    0,
+                    sizeof(PushConstants),
+                    &pushConstants,
+                    dld
+                );
+
+                const auto& dispatch{subiteration.dispatch};
+                cmdbuf->dispatch(dispatch.width, dispatch.height, 1, dld);
+            }
+        }
+
+        // Append barriers for next stage
+        for (const auto& sampledImage : stage.sampledImages) {
+            const auto& image = this->m_images.at(sampledImage);
+            for (const auto& subimage : image.subimages) {
+                stageBarriers[*subimage.image] = {
+                    .srcStageMask = vk::PipelineStageFlagBits2::eComputeShader,
+                    .srcAccessMask = vk::AccessFlagBits2::eShaderRead,
+                    .dstStageMask = vk::PipelineStageFlagBits2::eComputeShader,
+                    .dstAccessMask = vk::AccessFlagBits2::eShaderRead,
+                    .image = *subimage.image,
+                    .subresourceRange = {
+                        .aspectMask = vk::ImageAspectFlagBits::eColor,
+                        .levelCount = 1,
+                        .layerCount = image.subimages.size() == 1 ? image.signature.count : 1
+                    }
+                };
+            }
+        }
+        for (const auto& storageImage : stage.storageImages) {
+            const auto& image = this->m_images.at(storageImage);
+            for (const auto& subimage : image.subimages) {
+                stageBarriers[*subimage.image] = {
+                    .srcStageMask = vk::PipelineStageFlagBits2::eComputeShader,
+                    .srcAccessMask = vk::AccessFlagBits2::eShaderWrite,
+                    .dstStageMask = vk::PipelineStageFlagBits2::eComputeShader,
+                    .dstAccessMask = vk::AccessFlagBits2::eShaderRead,
+                    .image = *subimage.image,
+                    .subresourceRange = {
+                        .aspectMask = vk::ImageAspectFlagBits::eColor,
+                        .levelCount = 1,
+                        .layerCount = image.subimages.size() == 1 ? image.signature.count : 1
+                    }
+                };
+            }
+        }
+
+        // Skip barriers on switch between passes
+        if (i + 1 == currentStageBound) {
+            stageBarriers.clear();
+        }
+    }
+
+    for (auto& cmdbuf : this->m_cmdbufs) {
+        cmdbuf->end(dld);
+    }
+
+    LOG_DEBUG("  Recorded command buffers for pipeline execution")
     LOG_DEBUG("Finished building pipeline")
 }

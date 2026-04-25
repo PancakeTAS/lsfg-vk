@@ -306,6 +306,51 @@ namespace vkhelper {
         uint32_t layers
     );
 
+    /* Command buffers */
+
+    ///
+    /// Create a Vulkan command pool for lsfg-vk
+    ///
+    /// @param dld Dynamic dispatch loader
+    /// @param device Vulkan device
+    /// @param qfi Queue family index
+    /// @return RAII-wrapped Vulkan command pool
+    /// @throws std::runtime_error on failure
+    ///
+    vk::UniqueCommandPool createCommandPool(
+        const vk::detail::DispatchLoaderDynamic& dld,
+        const vk::Device& device,
+        uint32_t qfi
+    );
+
+    ///
+    /// Create a Vulkan command buffer for lsfg-vk
+    ///
+    /// @param dld Dynamic dispatch loader
+    /// @param device Vulkan device
+    /// @param cmdpool Vulkan command pool
+    /// @return RAII-wrapped Vulkan command buffer
+    /// @throws std::runtime_error on failure
+    ///
+    vk::UniqueCommandBuffer createCommandBuffer(
+        const vk::detail::DispatchLoaderDynamic& dld,
+        const vk::Device& device,
+        const vk::CommandPool& cmdpool
+    );
+
+    ///
+    /// Create a fence
+    ///
+    /// @param dld Dynamic dispatch loader
+    /// @param device Vulkan device
+    /// @return RAII-wrapped Vulkan fence
+    /// @throws std::runtime_error on failure
+    ///
+    vk::UniqueFence createFence(
+        const vk::detail::DispatchLoaderDynamic& dld,
+        const vk::Device& device
+    );
+
     /* External memory */
 
     ///

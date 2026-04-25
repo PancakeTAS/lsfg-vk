@@ -109,6 +109,15 @@ namespace lsfgvk::pipeline {
             return *this->m_descriptorSet.mappedBuffer.get();
         }
 
+        ///
+        /// Get all command buffers
+        ///
+        /// @return List of command buffers
+        ///
+        [[nodiscard]] auto& getCmdbufs() const {
+            return this->m_cmdbufs;
+        }
+
     private:
         /// Vulkan descriptor set & pipeline layout
         struct Layout {
@@ -191,6 +200,9 @@ namespace lsfgvk::pipeline {
             std::vector<size_t> storageImages;
         };
         std::vector<Stage> m_stages;
+
+        vk::UniqueCommandPool m_pool;
+        std::vector<vk::UniqueCommandBuffer> m_cmdbufs;
     };
 
 }

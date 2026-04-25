@@ -445,6 +445,38 @@ vk::UniqueImageView vkhelper::createImageView(
     return device.createImageViewUnique(viewInfo, nullptr, dld);
 }
 
+/* Command buffers */
+
+vk::UniqueCommandPool vkhelper::createCommandPool(
+    const vk::detail::DispatchLoaderDynamic& dld,
+    const vk::Device& device,
+    uint32_t qfi
+) {
+    const vk::CommandPoolCreateInfo cmdpoolInfo{
+        .queueFamilyIndex = qfi
+    };
+    return device.createCommandPoolUnique(cmdpoolInfo, nullptr, dld);
+}
+
+vk::UniqueCommandBuffer vkhelper::createCommandBuffer(
+    const vk::detail::DispatchLoaderDynamic& dld,
+    const vk::Device& device,
+    const vk::CommandPool& cmdpool
+) {
+    const vk::CommandBufferAllocateInfo cmdbufInfo{
+        .commandPool = cmdpool,
+        .commandBufferCount = 1
+    };
+    return { std::move(device.allocateCommandBuffersUnique(cmdbufInfo, dld).front()) };
+}
+
+vk::UniqueFence vkhelper::createFence(
+    const vk::detail::DispatchLoaderDynamic& dld,
+    const vk::Device& device
+) {
+    return device.createFenceUnique({}, nullptr, dld);
+}
+
 /* External memory */
 
 std::pair<vk::UniqueImage, vk::UniqueDeviceMemory> vkhelper::createExternalImage(
