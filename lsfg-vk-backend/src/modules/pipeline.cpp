@@ -6,14 +6,12 @@
 #include "modules/pipeline/signature/helpers.hpp"
 #include "modules/pipeline/signature/image.hpp"
 #include "modules/pipeline/signature/pass.hpp"
-#include "utility/logger.hpp"
 #include "utility/vkhelper.hpp"
 
 #include <algorithm>
 #include <array>
 #include <cstddef>
 #include <cstdint>
-#include <ios>
 #include <memory>
 #include <numeric>
 #include <stdexcept>
@@ -54,10 +52,6 @@ Pipeline::Pipeline(
     bool perf,
     bool hdr
 ) {
-    LOG_DEBUG("Building pipeline for "
-        << extent.width << "x" << extent.height
-        << " at " << flow << " flow")
-
     // Build the Vulkan descriptor set layout
     uint32_t sampledImageCount{};
     uint32_t storageImageCount{};
@@ -114,10 +108,6 @@ Pipeline::Pipeline(
         .layout = std::move(layout),
         .pipelineLayout = std::move(pipelineLayout)
     };
-
-    LOG_DEBUG("  Built descriptor set layout with " << bindings.size() << " bindings ("
-        << sampledImageCount << " sampled images, "
-        << storageImageCount << " storage images)")
 
     // Create the Vulkan images
     size_t alignment{};
@@ -186,12 +176,6 @@ Pipeline::Pipeline(
                     });
                 }
 
-                LOG_DEBUG("  Allocated memory of size "
-                    << [&]() {
-                        const auto& reqs{device.getImageMemoryRequirements(*subimage, dld)};
-                        return reqs.size;
-                    }() << " for external image " << imageIdx)
-
                 image.subimages.push_back({
                     .image = std::move(subimage)
                 });
@@ -229,9 +213,6 @@ Pipeline::Pipeline(
 
     if (types == 0)
         throw std::runtime_error("No compatible memory type found for pipeline images");
-
-    LOG_DEBUG("  Created " << this->m_images.size() << " images with common alignment "
-        << alignment << " and memory type bits " << std::hex << types << std::dec)
 
     // Fill in image sizes in respect to alignment
     for (auto& image : this->m_images) {
@@ -324,8 +305,6 @@ Pipeline::Pipeline(
         }
     }
 
-    LOG_DEBUG("  Computed " << this->m_allocations.size() << " memory allocations")
-
     // Allocate the memory & bind the images
     for (auto& allocation : this->m_allocations) {
         allocation.memory = vkhelper::allocateMemory(
@@ -351,9 +330,6 @@ Pipeline::Pipeline(
                 );
             }
         }
-
-        LOG_DEBUG("  Allocated memory of size " << allocation.size << " for "
-            << allocation.segments.size() << " segments")
     }
 
     // Create image views
@@ -496,8 +472,6 @@ Pipeline::Pipeline(
 
     device.updateDescriptorSets(writeInfos, {}, dld);
 
-    LOG_DEBUG("  Updated descriptor set with " << writeInfos.size() << " bindings")
-
     // Build all shader pipelines
     std::vector<vk::ComputePipelineCreateInfo> pipelineCreateInfos;
     for (const auto& [name, variant] : signature.shaders) {
@@ -535,8 +509,6 @@ Pipeline::Pipeline(
     };
 
     if (!isCacheValid) {
-        LOG_DEBUG("  Pipeline cache is not valid, persisting new cache data")
-
         vkhelper::persistPipelineCache(
             dld,
             device,
@@ -551,8 +523,6 @@ Pipeline::Pipeline(
         const auto& name{signature.shaders.at(i).first};
         this->m_pipelines.emplace(name, std::move(pipelines.at(i)));
     }
-
-    LOG_DEBUG("  Created " << this->m_pipelines.size() << " pipelines")
 
     // Build pipeline stages
     std::unordered_map<std::string_view, uint32_t> indices;
@@ -588,8 +558,6 @@ Pipeline::Pipeline(
             });
         }
     }
-
-    LOG_DEBUG("  Built " << this->m_stages.size() << " pipeline stages")
 
     // Transition all images into general layout
     this->m_pool = vkhelper::createCommandPool(
@@ -636,8 +604,6 @@ Pipeline::Pipeline(
     if (device.waitForFences(*fence, VK_TRUE, 50'000'000, dld) != vk::Result::eSuccess) {
         throw std::runtime_error("Failed to wait for image layout transition fence");
     }
-
-    LOG_DEBUG("  Transitioned all " << this->m_images.size() << " images into general layout")
 
     for (size_t i = 0; i < signature.splitIndices.size() + 1; i++) {
         auto& cmdbuf{this->m_cmdbufs.emplace_back()};
@@ -801,9 +767,6 @@ Pipeline::Pipeline(
     for (auto& cmdbuf : this->m_cmdbufs) {
         cmdbuf->end(dld);
     }
-
-    LOG_DEBUG("  Recorded command buffers for pipeline execution")
-    LOG_DEBUG("Finished building pipeline")
 }
 
 vk::CommandBuffer Pipeline::buildTransCmdbuf(

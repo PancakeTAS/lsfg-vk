@@ -2,18 +2,15 @@
 
 #include "library.hpp"
 #include "library/dll.hpp"
-#include "utility/logger.hpp"
 #include "utility/vkhelper.hpp"
 
 #include <array>
 #include <cstdint>
 #include <filesystem>
-#include <iomanip>
 #include <stdexcept>
 #include <string>
 #include <string_view>
 #include <utility>
-#include <vector>
 
 /// All base shaders in the library.
 const std::array<std::pair<std::string_view, uint32_t>, 3> BASE_LIBRARY{{
@@ -58,8 +55,6 @@ ShaderLibrary::ShaderLibrary(
     bool halfPrecision,
     const std::filesystem::path& dll
 ) {
-    LOG_DEBUG("Loading shader library from DLL: " << dll)
-
     if (!std::filesystem::exists(dll)) {
         throw std::runtime_error("The specified shader DLL does not exist");
     }
@@ -73,11 +68,6 @@ ShaderLibrary::ShaderLibrary(
             throw std::runtime_error(
                 "Unable to find base shader '" + std::string(name) + "' in DLL"
             );
-
-        LOG_DEBUG("  " << std::setw(2) << idx
-            << ": name=" << name
-            << ", rid=" << rid
-            << ", size=" << (it->second.size() * 4) << " bytes")
 
         this->m_baseShaders[name] = vkhelper::createShaderModule(dld, device, it->second);
     }
@@ -95,19 +85,7 @@ ShaderLibrary::ShaderLibrary(
                 "Unable to find shader '" + std::string(name) + "' in DLL"
             );
 
-        LOG_DEBUG("  " << std::setw(2) << idx
-            << ": name=" << std::setw(8) << name
-            << ", [Q] "
-                << "rid="<< std::setw(2) << rid.first
-                << ", size="<< std::setw(5) << (qit->second.size() * 4) << " bytes"
-            << ", [P] "
-                << "rid="<< std::setw(2) << rid.second
-                << ", size="<< std::setw(5) << (pit->second.size() * 4) << " bytes")
-
         this->m_qualityShaders[name] = vkhelper::createShaderModule(dld, device, qit->second);
         this->m_performanceShaders[name] = vkhelper::createShaderModule(dld, device, pit->second);
-
     }
-
-    LOG_DEBUG("Finished loading shader library")
 }

@@ -2,7 +2,6 @@ set(BACKEND_SOURCES
     "src/modules/library/dll.cpp"
     "src/modules/library.cpp"
     "src/modules/pipeline.cpp"
-    "src/utility/logger.cpp"
     "src/utility/pipelines.cpp"
     "src/utility/vkhelper.cpp"
     "src/lsfgvk.cpp")
