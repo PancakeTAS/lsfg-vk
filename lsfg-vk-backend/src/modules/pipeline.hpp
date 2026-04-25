@@ -10,7 +10,10 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <memory>
+#include <string_view>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
 namespace lsfgvk::pipeline {
@@ -97,6 +100,15 @@ namespace lsfgvk::pipeline {
             return this->m_externalOutputs;
         }
 
+        ///
+        /// Get the mapped uniform buffer
+        ///
+        /// @return Mapped uniform buffer
+        ///
+        [[nodiscard]] auto* getMappedBuffer() const {
+            return *this->m_descriptorSet.mappedBuffer.get();
+        }
+
     private:
         /// Vulkan descriptor set & pipeline layout
         struct Layout {
@@ -145,6 +157,19 @@ namespace lsfgvk::pipeline {
         };
         std::array<AllocationInfo, 2> m_allocations;
         std::unordered_map<size_t, vk::UniqueDeviceMemory> m_externalAllocations;
+
+        /// Vulkan descriptor set
+        struct DescriptorSet {
+            vk::UniqueDescriptorPool pool;
+            vk::DescriptorSet set; // Can not be freed
+            std::pair<vk::UniqueBuffer, vk::UniqueDeviceMemory> buffer;
+            std::shared_ptr<UniformBuffer*> mappedBuffer;
+            std::array<vk::UniqueSampler, 3> samplers;
+        };
+        DescriptorSet m_descriptorSet;
+
+        vk::UniquePipelineCache m_cache;
+        std::unordered_map<std::string_view, vk::UniquePipeline> m_pipelines;
     };
 
 }

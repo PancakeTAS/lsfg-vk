@@ -13,8 +13,10 @@
 #include <cstddef>
 #include <cstdint>
 #include <ios>
+#include <memory>
 #include <numeric>
 #include <stdexcept>
+#include <string>
 #include <unordered_map>
 #include <utility>
 #include <vector>
@@ -351,6 +353,184 @@ Pipeline::Pipeline(
         LOG_DEBUG("  Allocated memory of size " << allocation.size << " for "
             << allocation.segments.size() << " segments")
     }
+
+    // Create image views
+    for (auto& image : this->m_images) {
+        const bool hasHdrVariant{image.signature.flags & ImageFlag::HdrVariant};
+        const bool isLayered{image.subimages.size() == 1 && image.signature.count > 1};
+
+        for (auto& subimage : image.subimages) {
+            subimage.view = vkhelper::createImageView(
+                dld,
+                device,
+                *subimage.image,
+                static_cast<vk::Format>((hasHdrVariant && hdr)
+                    ? image.signature.hdrFormat : image.signature.format),
+                isLayered ? image.signature.count : 1
+            );
+        }
+    }
+
+    // Create the descriptor set & required resources
+    auto [pool, set] = vkhelper::createDescriptorSet(
+        dld,
+        device,
+        *this->m_layout.layout,
+        3, 1, sampledImageCount, storageImageCount
+    );
+    this->m_descriptorSet.pool = std::move(pool);
+    this->m_descriptorSet.set = set;
+
+    const UniformBuffer buf{
+        .advancedColorKind = hdr ? 2U : 0U,
+        .hdrSupport = hdr ? 1U : 0U,
+        .resolutionInvScale = 1.0F / flow,
+        .uiThreshold = 0.5F
+    };
+    this->m_descriptorSet.buffer = vkhelper::createBuffer(
+        dld,
+        device,
+        physdev,
+        buf
+    );
+    auto* mapped{static_cast<UniformBuffer*>(
+        device.mapMemory(
+            *this->m_descriptorSet.buffer.second,
+            0,
+            VK_WHOLE_SIZE,
+            {},
+            dld
+        )
+    )};
+    this->m_descriptorSet.mappedBuffer = std::shared_ptr<UniformBuffer*>(
+        new UniformBuffer*{mapped},
+        [device, memory = *this->m_descriptorSet.buffer.second, dld](auto* ptr) {
+            device.unmapMemory(memory, dld);
+            delete ptr; // NOLINT (manual memory management)
+        }
+    );
+    this->m_descriptorSet.samplers.at(0) = vkhelper::createSampler(
+        dld,
+        device,
+        vk::SamplerAddressMode::eClampToBorder,
+        vk::CompareOp::eNever,
+        false
+    );
+    this->m_descriptorSet.samplers.at(1) = vkhelper::createSampler(
+        dld,
+        device,
+        vk::SamplerAddressMode::eClampToBorder,
+        vk::CompareOp::eNever,
+        true
+    );
+    this->m_descriptorSet.samplers.at(2) = vkhelper::createSampler(
+        dld,
+        device,
+        vk::SamplerAddressMode::eClampToEdge,
+        vk::CompareOp::eAlways,
+        false
+    );
+
+    // Update descriptor set bindings
+    std::vector<vk::WriteDescriptorSet> writeInfos(4 + signature.descriptors.size());
+    bindingIdx = 0;
+
+    std::array<vk::DescriptorBufferInfo, 1> bufferInfos;
+    bufferInfos.at(0) = {
+        .buffer = *this->m_descriptorSet.buffer.first,
+        .range = VK_WHOLE_SIZE
+    };
+    writeInfos.at(0) = {
+        .dstSet = this->m_descriptorSet.set,
+        .dstBinding = bindingIdx++,
+        .descriptorCount = 1,
+        .descriptorType = vk::DescriptorType::eUniformBuffer,
+        .pBufferInfo = bufferInfos.data()
+    };
+
+    std::array<vk::DescriptorImageInfo, 3> samplerInfos;
+    for (uint32_t i = 0; i < 3; i++) {
+        auto& writeInfo{writeInfos.at(bindingIdx)};
+
+        samplerInfos.at(i) = {
+            .sampler = *this->m_descriptorSet.samplers.at(i)
+        };
+        writeInfo = {
+            .dstSet = this->m_descriptorSet.set,
+            .dstBinding = bindingIdx++,
+            .descriptorCount = 1,
+            .descriptorType = vk::DescriptorType::eSampler,
+            .pImageInfo = &samplerInfos.at(i)
+        };
+    }
+
+    std::vector<std::vector<vk::DescriptorImageInfo>> imageInfos2D(signature.descriptors.size());
+    for (const auto& binding : signature.descriptors) {
+        auto& writeInfo{writeInfos.at(bindingIdx)};
+
+        auto& imageInfos{imageInfos2D.at(bindingIdx - 4)};
+        imageInfos.reserve(binding.resources.size());
+
+        for (const auto& resourceIdx : binding.resources) {
+            const auto& image{this->m_images.at(resourceIdx)};
+
+            for (const auto& subimage : image.subimages) {
+                imageInfos.push_back({
+                    .imageView = *subimage.view,
+                    .imageLayout = vk::ImageLayout::eGeneral
+                });
+            }
+        }
+
+        writeInfo = {
+            .dstSet = this->m_descriptorSet.set,
+            .dstBinding = bindingIdx++,
+            .descriptorCount = static_cast<uint32_t>(imageInfos.size()),
+            .descriptorType = binding.type == BindingType::StorageImage ?
+                vk::DescriptorType::eStorageImage : vk::DescriptorType::eSampledImage,
+            .pImageInfo = imageInfos.data()
+        };
+    }
+
+    device.updateDescriptorSets(writeInfos, {}, dld);
+
+    LOG_DEBUG("  Updated descriptor set with " << writeInfos.size() << " bindings")
+
+    // Build all shader pipelines
+    std::vector<vk::ComputePipelineCreateInfo> pipelineCreateInfos;
+    for (const auto& [name, variant] : signature.shaders) {
+        std::string name2{name};
+        if (variant) name2 += hdr ? "_16bit" : "_8bit";
+
+        const auto& module{library.shader(name2, perf)};
+
+        pipelineCreateInfos.push_back({
+            .stage = {
+                .stage = vk::ShaderStageFlagBits::eCompute,
+                .module = *module,
+                .pName = "main"
+            },
+            .layout = *this->m_layout.pipelineLayout
+        });
+    }
+
+    this->m_cache = vkhelper::createPipelineCache(dld, device);
+    std::vector<vk::UniquePipeline> pipelines{
+        device.createComputePipelinesUnique(
+            *this->m_cache,
+            pipelineCreateInfos,
+            nullptr,
+            dld
+        ).value
+    };
+
+    this->m_pipelines.reserve(signature.shaders.size());
+    for (size_t i = 0; i < signature.shaders.size(); i++) {
+        const auto& name{signature.shaders.at(i).first};
+        this->m_pipelines.emplace(name, std::move(pipelines.at(i)));
+    }
+
+    LOG_DEBUG("  Created " << this->m_pipelines.size() << " pipelines")
 
     LOG_DEBUG("Finished building pipeline")
 }

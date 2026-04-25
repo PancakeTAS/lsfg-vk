@@ -2,11 +2,14 @@
 
 #include "vkhelper.hpp"
 
+#include <algorithm>
 #include <array>
 #include <bitset>
 #include <cstddef>
 #include <cstdint>
 #include <cstdlib>
+#include <filesystem>
+#include <fstream>
 #include <iomanip>
 #include <ios>
 #include <iostream>
@@ -176,6 +179,45 @@ vk::UniqueShaderModule vkhelper::createShaderModule(
     return device.createShaderModuleUnique(shaderInfo, nullptr, dld);
 }
 
+vk::UniquePipelineCache vkhelper::createPipelineCache(
+    const vk::detail::DispatchLoaderDynamic& dld,
+    const vk::Device& device
+) {
+    // Find the cache file path
+    std::filesystem::path path{"/tmp/lsfg-vk_pipeline_cache.bin"};
+
+    const char* xdgCacheHome{std::getenv("XDG_CACHE_HOME")};
+    if (xdgCacheHome && *xdgCacheHome != '\0')
+        path = std::filesystem::path(xdgCacheHome) / "lsfg-vk_pipeline_cache.bin";
+
+    const char* home{std::getenv("HOME")};
+    if (home && *home != '\0')
+        path = std::filesystem::path(home) / ".cache" / "lsfg-vk_pipeline_cache.bin";
+
+    // Read cache data (if any)
+    std::vector<uint8_t> cacheData{};
+
+    if (std::filesystem::exists(path)) {
+        std::ifstream file(path, std::ios::binary | std::ios::ate);
+        if (!file.is_open())
+            throw std::runtime_error("Unable to open pipeline cache file for reading");
+
+        const std::streamsize size{static_cast<std::streamsize>(file.tellg())};
+        cacheData = std::vector<uint8_t>(static_cast<size_t>(size));
+
+        file.seekg(0, std::ios::beg);
+        if (!file.read(reinterpret_cast<char*>(cacheData.data()), size)) // NOLINT (unsafe cast)
+            throw std::runtime_error("Unable to read pipeline cache file");
+    }
+
+    // Build pipeline cache
+    const vk::PipelineCacheCreateInfo pipelineCacheInfo{
+        .initialDataSize = cacheData.size(),
+        .pInitialData = cacheData.data()
+    };
+    return device.createPipelineCacheUnique(pipelineCacheInfo, nullptr, dld);
+}
+
 std::pair<vk::UniqueDescriptorSetLayout, vk::UniquePipelineLayout> vkhelper::createLayout(
     const vk::detail::DispatchLoaderDynamic& dld,
     const vk::Device& device,
@@ -230,6 +272,76 @@ vk::UniqueImage vkhelper::createImage(
     return device.createImageUnique(imageInfo, nullptr, dld);
 }
 
+vk::UniqueSampler vkhelper::createSampler(
+    const vk::detail::DispatchLoaderDynamic& dld,
+    const vk::Device& device,
+    vk::SamplerAddressMode mode,
+    vk::CompareOp compare,
+    bool white
+) {
+    const vk::SamplerCreateInfo samplerInfo{
+        .magFilter = vk::Filter::eLinear,
+        .minFilter = vk::Filter::eLinear,
+        .mipmapMode = vk::SamplerMipmapMode::eLinear,
+        .addressModeU = mode,
+        .addressModeV = mode,
+        .addressModeW = mode,
+        .compareOp = compare,
+        .maxLod = vk::LodClampNone,
+        .borderColor = white ?
+            vk::BorderColor::eFloatOpaqueWhite : vk::BorderColor::eFloatTransparentBlack
+    };
+    return device.createSamplerUnique(samplerInfo, nullptr, dld);
+}
+
+std::pair<vk::UniqueBuffer, vk::UniqueDeviceMemory> vkhelper::createBuffer(
+    const vk::detail::DispatchLoaderDynamic& dld,
+    const vk::Device& device,
+    const vk::PhysicalDevice& physdev,
+    vk::BufferUsageFlags usage,
+    const void* data,
+    size_t size
+) {
+    // Create buffer
+    const vk::BufferCreateInfo bufferInfo{
+        .size = size,
+        .usage = usage,
+        .sharingMode = vk::SharingMode::eExclusive
+    };
+    auto buffer{device.createBufferUnique(bufferInfo, nullptr, dld)};
+
+    // Allocate memory
+    const auto requirements{device.getBufferMemoryRequirements(*buffer, dld)};
+
+    auto memory{vkhelper::allocateMemory(
+        dld,
+        device,
+        physdev,
+        requirements.size,
+        requirements.memoryTypeBits,
+        true
+    )};
+
+    // Bind memory
+    device.bindBufferMemory(*buffer, *memory, 0, dld);
+
+    // Copy data
+    if (data) {
+        void* mapped{device.mapMemory(*memory, 0, size, {}, dld)};
+        std::copy_n(
+            reinterpret_cast<const uint8_t*>(data), // NOLINT (unsafe cast)
+            size,
+            reinterpret_cast<uint8_t*>(mapped) // NOLINT (unsafe cast)
+        );
+        device.unmapMemory(*memory, dld);
+    }
+
+    return {
+        std::move(buffer),
+        std::move(memory)
+    };
+}
+
 /* Memory allocations */
 
 vk::UniqueDeviceMemory vkhelper::allocateMemory(
@@ -273,6 +385,64 @@ vk::UniqueDeviceMemory vkhelper::allocateMemory(
         .memoryTypeIndex = *selectedTypeIdx
     };
     return device.allocateMemoryUnique(allocInfo, nullptr, dld);
+}
+
+/* Descriptors */
+
+std::pair<vk::UniqueDescriptorPool, vk::DescriptorSet> vkhelper::createDescriptorSet(
+    const vk::detail::DispatchLoaderDynamic& dld,
+    const vk::Device& device,
+    const vk::DescriptorSetLayout& layout,
+    uint32_t samplers, uint32_t buffers,
+    uint32_t sampledImages, uint32_t storageImages
+) {
+    const std::array<vk::DescriptorPoolSize, 4> poolSizes{{
+        { .type = vk::DescriptorType::eSampler,
+          .descriptorCount = samplers },
+        { .type = vk::DescriptorType::eSampledImage,
+          .descriptorCount = sampledImages },
+        { .type = vk::DescriptorType::eStorageImage,
+          .descriptorCount = storageImages },
+        { .type = vk::DescriptorType::eUniformBuffer,
+          .descriptorCount = buffers }
+    }};
+    auto pool{device.createDescriptorPoolUnique({
+        .flags = vk::DescriptorPoolCreateFlagBits::eUpdateAfterBind,
+        .maxSets = 1,
+        .poolSizeCount = static_cast<uint32_t>(poolSizes.size()),
+        .pPoolSizes = poolSizes.data()
+    }, nullptr, dld)};
+
+    auto set{device.allocateDescriptorSets({
+        .descriptorPool = *pool,
+        .descriptorSetCount = 1,
+        .pSetLayouts = &layout
+    }, dld).at(0)};
+
+    return{
+        std::move(pool),
+        set
+    };
+}
+
+vk::UniqueImageView vkhelper::createImageView(
+    const vk::detail::DispatchLoaderDynamic& dld,
+    const vk::Device& device,
+    const vk::Image& image,
+    vk::Format format,
+    uint32_t layers
+) {
+    const vk::ImageViewCreateInfo viewInfo{
+        .image = image,
+        .viewType = layers == 1 ? vk::ImageViewType::e2D : vk::ImageViewType::e2DArray,
+        .format = format,
+        .subresourceRange = {
+            .aspectMask = vk::ImageAspectFlagBits::eColor,
+            .levelCount = 1,
+            .layerCount = layers
+        }
+    };
+    return device.createImageViewUnique(viewInfo, nullptr, dld);
 }
 
 /* External memory */

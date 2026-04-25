@@ -120,6 +120,21 @@ namespace vkhelper {
     );
 
     ///
+    /// Create and maintain the Vulkan pipeline cache for lsfg-vk
+    ///
+    /// @param dld Dynamic dispatch loader
+    /// @param device Vulkan device
+    /// @return RAII-wrapped Vulkan pipeline cache
+    /// @throws std::runtime_error on failure
+    ///
+    vk::UniquePipelineCache createPipelineCache(
+        const vk::detail::DispatchLoaderDynamic& dld,
+        const vk::Device& device
+    );
+
+    // TODO: Persist pipeline cache
+
+    ///
     /// Create a Vulkan descriptor set layout
     ///
     /// @param dld Dynamic dispatch loader
@@ -159,6 +174,62 @@ namespace vkhelper {
         vk::ImageUsageFlags usage
     );
 
+    ///
+    /// Create a Vulkan sampler for lsfg-vk
+    ///
+    /// @param dld Dynamic dispatch loader
+    /// @param device Vulkan device
+    /// @param mode Address mode
+    /// @param compare Comparison mode
+    /// @param white Black/White border color
+    /// @return RAII-wrapped Vulkan sampler
+    /// @throws std::runtime_error on failure
+    ///
+    vk::UniqueSampler createSampler(
+        const vk::detail::DispatchLoaderDynamic& dld,
+        const vk::Device& device,
+        vk::SamplerAddressMode mode,
+        vk::CompareOp compare,
+        bool white
+    );
+
+    // (forward decl)
+    std::pair<vk::UniqueBuffer, vk::UniqueDeviceMemory> createBuffer(
+        const vk::detail::DispatchLoaderDynamic& dld,
+        const vk::Device& device,
+        const vk::PhysicalDevice& physdev,
+        vk::BufferUsageFlags usage,
+        const void* data,
+        size_t size
+    );
+
+    ///
+    /// Create a Vulkan buffer for lsfg-vk
+    ///
+    /// @param dld Dynamic dispatch loader
+    /// @param device Vulkan device
+    /// @param physdev Physical device
+    /// @param data Buffer contained data
+    /// @return RAII-wrapped Vulkan uniform buffer & device memory
+    /// @throws std::runtime_error on failure
+    ///
+    template<typename T>
+    std::pair<vk::UniqueBuffer, vk::UniqueDeviceMemory> createBuffer(
+        const vk::detail::DispatchLoaderDynamic& dld,
+        const vk::Device& device,
+        const vk::PhysicalDevice& physdev,
+        const T& data
+    ) {
+        return createBuffer(
+            dld,
+            device,
+            physdev,
+            vk::BufferUsageFlagBits::eUniformBuffer | vk::BufferUsageFlagBits::eTransferDst,
+            static_cast<const void*>(&data),
+            sizeof(T)
+        );
+    }
+
     /* Memory allocations */
 
     ///
@@ -192,6 +263,50 @@ namespace vkhelper {
     inline vk::DeviceSize align(vk::DeviceSize size, vk::DeviceSize align) noexcept {
         return (size + align - 1) & ~(align - 1);
     }
+
+    /* Descriptors */
+
+    ///
+    /// Create a Vulkan descriptor set for lsfg-vk
+    ///
+    /// @param dld Dynamic dispatch loader
+    /// @param device Vulkan device
+    /// @param layout Descriptor set layout
+    /// @param samplers Amount of samplers
+    /// @param buffers Amount of buffers
+    /// @param sampledImages Amount of sampled images
+    /// @param storageImages Amount of storage images
+    /// @return Vulkan descriptor pool & set
+    /// @throws std::runtime_error on failure
+    ///
+    std::pair<vk::UniqueDescriptorPool, vk::DescriptorSet> createDescriptorSet(
+        const vk::detail::DispatchLoaderDynamic& dld,
+        const vk::Device& device,
+        const vk::DescriptorSetLayout& layout,
+        uint32_t samplers, uint32_t buffers,
+        uint32_t sampledImages, uint32_t storageImages
+    );
+
+    ///
+    /// Create an image view
+    ///
+    /// @param dld Dynamic dispatch loader
+    /// @param device Vulkan device
+    /// @param image Vulkan image
+    /// @param format Image format
+    /// @param layers Amount of layers in image
+    /// @return RAII-wrapped Vulkan image view
+    /// @throws std::runtime_error on failure
+    ///
+    vk::UniqueImageView createImageView(
+        const vk::detail::DispatchLoaderDynamic& dld,
+        const vk::Device& device,
+        const vk::Image& image,
+        vk::Format format,
+        uint32_t layers
+    );
+
+    /* External memory */
 
     ///
     /// Create a Vulkan image with a fd-exportable dedicated allocation
