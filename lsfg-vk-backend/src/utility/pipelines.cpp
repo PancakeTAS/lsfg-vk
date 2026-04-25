@@ -548,7 +548,7 @@ namespace {
                 | ImageFlag::ExternalOutput
                 | ImageFlag::HdrVariant,
             .extentOp = extent,
-            .count = 2 // FIXME: Count should be 1.
+            .count = 1
         });
 
         s.appendPass({

@@ -92,7 +92,7 @@ Swapchain::Swapchain(const vk::Vulkan& vk, lsfgvk::Instance& backend,
     this->destinationImage.emplace(vk,
         extent, VK_FORMAT_R8G8B8A8_UNORM,
         VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-        exportedFds.destinationFd, std::nullopt, 2); // FIXME: Should be 1
+        exportedFds.destinationFd);
     this->syncSemaphore.emplace(vk, 0, exportedFds.syncFd);
 
     this->renderCommandBuffer.emplace(vk);

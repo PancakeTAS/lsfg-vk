@@ -160,7 +160,7 @@ int debug::run(const Options& opts) {
             extent,
             VK_FORMAT_R8G8B8A8_UNORM,
             VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-            fds.destinationFd, std::nullopt, 2 // FIXME: Should be 1
+            fds.destinationFd
         };
         const vk::TimelineSemaphore sync{vk,
             0,
