@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "lsfg-vk-backend/lsfgvk.hpp"
+#include "lsfg-vk/lsfgvk.hpp"
 #include "lsfg-vk-common/configuration/config.hpp"
 #include "lsfg-vk-common/helpers/pointers.hpp"
 #include "lsfg-vk-common/vulkan/command_buffer.hpp"
@@ -12,15 +12,18 @@
 #include "lsfg-vk-common/vulkan/timeline_semaphore.hpp"
 #include "lsfg-vk-common/vulkan/vulkan.hpp"
 
+#include <cstddef>
 #include <cstdint>
-#include <utility>
+#include <memory>
 #include <vector>
 
 #include <vulkan/vulkan_core.h>
 
 namespace lsfgvk::layer {
 
-    /// swapchain info struct
+    ///
+    /// Swapchain info struct
+    ///
     struct SwapchainInfo {
         std::vector<VkImage> images;
         VkFormat format;
@@ -29,53 +32,67 @@ namespace lsfgvk::layer {
         VkPresentModeKHR presentMode;
     };
 
-    /// modify the swapchain create info based on the profile pre-swapchain creation
-    /// @param profile active game profile
-    /// @param maxImages maximum number of images supported by the surface
-    /// @param createInfo swapchain create info to modify
+    ///
+    /// Modify the swapchain create info based on the profile pre-swapchain creation
+    ///
+    /// @param profile Active game profile
+    /// @param maxImages Maximum number of images supported by the surface
+    /// @param createInfo Swapchain create info to modify
+    ///
     void context_ModifySwapchainCreateInfo(const ls::GameConf& profile, uint32_t maxImages,
         VkSwapchainCreateInfoKHR& createInfo);
 
-    /// swapchain context for a layer instance
+    ///
+    /// Swapchain context for a layer instance
+    ///
     class Swapchain {
     public:
-        /// create a new swapchain context
-        /// @param vk vulkan instance
+        ///
+        /// Create a new swapchain context
+        ///
+        /// @param vk Vulkan instance
         /// @param backend lsfg-vk backend instance
-        /// @param profile active game profile
-        /// @param info swapchain info
-        Swapchain(const vk::Vulkan& vk, backend::Instance& backend,
+        /// @param profile Active game profile
+        /// @param info Swapchain info
+        ///
+        Swapchain(const vk::Vulkan& vk, lsfgvk::Instance& backend,
             ls::GameConf profile, SwapchainInfo info);
 
-        /// present a frame
-        /// @param vk vulkan instance
-        /// @param queue presentation queue
-        /// @param next_chain next chain pointer for the present info (WARN: shared!)
-        /// @param imageIdx swapchain image index to present to
-        /// @param semaphores semaphores to wait on before presenting
-        /// @throws ls::vulkan_error on vulkan errors
+        ///
+        /// Present a frame
+        ///
+        /// @param vk Vulkan instance
+        /// @param queue Presentation queue
+        /// @param next_chain next chain pointer for the present info (WARNING: shared!)
+        /// @param imageIdx Swapchain image index to present to
+        /// @param semaphores Semaphores to wait on before presenting
+        /// @throws ls::vulkan_error on vulkan error
+        ///
         VkResult present(const vk::Vulkan& vk,
             VkQueue queue, VkSwapchainKHR swapchain,
             void* next_chain, uint32_t imageIdx,
             const std::vector<VkSemaphore>& semaphores);
     private:
-        std::vector<vk::Image> sourceImages;
-        std::vector<vk::Image> destinationImages;
+        ls::lazy<vk::Image> sourceImage;
+        ls::lazy<vk::Image> destinationImage;
         ls::lazy<vk::TimelineSemaphore> syncSemaphore;
 
         ls::lazy<vk::CommandBuffer> renderCommandBuffer;
         ls::lazy<vk::Fence> renderFence;
+        ls::lazy<vk::Semaphore> finalSemaphore;
         struct RenderPass {
             vk::CommandBuffer commandBuffer;
             vk::Semaphore acquireSemaphore;
+            vk::Semaphore copySemaphore;
         };
         std::vector<RenderPass> passes;
-        std::vector<std::pair<vk::Semaphore, vk::Semaphore>> postCopySemaphores;
 
-        ls::R<backend::Instance> instance;
-        ls::owned_ptr<ls::R<backend::Context>> ctx;
-        size_t idx{1};
-        size_t fidx{0}; // real frame index
+        ls::R<lsfgvk::Instance> instance;
+        std::unique_ptr<lsfgvk::Context> ctx;
+        uint32_t total{};
+
+        size_t iteration{0};
+        size_t syncValue{1};
 
         ls::GameConf profile;
         SwapchainInfo info;

@@ -29,4 +29,3 @@ Checks:
 # Vulkan layers often require C-style memory access
 - -cppcoreguidelines-pro-bounds-pointer-arithmetic
 - -cppcoreguidelines-pro-type-union-access
-- -clang-diagnostic-unsafe-buffer-usage

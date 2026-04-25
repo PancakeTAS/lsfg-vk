@@ -2,10 +2,10 @@
 
 #include "instance.hpp"
 #include "lsfg-vk-common/helpers/paths.hpp"
-#include "swapchain.hpp"
 #include "lsfg-vk-common/configuration/detection.hpp"
 #include "lsfg-vk-common/helpers/errors.hpp"
 #include "lsfg-vk-common/vulkan/vulkan.hpp"
+#include "swapchain.hpp"
 
 #include <algorithm>
 #include <cstdint>
@@ -25,7 +25,7 @@ using namespace lsfgvk;
 using namespace lsfgvk::layer;
 
 namespace {
-    /// helper function to add required extensions
+    /// Helper function to add required extensions
     std::vector<const char*> add_extensions(const char* const* existingExtensions, size_t count,
             const std::vector<const char*>& requiredExtensions) {
         std::vector<const char*> extensions(count);
@@ -45,14 +45,14 @@ namespace {
 }
 
 Root::Root() {
-    // find active profile
+    // Find active profile
     const auto& profile = findProfile(this->config.get(), ls::identify());
     if (!profile.has_value())
         return;
 
     this->active_profile = profile->second;
 
-    std::cerr << "lsfg-vk: using profile with name '" << this->active_profile->name << "' ";
+    std::cerr << "lsfg-vk: Using profile with name '" << this->active_profile->name << "' ";
     switch (profile->first) {
         case ls::IdentType::OVERRIDE:
             std::cerr << "(identified via override)\n";
@@ -167,10 +167,10 @@ void Root::modifySwapchainCreateInfo(const vk::Vulkan& vk, VkSwapchainCreateInfo
 void Root::createSwapchainContext(const vk::Vulkan& vk,
         VkSwapchainKHR swapchain, const SwapchainInfo& info) {
     if (!this->active_profile.has_value())
-        throw ls::error("attempted to create swapchain context while layer is inactive");
+        throw ls::error("Attempted to create swapchain context while layer is inactive");
     const auto& profile = *this->active_profile;
 
-    if (!this->backend.has_value()) { // emplace backend late, due to loader bug
+    if (!this->backend.has_value()) { // Emplace backend late, due to loader bug
         const auto& global = this->config.get().global();
 
         setenv("DISABLE_LSFGVK", "1", 1);
@@ -183,23 +183,12 @@ void Root::createSwapchainContext(const vk::Vulkan& vk,
                 dll = ls::findShaderDll();
 
             this->backend.emplace(
-                [gpu = profile.gpu](
-                    const std::string& deviceName,
-                    std::pair<const std::string&, const std::string&> ids,
-                    const std::optional<std::string>& pci
-                ) {
-                    if (!gpu)
-                        return true;
-
-                    return (deviceName == *gpu)
-                        || (ids.first + ":" + ids.second == *gpu)
-                        || (pci && *pci == *gpu);
-                },
+                profile.gpu.value_or(""),
                 dll, global.allow_fp16
             );
         } catch (const std::exception& e) {
             unsetenv("DISABLE_LSFGVK");
-            throw ls::error("failed to create backend instance", e);
+            throw ls::error("Failed to create backend instance", e);
         }
 
         unsetenv("DISABLE_LSFGVK");

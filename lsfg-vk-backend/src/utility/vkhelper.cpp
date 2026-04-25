@@ -67,6 +67,10 @@ vk::PhysicalDevice vkhelper::findPhysicalDevice(
 
         auto& props{info.properties};
 
+        // Check first if id is not given
+        if (id.empty())
+            return physdev;
+
         // Compare device name
         props.deviceName.back() = '\0'; // Ensure null-termination
         if (id == std::string(props.deviceName))

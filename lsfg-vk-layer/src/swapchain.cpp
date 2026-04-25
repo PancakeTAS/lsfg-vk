@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 
 #include "swapchain.hpp"
-#include "lsfg-vk-backend/lsfgvk.hpp"
+#include "lsfg-vk/lsfgvk.hpp"
 #include "lsfg-vk-common/configuration/config.hpp"
 #include "lsfg-vk-common/helpers/errors.hpp"
 #include "lsfg-vk-common/helpers/pointers.hpp"
@@ -10,11 +10,10 @@
 #include "lsfg-vk-common/vulkan/semaphore.hpp"
 #include "lsfg-vk-common/vulkan/vulkan.hpp"
 
-#include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <exception>
-#include <functional>
+#include <memory>
 #include <optional>
 #include <utility>
 #include <vector>
@@ -25,6 +24,7 @@ using namespace lsfgvk;
 using namespace lsfgvk::layer;
 
 namespace {
+    /// Barrier helper
     VkImageMemoryBarrier barrierHelper(VkImage handle,
             VkAccessFlags srcAccessMask,
             VkAccessFlags dstAccessMask,
@@ -66,65 +66,44 @@ void layer::context_ModifySwapchainCreateInfo(const ls::GameConf& profile, uint3
     }
 }
 
-Swapchain::Swapchain(const vk::Vulkan& vk, backend::Instance& backend,
+Swapchain::Swapchain(const vk::Vulkan& vk, lsfgvk::Instance& backend,
             ls::GameConf profile, SwapchainInfo info) :
         instance(backend),
         profile(std::move(profile)), info(std::move(info)) {
     const VkExtent2D extent = this->info.extent;
-    const bool hdr = this->info.format > 57;
-
-    std::vector<int> sourceFds(2);
-    std::vector<int> destinationFds(this->profile.multiplier - 1);
-
-    this->sourceImages.reserve(sourceFds.size());
-    for (int& fd : sourceFds)
-        this->sourceImages.emplace_back(vk,
-            extent, hdr ? VK_FORMAT_R16G16B16A16_SFLOAT : VK_FORMAT_R8G8B8A8_UNORM,
-            VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-            std::nullopt, &fd);
-
-    this->destinationImages.reserve(destinationFds.size());
-    for (int& fd : destinationFds)
-        this->destinationImages.emplace_back(vk,
-            extent, hdr ? VK_FORMAT_R16G16B16A16_SFLOAT : VK_FORMAT_R8G8B8A8_UNORM,
-            VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-            std::nullopt, &fd);
-
-    int syncFd{};
-    this->syncSemaphore.emplace(vk, 0, std::nullopt, &syncFd);
 
     try {
-        this->ctx = ls::owned_ptr<ls::R<backend::Context>>(
-            new ls::R<backend::Context>(backend.openContext(
-                { sourceFds.at(0), sourceFds.at(1) }, destinationFds, syncFd,
-                extent.width, extent.height,
-                hdr, 1.0F / this->profile.flow_scale, this->profile.performance_mode
-            )),
-            [backend = &backend](ls::R<backend::Context>& ctx) {
-                backend->closeContext(ctx);
-            }
+        this->ctx = std::make_unique<lsfgvk::Context>(
+            backend,
+            extent.width, extent.height,
+            this->profile.flow_scale,
+            this->profile.performance_mode
         );
-
-        backend::makeLeaking(); // don't worry about it :3
+        this->total = static_cast<uint32_t>(this->profile.multiplier) - 1;
     } catch (const std::exception& e) {
-        throw ls::error("failed to create swapchain context", e);
+        throw ls::error("Failed to create swapchain context", e);
     }
+
+    const auto exportedFds = this->ctx->exportFds();
+    this->sourceImage.emplace(vk,
+        extent, VK_FORMAT_R8G8B8A8_UNORM,
+        VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+        exportedFds.sourceFd, std::nullopt, 2);
+    this->destinationImage.emplace(vk,
+        extent, VK_FORMAT_R8G8B8A8_UNORM,
+        VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+        exportedFds.destinationFd, std::nullopt, 2); // FIXME: Should be 1
+    this->syncSemaphore.emplace(vk, 0, exportedFds.syncFd);
 
     this->renderCommandBuffer.emplace(vk);
     this->renderFence.emplace(vk);
-    for (size_t i = 0; i < this->destinationImages.size(); i++) {
+    this->finalSemaphore.emplace(vk);
+    for (size_t i = 0; i < this->total; i++) {
         this->passes.emplace_back(RenderPass {
             .commandBuffer = vk::CommandBuffer(vk),
-            .acquireSemaphore = vk::Semaphore(vk)
+            .acquireSemaphore = vk::Semaphore(vk),
+            .copySemaphore = vk::Semaphore(vk)
         });
-    }
-
-    const size_t frames = std::max(this->info.images.size(), this->destinationImages.size() + 2);
-    for (size_t i = 0; i < frames; i++) {
-        this->postCopySemaphores.emplace_back(
-            vk::Semaphore(vk),
-            vk::Semaphore(vk)
-        );
     }
 }
 
@@ -133,19 +112,18 @@ VkResult Swapchain::present(const vk::Vulkan& vk,
         void* next_chain, uint32_t imageIdx,
         const std::vector<VkSemaphore>& semaphores) {
     const auto& swapchainImage = this->info.images.at(imageIdx);
-    const auto& sourceImage = this->sourceImages.at(this->fidx % 2);
+    const auto sourceImageIdx{static_cast<uint32_t>(this->iteration) % 2};
 
-    // schedule frame generation
+    // Schedule frame generation
     try {
-        this->instance.get().scheduleFrames(this->ctx.get());
+        this->ctx->dispatch(this->total);
     } catch (const std::exception& e) {
-        throw ls::error("failed to schedule frames", e);
+        throw ls::error("Failed to schedule frames", e);
     }
 
-    // update present mode when not using pacing
+    // Update present mode when not using pacing
     if (this->profile.pacing == ls::Pacing::None) {
 #pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wunknown-warning-option"
 #pragma clang diagnostic ignored "-Wunsafe-buffer-usage"
         auto* info = reinterpret_cast<VkSwapchainPresentModeInfoEXT*>(next_chain);
         while (info) {
@@ -160,12 +138,12 @@ VkResult Swapchain::present(const vk::Vulkan& vk,
 #pragma clang diagnostic pop
     }
 
-    // wait for completion of previous frame
-    if (this->fidx && !this->renderFence->wait(vk, 150ULL * 1000 * 1000))
+    // Wait for completion of previous frame
+    if (this->iteration && !this->renderFence->wait(vk, 150ULL * 1000 * 1000))
         throw ls::vulkan_error(VK_TIMEOUT, "vkWaitForFences() failed");
     this->renderFence->reset(vk);
 
-    // copy swapchain image into backend source image
+    // Copy swapchain image into backend source image
     const auto& cmdbuf = *this->renderCommandBuffer;
     cmdbuf.begin(vk);
 
@@ -177,15 +155,15 @@ VkResult Swapchain::present(const vk::Vulkan& vk,
                 VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
                 VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
             ),
-            barrierHelper(sourceImage.handle(),
+            barrierHelper(this->sourceImage->handle(),
                 VK_ACCESS_NONE,
                 VK_ACCESS_TRANSFER_WRITE_BIT,
                 VK_IMAGE_LAYOUT_UNDEFINED,
                 VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
             ),
         },
-        { swapchainImage, sourceImage.handle() },
-        sourceImage.getExtent(),
+        { swapchainImage, this->sourceImage->handle() },
+        this->sourceImage->getExtent(),
         {
             barrierHelper(swapchainImage,
                 VK_ACCESS_TRANSFER_READ_BIT,
@@ -193,39 +171,40 @@ VkResult Swapchain::present(const vk::Vulkan& vk,
                 VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
                 VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
             ),
-        }
+        },
+        0, sourceImageIdx
     );
 
     cmdbuf.end(vk);
+
     cmdbuf.submit(vk,
         semaphores, VK_NULL_HANDLE, 0,
-        {}, this->syncSemaphore->handle(), this->idx++
+        {}, this->syncSemaphore->handle(), this->syncValue
     );
 
-    for (size_t i = 0; i < this->destinationImages.size(); i++) {
-        auto& pcs = this->postCopySemaphores.at(this->idx % this->postCopySemaphores.size());
-        auto& destinationImage = this->destinationImages.at(i);
-        auto& pass = this->passes.at(i);
+    for (size_t i = 0; i < this->passes.size(); i++) {
+        auto& pass{this->passes.at(i)};
+        const bool last{i == (this->passes.size() - 1)};
 
-        // acquire swapchain image
-        uint32_t aqImageIdx{};
+        // Acquire swapchain image
+        uint32_t swapchainImageIdx{};
         auto res = vk.df().AcquireNextImageKHR(vk.dev(), swapchain,
             UINT64_MAX, pass.acquireSemaphore.handle(),
             VK_NULL_HANDLE,
-            &aqImageIdx
+            &swapchainImageIdx
         );
         if (res != VK_SUCCESS && res != VK_SUBOPTIMAL_KHR)
             throw ls::vulkan_error(res, "vkAcquireNextImageKHR() failed");
 
-        const auto& aquiredSwapchainImage = this->info.images.at(aqImageIdx);
+        const auto& aquiredSwapchainImage = this->info.images.at(swapchainImageIdx);
 
-        // copy backend destination image into swapchain image
+        // Copy backend destination image into swapchain image
         auto& cmdbuf = pass.commandBuffer;
         cmdbuf.begin(vk);
 
         cmdbuf.blitImage(vk,
             {
-                barrierHelper(destinationImage.handle(),
+                barrierHelper(this->destinationImage->handle(),
                     VK_ACCESS_NONE,
                     VK_ACCESS_TRANSFER_READ_BIT,
                     VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
@@ -238,8 +217,8 @@ VkResult Swapchain::present(const vk::Vulkan& vk,
                     VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
                 ),
             },
-            { destinationImage.handle(), aquiredSwapchainImage },
-            destinationImage.getExtent(),
+            { this->destinationImage->handle(), aquiredSwapchainImage },
+            this->destinationImage->getExtent(),
             {
                 barrierHelper(aquiredSwapchainImage,
                     VK_ACCESS_TRANSFER_WRITE_BIT,
@@ -250,48 +229,43 @@ VkResult Swapchain::present(const vk::Vulkan& vk,
             }
         );
 
-        std::vector<VkSemaphore> waitSemaphores{ pass.acquireSemaphore.handle() };
-        if (i) { // non-first pass
-            const auto& prevPCS = this->postCopySemaphores.at((this->idx - 1) % this->postCopySemaphores.size());
-            waitSemaphores.push_back(prevPCS.second.handle());
-        }
-
-        const std::vector<VkSemaphore> signalSemaphores{
-            pcs.first.handle(),
-            pcs.second.handle()
-        };
-
         cmdbuf.end(vk);
+
+        std::vector<VkSemaphore> signalSemaphores{ pass.copySemaphore.handle() };
+        if (last)
+            signalSemaphores.push_back(this->finalSemaphore->handle());
+
+        this->syncValue++;
+
         cmdbuf.submit(vk,
-            waitSemaphores, this->syncSemaphore->handle(), this->idx,
-            signalSemaphores, VK_NULL_HANDLE, 0,
-            i == this->destinationImages.size() - 1 ? this->renderFence->handle() : VK_NULL_HANDLE
+            { pass.acquireSemaphore.handle() }, this->syncSemaphore->handle(), this->syncValue,
+            signalSemaphores, last ? nullptr : this->syncSemaphore->handle(), this->syncValue + 1,
+            last ? this->renderFence->handle() : VK_NULL_HANDLE
         );
 
-        // present swapchain image
+        this->syncValue++;
+
+        // Present swapchain image
         const VkPresentInfoKHR presentInfo{
             .sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
             .pNext = i ? nullptr : next_chain,
             .waitSemaphoreCount = 1,
-            .pWaitSemaphores = &pcs.first.handle(),
+            .pWaitSemaphores = &pass.copySemaphore.handle(),
             .swapchainCount = 1,
             .pSwapchains = &swapchain,
-            .pImageIndices = &aqImageIdx,
+            .pImageIndices = &swapchainImageIdx,
         };
         res = vk.df().QueuePresentKHR(queue,
             &presentInfo);
         if (res != VK_SUCCESS && res != VK_SUBOPTIMAL_KHR)
             throw ls::vulkan_error(res, "vkQueuePresentKHR() failed");
-
-        this->idx++;
     }
 
-    // present original swapchain image
-    auto& lastPCS = this->postCopySemaphores.at((this->idx - 1) % this->postCopySemaphores.size());
+    // Present original swapchain image
     const VkPresentInfoKHR presentInfo{
         .sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
         .waitSemaphoreCount = 1,
-        .pWaitSemaphores = &lastPCS.second.handle(),
+        .pWaitSemaphores = &this->finalSemaphore->handle(),
         .swapchainCount = 1,
         .pSwapchains = &swapchain,
         .pImageIndices = &imageIdx,
@@ -300,6 +274,7 @@ VkResult Swapchain::present(const vk::Vulkan& vk,
     if (res != VK_SUCCESS && res != VK_SUBOPTIMAL_KHR)
         throw ls::vulkan_error(res, "vkQueuePresentKHR() failed");
 
-    this->fidx++;
+    this->iteration++;
+
     return res;
 }
