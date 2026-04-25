@@ -18,7 +18,6 @@ namespace {
     /// Build the pipeline signature
     consteval PipelineSignature buildPipelineSignature(bool perf) {
 #pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wunknown-warning-option"
 #pragma clang diagnostic ignored "-Wshadow"
         PipelineSignatureBuilder s;
 

@@ -72,7 +72,6 @@ namespace {
     };
 
 #pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wunknown-warning-option"
 #pragma clang diagnostic ignored "-Wunsafe-buffer-usage-in-container"
     /// Safely cast a vector to a pointer of type T
     template<typename T>

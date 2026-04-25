@@ -18,7 +18,6 @@ namespace lsfgvk::pipeline {
     template<typename T, size_t N>
     class inplace_vector {
 #pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wunknown-warning-option"
 #pragma clang diagnostic ignored "-Wunsafe-buffer-usage"
     public:
         // Constructors

@@ -29,6 +29,7 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
         add_compile_options(
             # By default, enable all warnings
             -Weverything
+            -Wno-unknown-warning-option
             # Some warnings are incompatible with each other
             -Wno-pre-c++20-compat-pedantic
             -Wno-c++98-compat-pedantic
