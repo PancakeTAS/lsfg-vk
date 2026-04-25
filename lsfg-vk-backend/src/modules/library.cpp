@@ -77,7 +77,7 @@ ShaderLibrary::ShaderLibrary(
         LOG_DEBUG("  " << std::setw(2) << idx
             << ": name=" << name
             << ", rid=" << rid
-            << ", size=" << it->second.size() << " bytes")
+            << ", size=" << (it->second.size() * 4) << " bytes")
 
         this->m_baseShaders[name] = vkhelper::createShaderModule(dld, device, it->second);
     }
@@ -99,10 +99,10 @@ ShaderLibrary::ShaderLibrary(
             << ": name=" << std::setw(8) << name
             << ", [Q] "
                 << "rid="<< std::setw(2) << rid.first
-                << ", size="<< std::setw(5) << qit->second.size() << " bytes"
+                << ", size="<< std::setw(5) << (qit->second.size() * 4) << " bytes"
             << ", [P] "
                 << "rid="<< std::setw(2) << rid.second
-                << ", size="<< std::setw(5) << pit->second.size() << " bytes")
+                << ", size="<< std::setw(5) << (pit->second.size() * 4) << " bytes")
 
         this->m_qualityShaders[name] = vkhelper::createShaderModule(dld, device, qit->second);
         this->m_performanceShaders[name] = vkhelper::createShaderModule(dld, device, pit->second);
