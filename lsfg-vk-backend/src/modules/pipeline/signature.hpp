@@ -106,8 +106,94 @@ namespace lsfgvk::pipeline {
         consteval PipelineSignature finalize() {
             PipelineSignature s{};
 
-            /* TODO */
+            struct ShaderInfo {
+                std::string_view id;
+                bool hasHdrVariant{};
+                size_t sampledImageBindings{}; // Only the amount suffices here
+                std::vector<std::vector<size_t>> storageImageBindings;
+            };
+            std::vector<ShaderInfo> shaderInfos;
 
+            // Populate shader map with empty bindings
+            for (const auto& pass : this->m_passes) {
+                const auto it{std::ranges::find_if(shaderInfos, [&pass](const auto& shader) {
+                    return shader.id == pass.shader;
+                })};
+                const bool firstOccurrence{it == shaderInfos.end()};
+                const bool isAggregatePass{pass.flags & PassFlag::Aggregate};
+
+                auto& shader{firstOccurrence ? shaderInfos.emplace_back() : *it};
+
+                if (firstOccurrence) {
+                    shader.id = pass.shader;
+                    shader.hasHdrVariant = pass.flags & PassFlag::HdrVariant;
+                    shader.sampledImageBindings = pass.inputs.size();
+                    shader.storageImageBindings.resize(pass.outputs.size());
+                }
+
+                // Ensure consistent usage aross invocations
+                if (!firstOccurrence && !isAggregatePass)
+                    throw "Shader \"" + std::string(pass.shader) + "\" is used by "
+                        "multiple passes but does not have the Aggregate flag set";
+
+                if (shader.sampledImageBindings != pass.inputs.size())
+                    throw "Shader \"" + std::string(pass.shader) + "\" has "
+                        "inconsistent read counts across passes";
+                if (shader.storageImageBindings.size() != pass.outputs.size())
+                    throw "Shader \"" + std::string(pass.shader) + "\" has "
+                        "inconsistent write counts across passes";
+
+                // Collect all used resources written by this shader
+                for (size_t i = 0; i < pass.outputs.size(); i++) {
+                    const auto& resource{pass.outputs.at(i)};
+                    if (!resource.idx())
+                        continue;
+
+                    const auto& image{this->m_images.at(*resource.idx())};
+                    if (isAggregatePass && (image.flags & ImageFlag::Mipmaps) && !resource.layer())
+                        throw "Pass \"" + std::string(pass.shader) + "\" has "
+                            "Aggregate flag but fully writes to an image with Mipmaps flag";
+
+                    shader.storageImageBindings.at(i).push_back(*resource.idx());
+                }
+            }
+
+            // Create descriptors for all resources
+            for (size_t i = 0; i < this->m_images.size(); i++) {
+                const auto& image{this->m_images.at(i)};
+                if (image.flags & ImageFlag::ExternalInput) {
+                    s.descriptors.push_back({
+                        .type = BindingType::SampledImage,
+                        .resources = { i }
+                    });
+                }
+            }
+            for (const auto& shader : shaderInfos) {
+                for (const auto& resources : shader.storageImageBindings) {
+                    s.descriptors.push_back({
+                        .type = BindingType::StorageImage,
+                        .resources = resources
+                    });
+
+                    // Skip sampled image bindings for external outputs
+                    const auto& image{this->m_images.at(resources.front())};
+                    if (image.flags & ImageFlag::ExternalOutput)
+                        continue;
+
+                    s.descriptors.push_back({
+                        .type = BindingType::SampledImage,
+                        .resources = resources
+                    });
+                }
+            }
+
+            // Copy remaining resources into signature
+            for (const auto& shader : shaderInfos)
+                s.shaders.emplace_back(shader.id, shader.hasHdrVariant);
+            for (const auto& image : this->m_images)
+                s.images.push_back(image);
+            for (const auto& pass : this->m_passes)
+                s.passes.push_back(pass);
             return s;
         }
     private:
