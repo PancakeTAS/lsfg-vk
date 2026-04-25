@@ -23,8 +23,3 @@ Checks:
 - -cppcoreguidelines-macro-usage
 - -bugprone-easily-swappable-parameters
 - -portability-avoid-pragma-once
-# Vulkan requires the use of reinterpret/const casts in many places
-- -cppcoreguidelines-pro-type-reinterpret-cast
-- -cppcoreguidelines-pro-type-const-cast
-# We use namespace forward declarations
-- -bugprone-forward-declaration-namespace
