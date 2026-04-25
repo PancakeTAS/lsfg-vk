@@ -339,6 +339,21 @@ namespace vkhelper {
     );
 
     ///
+    /// Create a timeline semaphore
+    ///
+    /// @param dld Dynamic dispatch loader
+    /// @param device Vulkan device
+    /// @param exportable Whether the semaphore should be exportable as a fd
+    /// @return RAII-wrapped Vulkan semaphore
+    /// @throws std::runtime_error on failure
+    ///
+    vk::UniqueSemaphore createTimelineSemaphore(
+        const vk::detail::DispatchLoaderDynamic& dld,
+        const vk::Device& device,
+        bool exportable = false
+    );
+
+    ///
     /// Create a fence
     ///
     /// @param dld Dynamic dispatch loader
@@ -374,6 +389,36 @@ namespace vkhelper {
         vk::Format format,
         uint32_t layers,
         vk::ImageUsageFlags usage
+    );
+
+    ///
+    /// Export a Vulkan memory allocation as a fd
+    ///
+    /// @param dld Dynamic dispatch loader
+    /// @param device Vulkan device
+    /// @param memory Vulkan device memory
+    /// @return File descriptor to the allocation
+    /// @throws std::runtime_error on failure
+    ///
+    int exportMemoryFd(
+        const vk::detail::DispatchLoaderDynamic& dld,
+        const vk::Device& device,
+        const vk::DeviceMemory& memory
+    );
+
+    ///
+    /// Export a Vulkan semaphore as a fd
+    ///
+    /// @param dld Dynamic dispatch loader
+    /// @param device Vulkan device
+    /// @param semaphore Vulkan semaphore
+    /// @return File descriptor to the semaphore
+    /// @throws std::runtime_error on failure
+    ///
+    int exportSemaphoreFd(
+        const vk::detail::DispatchLoaderDynamic& dld,
+        const vk::Device& device,
+        const vk::Semaphore& semaphore
     );
 
 }

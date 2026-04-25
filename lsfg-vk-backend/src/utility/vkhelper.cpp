@@ -470,6 +470,24 @@ vk::UniqueCommandBuffer vkhelper::createCommandBuffer(
     return { std::move(device.allocateCommandBuffersUnique(cmdbufInfo, dld).front()) };
 }
 
+vk::UniqueSemaphore vkhelper::createTimelineSemaphore(
+    const vk::detail::DispatchLoaderDynamic& dld,
+    const vk::Device& device,
+    bool exportable
+) {
+    const vk::ExportSemaphoreCreateInfo exportInfo{
+        .handleTypes = vk::ExternalSemaphoreHandleTypeFlagBits::eOpaqueFd
+    };
+    const vk::SemaphoreTypeCreateInfo typeInfo{
+        .pNext = exportable ? &exportInfo : nullptr,
+        .semaphoreType = vk::SemaphoreType::eTimeline,
+    };
+    const vk::SemaphoreCreateInfo createInfo{
+        .pNext = &typeInfo,
+    };
+    return device.createSemaphoreUnique(createInfo, nullptr, dld);
+}
+
 vk::UniqueFence vkhelper::createFence(
     const vk::detail::DispatchLoaderDynamic& dld,
     const vk::Device& device
@@ -548,4 +566,28 @@ std::pair<vk::UniqueImage, vk::UniqueDeviceMemory> vkhelper::createExternalImage
         std::move(image),
         std::move(memory)
     };
+}
+
+int vkhelper::exportMemoryFd(
+    const vk::detail::DispatchLoaderDynamic& dld,
+    const vk::Device& device,
+    const vk::DeviceMemory& memory
+) {
+    const vk::MemoryGetFdInfoKHR fdInfo{
+        .memory = memory,
+        .handleType = vk::ExternalMemoryHandleTypeFlagBits::eOpaqueFd
+    };
+    return device.getMemoryFdKHR(fdInfo, dld);
+}
+
+int vkhelper::exportSemaphoreFd(
+    const vk::detail::DispatchLoaderDynamic& dld,
+    const vk::Device& device,
+    const vk::Semaphore& semaphore
+) {
+    const vk::SemaphoreGetFdInfoKHR fdInfo{
+        .semaphore = semaphore,
+        .handleType = vk::ExternalSemaphoreHandleTypeFlagBits::eOpaqueFd
+    };
+    return device.getSemaphoreFdKHR(fdInfo, dld);
 }
