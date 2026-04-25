@@ -516,7 +516,15 @@ Pipeline::Pipeline(
         });
     }
 
-    this->m_cache = vkhelper::createPipelineCache(dld, device);
+    const std::string_view cacheTag{perf ? "performance" : "quality"};
+    auto [cache, isCacheValid] = vkhelper::createPipelineCache(
+        dld,
+        device,
+        physdev,
+        cacheTag
+    );
+    this->m_cache = std::move(cache);
+
     std::vector<vk::UniquePipeline> pipelines{
         device.createComputePipelinesUnique(
             *this->m_cache,
@@ -525,6 +533,18 @@ Pipeline::Pipeline(
             dld
         ).value
     };
+
+    if (!isCacheValid) {
+        LOG_DEBUG("  Pipeline cache is not valid, persisting new cache data")
+
+        vkhelper::persistPipelineCache(
+            dld,
+            device,
+            physdev,
+            *this->m_cache,
+            cacheTag
+        );
+    }
 
     this->m_pipelines.reserve(signature.shaders.size());
     for (size_t i = 0; i < signature.shaders.size(); i++) {

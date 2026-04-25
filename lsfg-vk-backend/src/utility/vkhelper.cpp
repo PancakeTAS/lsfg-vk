@@ -18,6 +18,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -183,24 +184,57 @@ vk::UniqueShaderModule vkhelper::createShaderModule(
     return device.createShaderModuleUnique(shaderInfo, nullptr, dld);
 }
 
-vk::UniquePipelineCache vkhelper::createPipelineCache(
+namespace {
+    /// Find the cache file path
+    std::filesystem::path findPipelineCache(
+        const vk::detail::DispatchLoaderDynamic& dld,
+        const vk::PhysicalDevice& physdev,
+        std::string_view tag
+    ) {
+        // First find the base path
+        std::filesystem::path path{"/tmp/lsfg-vk"};
+
+        const char* xdgCacheHome{std::getenv("XDG_CACHE_HOME")};
+        if (xdgCacheHome && *xdgCacheHome != '\0')
+            path = std::filesystem::path(xdgCacheHome) / "lsfg-vk";
+
+        const char* home{std::getenv("HOME")};
+        if (home && *home != '\0')
+            path = std::filesystem::path(home) / ".cache" / "lsfg-vk";
+
+        // Ensure the directory exists
+        if (!std::filesystem::exists(path))
+            std::filesystem::create_directories(path);
+
+        // Calculate the physical device UUID
+        vk::PhysicalDeviceProperties2 info{};
+        physdev.getProperties2(&info, dld);
+
+        std::ostringstream ss;
+        ss << std::hex << std::setfill('0');
+        for (uint32_t i = 0; i < 16; i++) {
+            ss << std::setw(2) << static_cast<uint32_t>(info.properties.pipelineCacheUUID.at(i));
+            if (i == 3 || i == 5 || i == 7 || i == 9) {
+                ss << "-";
+            }
+        }
+
+        // Return the full path
+        return path / ("cache_" + std::string(tag) + "_" + ss.str() + ".bin");
+    }
+}
+
+std::pair<vk::UniquePipelineCache, bool> vkhelper::createPipelineCache(
     const vk::detail::DispatchLoaderDynamic& dld,
-    const vk::Device& device
+    const vk::Device& device,
+    const vk::PhysicalDevice& physdev,
+    std::string_view tag
 ) {
-    // Find the cache file path
-    std::filesystem::path path{"/tmp/lsfg-vk_pipeline_cache.bin"};
-
-    const char* xdgCacheHome{std::getenv("XDG_CACHE_HOME")};
-    if (xdgCacheHome && *xdgCacheHome != '\0')
-        path = std::filesystem::path(xdgCacheHome) / "lsfg-vk_pipeline_cache.bin";
-
-    const char* home{std::getenv("HOME")};
-    if (home && *home != '\0')
-        path = std::filesystem::path(home) / ".cache" / "lsfg-vk_pipeline_cache.bin";
+    const std::filesystem::path path{findPipelineCache(dld, physdev, tag)};
+    const bool valid{std::filesystem::exists(path) && std::filesystem::file_size(path) > 32};
 
     // Read cache data (if any)
     std::vector<uint8_t> cacheData{};
-
     if (std::filesystem::exists(path)) {
         std::ifstream file(path, std::ios::binary | std::ios::ate);
         if (!file.is_open())
@@ -219,7 +253,32 @@ vk::UniquePipelineCache vkhelper::createPipelineCache(
         .initialDataSize = cacheData.size(),
         .pInitialData = cacheData.data()
     };
-    return device.createPipelineCacheUnique(pipelineCacheInfo, nullptr, dld);
+    return { device.createPipelineCacheUnique(pipelineCacheInfo, nullptr, dld), valid };
+}
+
+void vkhelper::persistPipelineCache(
+    const vk::detail::DispatchLoaderDynamic& dld,
+    const vk::Device& device,
+    const vk::PhysicalDevice& physdev,
+    const vk::PipelineCache& cache,
+    std::string_view tag
+) {
+    const std::filesystem::path path{findPipelineCache(dld, physdev, tag)};
+
+    std::ofstream file(path, std::ios::binary | std::ios::trunc);
+    if (!file.is_open())
+        throw std::runtime_error("Unable to open pipeline cache file for writing");
+
+    const std::vector<uint8_t> cacheData{
+        device.getPipelineCacheData(cache, dld)
+    };
+    file.write(
+        reinterpret_cast<const char*>(cacheData.data()), // NOLINT (unsafe cast)
+        static_cast<std::streamsize>(cacheData.size())
+    );
+
+    file.flush();
+    file.close();
 }
 
 std::pair<vk::UniqueDescriptorSetLayout, vk::UniquePipelineLayout> vkhelper::createLayout(

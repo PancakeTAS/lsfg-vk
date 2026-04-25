@@ -21,6 +21,7 @@
 #include <cstdint>
 #include <span>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -124,15 +125,35 @@ namespace vkhelper {
     ///
     /// @param dld Dynamic dispatch loader
     /// @param device Vulkan device
+    /// @param physdev Physical device
+    /// @param tag Cache tag for different pipelines
     /// @return RAII-wrapped Vulkan pipeline cache
     /// @throws std::runtime_error on failure
     ///
-    vk::UniquePipelineCache createPipelineCache(
+    std::pair<vk::UniquePipelineCache, bool> createPipelineCache(
         const vk::detail::DispatchLoaderDynamic& dld,
-        const vk::Device& device
+        const vk::Device& device,
+        const vk::PhysicalDevice& physdev,
+        std::string_view tag
     );
 
-    // TODO: Persist pipeline cache
+    ///
+    /// Persist the Vulkan pipeline cache to disk
+    ///
+    /// @param dld Dynamic dispatch loader
+    /// @param device Vulkan device
+    /// @param physdev Physical device
+    /// @param cache Vulkan pipeline cache
+    /// @param tag Cache tag for different pipelines
+    /// @throws std::runtime_error on failure
+    ///
+    void persistPipelineCache(
+        const vk::detail::DispatchLoaderDynamic& dld,
+        const vk::Device& device,
+        const vk::PhysicalDevice& physdev,
+        const vk::PipelineCache& cache,
+        std::string_view tag
+    );
 
     ///
     /// Create a Vulkan descriptor set layout
