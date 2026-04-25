@@ -138,7 +138,7 @@ int benchmark::run(const Options& opts) {
 
                 auto success = sync.wait(vk, idx++);
                 if (!success)
-                    throw ls::error("failed to wait for frame");
+                    throw ls::error("Failed to wait for frame");
 
                 total_frames++;
                 generated_frames++;

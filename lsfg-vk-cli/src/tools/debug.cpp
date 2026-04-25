@@ -24,6 +24,7 @@
 #include <iostream>
 #include <optional>
 #include <string>
+#include <thread>
 #include <vector>
 
 #include <dlfcn.h>
@@ -185,6 +186,7 @@ int debug::run(const Options& opts) {
         // Render destination images
         const uint32_t total{static_cast<uint32_t>(opts.multiplier) - 1U};
 
+        size_t idx{1};
         for (size_t j = 0; j < paths.size(); j++) {
             uploadDDS(vk, source, paths.at(j).string(), j % 2);
 
@@ -192,19 +194,24 @@ int debug::run(const Options& opts) {
                 rdoc_api->StartFrameCapture(rdoc_device, nullptr);
             }
 
-            const size_t idx{(j + 1) * total * 2};
-            sync.signal(vk, idx - 1);
+            std::thread signal_thread{[&sync, &vk, &idx, total] {
+                for (size_t i = 0; i < total; i++) {
+                    sync.signal(vk, idx++);
+
+                    auto success = sync.wait(vk, idx++);
+                    if (!success)
+                        throw ls::error("Failed to wait for frame");
+                }
+            }};
 
             lsfgvk_ctx.dispatch(total);
-
-            auto success = sync.wait(vk, idx);
-            if (!success)
-                throw ls::error("Failed to wait for frame");
 
             if (rdoc_api) {
                 lsfgvk_ctx.idle();
                 rdoc_api->EndFrameCapture(rdoc_device, nullptr);
             }
+
+            signal_thread.join();
         }
 
         // Wait for idle
