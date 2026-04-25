@@ -18,8 +18,6 @@
 
 namespace lsfgvk::pipeline {
 
-    // TODO: Improve API design
-
     /// Handle to an external image
     struct ExternalImage {
         /// Image Extent
@@ -60,7 +58,7 @@ namespace lsfgvk::pipeline {
         /// Create a new pipeline
         ///
         /// @param dld Vulkan dispatch loader
-        /// @param dev Vulkan device
+        /// @param device Vulkan device
         /// @param physdev Vulkan physical device
         /// @param queue Vulkan compute queue
         /// @param queueFamilyIndex Compute queue family index
@@ -74,7 +72,7 @@ namespace lsfgvk::pipeline {
         ///
         explicit Pipeline(
             const vk::detail::DispatchLoaderDynamic& dld,
-            const vk::Device& dev,
+            const vk::Device& device,
             const vk::PhysicalDevice& physdev,
             const vk::Queue& queue,
             uint32_t queueFamilyIndex,
@@ -117,6 +115,24 @@ namespace lsfgvk::pipeline {
         [[nodiscard]] auto& getCmdbufs() const {
             return this->m_cmdbufs;
         }
+
+        ///
+        /// Build a transition command buffer
+        ///
+        /// @param dld Vulkan dispatch loader
+        /// @param device Vulkan device
+        /// @param iteration Current iteration
+        /// @param index Index of the iteration
+        /// @param total Total iterations
+        /// @return Command buffer handle
+        ///
+        vk::CommandBuffer buildTransCmdbuf(
+            const vk::detail::DispatchLoaderDynamic& dld,
+            const vk::Device& device,
+            uint32_t iteration,
+            uint32_t index,
+            uint32_t total
+        );
 
     private:
         /// Vulkan descriptor set & pipeline layout
@@ -203,6 +219,7 @@ namespace lsfgvk::pipeline {
 
         vk::UniqueCommandPool m_pool;
         std::vector<vk::UniqueCommandBuffer> m_cmdbufs;
+        std::unordered_map<uint64_t, vk::UniqueCommandBuffer> m_transCmdbufs;
     };
 
 }

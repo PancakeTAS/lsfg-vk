@@ -805,3 +805,45 @@ Pipeline::Pipeline(
     LOG_DEBUG("  Recorded command buffers for pipeline execution")
     LOG_DEBUG("Finished building pipeline")
 }
+
+vk::CommandBuffer Pipeline::buildTransCmdbuf(
+    const vk::detail::DispatchLoaderDynamic& dld,
+    const vk::Device& device,
+    uint32_t iteration,
+    uint32_t index,
+    uint32_t total
+) {
+    const bool persist{total > 8};
+    const uint64_t key{persist ? ((static_cast<uint64_t>(index) << 32) | total) : index};
+
+    if (persist && this->m_transCmdbufs.contains(key))
+        return *this->m_transCmdbufs.at(key);
+
+    auto& cmdbuf{this->m_transCmdbufs[key]};
+    cmdbuf = vkhelper::createCommandBuffer(
+        dld,
+        device,
+        *this->m_pool
+    );
+
+    cmdbuf->begin({
+        .flags = persist ? vk::CommandBufferUsageFlagBits::eSimultaneousUse :
+            vk::CommandBufferUsageFlagBits::eOneTimeSubmit
+    }, dld);
+
+    const UniformBuffer buf{
+        .timestamp = static_cast<float>(index + 1) / static_cast<float>(total + 1),
+        .iteration = iteration
+    };
+    cmdbuf->updateBuffer(
+        *this->m_descriptorSet.buffer.first,
+        0,
+        4,
+        static_cast<const void*>(&buf.timestamp),
+        dld
+    );
+
+    cmdbuf->end(dld);
+
+    return *cmdbuf;
+}

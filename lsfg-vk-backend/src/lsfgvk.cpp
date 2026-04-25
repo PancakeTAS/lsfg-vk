@@ -75,7 +75,7 @@ Context::Context(
         { width, height },
         flowScale,
         performanceMode,
-        false /* TODO: HDR */
+        false
     };
 
     this->m_priv = std::make_unique<priv::Context>(priv::Context {
@@ -158,7 +158,11 @@ void Context::dispatch(uint32_t total) {
     // Dispatch main passes
     uint64_t prevInternal{};
     for (uint32_t i = 0; i < total; i++) {
-        const auto& transCmdbuf{ctx.pipeline.getCmdbufs().at(0)}; // FIXME: replace with actual buf
+        const auto& transCmdbuf{ctx.pipeline.buildTransCmdbuf(
+            vk.dld, *vk.device,
+            mapped->iteration,
+            i, total
+        )};
 
         // Transition command buffer to next timestamp
         if (i == 0) {
@@ -179,7 +183,7 @@ void Context::dispatch(uint32_t total) {
                 .pWaitSemaphores = i == 0 ? &*internal.first : &*sync.first,
                 .pWaitDstStageMask = &waitStage,
                 .commandBufferCount = 1,
-                .pCommandBuffers = &*transCmdbuf,
+                .pCommandBuffers = &transCmdbuf,
                 .signalSemaphoreCount = 1,
                 .pSignalSemaphores = &*internal.first
             }},
