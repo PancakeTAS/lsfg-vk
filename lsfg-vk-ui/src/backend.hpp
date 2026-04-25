@@ -9,14 +9,18 @@
 #include "lsfg-vk-common/configuration/config.hpp"
 
 #include <atomic>
+#include <cstddef>
+#include <optional>
+#include <stdexcept>
 #include <utility>
+#include <vector>
 
 #define getters public
 #define setters public
 
 namespace lsfgvk::ui {
 
-    /// Class tying ui and configuration together
+    /// Class tying UI and Configuration together
     class Backend : public QObject {
         Q_OBJECT
 
