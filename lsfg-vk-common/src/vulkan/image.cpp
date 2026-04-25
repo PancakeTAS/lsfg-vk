@@ -6,6 +6,7 @@
 #include "lsfg-vk-common/vulkan/vulkan.hpp"
 
 #include <bitset>
+#include <cstdint>
 #include <optional>
 
 #include <vulkan/vulkan_core.h>
@@ -16,7 +17,7 @@ namespace {
     /// create a image
     ls::owned_ptr<VkImage> createImage(const vk::Vulkan& vk,
             VkExtent2D extent, VkFormat format, VkImageUsageFlags usage,
-            bool external) {
+            bool external, uint32_t arrayLayers) {
         VkImage handle{};
 
         const VkExternalMemoryImageCreateInfo externalInfo{
@@ -34,7 +35,7 @@ namespace {
                 .depth = 1
             },
             .mipLevels = 1,
-            .arrayLayers = 1,
+            .arrayLayers = arrayLayers,
             .samples = VK_SAMPLE_COUNT_1_BIT,
             .usage = usage,
             .sharingMode = VK_SHARING_MODE_EXCLUSIVE
@@ -121,20 +122,20 @@ namespace {
     }
     /// create an image view
     ls::owned_ptr<VkImageView> createImageView(const vk::Vulkan& vk,
-            VkImage image, VkFormat format) {
+            VkImage image, VkFormat format, uint32_t arrayLayers) {
         VkImageView handle{};
 
         const VkImageViewCreateInfo viewInfo{
             .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
             .image = image,
-            .viewType = VK_IMAGE_VIEW_TYPE_2D,
+            .viewType = arrayLayers == 1 ? VK_IMAGE_VIEW_TYPE_2D : VK_IMAGE_VIEW_TYPE_2D_ARRAY,
             .format = format,
             .subresourceRange = {
                 .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
                 .baseMipLevel = 0,
                 .levelCount = 1,
                 .baseArrayLayer = 0,
-                .layerCount = 1
+                .layerCount = arrayLayers
             }
         };
         auto res = vk.df().CreateImageView(vk.dev(), &viewInfo, VK_NULL_HANDLE, &handle);
@@ -155,10 +156,13 @@ Image::Image(const vk::Vulkan& vk,
             VkFormat format,
             VkImageUsageFlags usage,
             std::optional<int> importFd,
-            std::optional<int*> exportFd) :
+            std::optional<int*> exportFd,
+            uint32_t arrayLayers
+        ) :
         image(createImage(vk,
             extent, format, usage,
-            importFd.has_value() || exportFd.has_value()
+            importFd.has_value() || exportFd.has_value(),
+            arrayLayers
         )),
         memory(allocateMemory(vk,
             *this->image,
@@ -166,7 +170,8 @@ Image::Image(const vk::Vulkan& vk,
         )),
         view(createImageView(vk,
             *this->image,
-            format
+            format,
+            arrayLayers
         )),
         extent(extent) {
 }

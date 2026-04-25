@@ -8,23 +8,29 @@
 
 namespace lsfgvk::cli::debug {
 
-    /// options for the "debug" command
+    ///
+    /// Options for the "debug" command
+    ///
     struct Options {
         std::optional<std::string> dll;
-        bool allow_fp16{true};
+        bool allow_fp16{false};
         int width{1920};
         int height{1080};
 
-        float flow{0.85F};
+        float flow{1.0F};
         int multiplier{2};
-        bool performance_mode{true};
+        bool performance_mode{false};
         std::optional<std::string> gpu;
 
         std::filesystem::path path;
     };
 
-    /// run the "debug" command
-    /// @param opts the command options
+    ///
+    /// Run the "debug" command
+    ///
+    /// @param opts Command options
+    /// @return Exit code
+    ///
     int run(const Options& opts);
 
 }

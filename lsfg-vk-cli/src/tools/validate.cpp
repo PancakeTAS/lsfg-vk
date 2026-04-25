@@ -16,7 +16,7 @@ int validate::run(const Options& opts) {
         path = *opts.config;
 
     if (!std::filesystem::exists(path)) {
-        std::cerr << "Validation failed: configuration file does not exist\n";
+        std::cerr << "Validation failed: Configuration file does not exist\n";
         return 1;
     }
 

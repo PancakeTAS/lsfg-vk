@@ -7,13 +7,19 @@
 
 namespace lsfgvk::cli::validate {
 
-    /// options for the "validate" command
+    ///
+    /// Options for the "validate" command
+    ///
     struct Options {
         std::optional<std::string> config;
     };
 
-    /// run the "validate" command
-    /// @param opts the command options
+    ///
+    /// Run the "validate" command
+    ///
+    /// @param opts Command options
+    /// @return Exit code
+    ///
     int run(const Options& opts);
 
 }
