@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <array>
 #include <cstddef>
+#include <cstdint>
 #include <initializer_list>
 #include <new>
 #include <stdexcept>
@@ -88,6 +89,41 @@ namespace lsfgvk::pipeline {
         std::array<T, N> m_data{};
         size_t m_size{0};
 #pragma clang diagnostic pop
+    };
+
+    /// Sequence of operations to apply to the base extent
+    class ExtentOp {
+    public:
+        /// Default constructor for no operations and no flow scaling
+        constexpr ExtentOp() = default;
+        /// Constructor for no operations aside from flow scale
+        constexpr ExtentOp(bool flow) : m_flow(flow) {}
+        /// Constructor for a single operation
+        constexpr ExtentOp(bool flow, uint32_t add, uint32_t shift)
+            : m_flow(flow), m_operations({{add, shift}}) {}
+        /// Constructor for a single operation starting from the flow base extent
+        constexpr ExtentOp(uint32_t add, uint32_t shift)
+            : m_flow(true), m_operations({{add, shift}}) {}
+        // Combine two extents
+        constexpr ExtentOp operator+(const ExtentOp& other) const {
+            ExtentOp result{*this};
+            for (const auto& [add, shift] : other.m_operations)
+                result.m_operations.emplace_back(add, shift);
+            return result;
+        }
+        // Combine two extends
+        constexpr ExtentOp operator+=(const ExtentOp& other) {
+            for (const auto& [add, shift] : other.m_operations)
+                this->m_operations.emplace_back(add, shift);
+            return *this;
+        }
+        /// Get the flow value
+        [[nodiscard]] constexpr auto flow() const { return this->m_flow; }
+        /// Get the operations
+        [[nodiscard]] constexpr const auto& operations() const { return this->m_operations; }
+    private:
+        bool m_flow{false};
+        inplace_vector<std::pair<uint32_t, uint32_t>, 8> m_operations;
     };
 
 }
