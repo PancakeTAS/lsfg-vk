@@ -28,15 +28,13 @@ set_target_properties(lsfg-vk-ui PROPERTIES
     AUTOUIC ON)
 
 target_compile_options(lsfg-vk-ui PRIVATE # QT-codegen warnings
-    -Wno-unknown-warning-option
     -Wno-ctad-maybe-unsupported
     -Wno-unsafe-buffer-usage-in-libc-call
-    -Wno-global-constructors
-    -Wno-unsafe-buffer-usage)
+    -Wno-unsafe-buffer-usage
+    -Wno-global-constructors)
 
 target_link_libraries(lsfg-vk-ui
     PRIVATE lsfg-vk-common
-    PRIVATE lsfg-vk-backend
     PRIVATE Qt6::Quick)
 
 install(TARGETS lsfg-vk-ui

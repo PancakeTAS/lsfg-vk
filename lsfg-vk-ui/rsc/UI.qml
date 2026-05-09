@@ -145,12 +145,12 @@ ApplicationWindow {
 
                 GroupEntry {
                     title: "Path to Lossless Scaling"
-                    description: "Change the location of Lossless.dll"
+                    description: "Change the location of lsfg-vk.dll"
 
                     FileEdit {
                         Layout.fillWidth: true
 
-                        title: "Select Lossless.dll"
+                        title: "Select lsfg-vk.dll"
                         filter: "Dynamic Link Library Files (*.dll)"
 
                         text: backend.dll

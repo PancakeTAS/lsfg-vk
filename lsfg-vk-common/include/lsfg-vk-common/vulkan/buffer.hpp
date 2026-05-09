@@ -21,7 +21,12 @@ namespace vk {
         template<typename T>
         Buffer(const vk::Vulkan& vk, const T& data,
                 VkBufferUsageFlags usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT)
-            : Buffer(vk, reinterpret_cast<const void*>(&data), sizeof(T), usage) {}
+            : Buffer(
+                vk,
+                reinterpret_cast<const void*>(&data), // NOLINT (unsafe cast)
+                sizeof(T),
+                usage
+            ) {}
 
         /// create a buffer
         /// @param vk the vulkan instance

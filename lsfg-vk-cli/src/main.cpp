@@ -18,7 +18,7 @@
 using namespace lsfgvk::cli;
 
 namespace {
-    /// print usage information
+    /// Print usage information
     void usage(const std::string& prog) {
         std::cerr <<
 R"(Validate, benchmark, and debug lsfg-vk.
@@ -37,7 +37,7 @@ SUBCOMMAND OPTIONS:
         -c, --config <PATH>             Optional path to the configuration file
 
     benchmark & debug
-        -d, --dll <PATH>                Path to Lossless.dll
+        -d, --dll <PATH>                Path to lsfg-vk.dll
         -a, --allow-fp16                Allow FP16 acceleration
         -w, --width <INT>               Width of the input frames
         -h, --height <INT>              Height of the input frames
@@ -53,7 +53,7 @@ SUBCOMMAND OPTIONS:
         <folder>                        Path to the debug frames)" << '\n';
     }
 
-    /// parse the validate command options
+    /// Parse the validate command options
     [[noreturn]] void on_validate(int argc, char** argv) {
         validate::Options opts{};
 
@@ -83,7 +83,7 @@ SUBCOMMAND OPTIONS:
         std::exit(validate::run(opts));
     }
 
-    /// parse the benchmark command options
+    /// Parse the benchmark command options
     [[noreturn]] void on_benchmark(int argc, char** argv) {
         benchmark::Options opts{};
 
@@ -145,7 +145,7 @@ SUBCOMMAND OPTIONS:
         std::exit(benchmark::run(opts));
     }
 
-    /// parse the debug command options
+    /// Parse the debug command options
     [[noreturn]] void on_debug(int argc, char** argv) {
         debug::Options opts{};
 

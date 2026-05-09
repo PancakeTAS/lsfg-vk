@@ -19,7 +19,7 @@ using namespace lsfgvk;
 using namespace lsfgvk::ui;
 
 Backend::Backend() {
-    // load configuration
+    // Load existing configuration
     ls::ConfigFile config{};
 
     auto path = ls::findConfigurationFile();
@@ -27,7 +27,8 @@ Backend::Backend() {
         try {
             config = ls::ConfigFile(path);
         } catch (const std::exception&) {
-            std::cerr << "the configuration file is invalid, it has been backed up to '.old'\n";
+            std::cerr << "The existing configuration file is invalid, "
+                << "it has been backed up to '.old'\n";
             std::filesystem::rename(path, path.string() + ".old");
         }
     }
@@ -35,17 +36,17 @@ Backend::Backend() {
     this->m_global = config.global();
     this->m_profiles = config.profiles();
 
-    // create gpu list
-    this->m_gpu_list = ui::getAvailableGPUs();
+    // Create gpu list
+    this->m_gpu_list = ui::queryGPUs();
 
-    // create profile list model
+    // Create profile list model
     QStringList profiles;
     for (const auto& profile : this->m_profiles)
         profiles.append(QString::fromStdString(profile.name));
 
     this->m_profile_list_model = new QStringListModel(profiles, this);
 
-    // create active_in list models
+    // Create active_in list models
     this->m_active_in_list_models.reserve(this->m_profiles.size());
     for (const auto& profile : this->m_profiles) {
         QStringList active_in;
@@ -55,11 +56,11 @@ Backend::Backend() {
         this->m_active_in_list_models.push_back(new QStringListModel(active_in, this));
     }
 
-    // try to select first profile
+    // Try to select first profile
     if (!this->m_profiles.empty())
         this->m_profile_index = 0;
 
-    // spawn saving thread
+    // Spawn saving thread
     std::thread([this, path]() {
         while (true) {
             std::this_thread::sleep_for(std::chrono::milliseconds(500));
@@ -74,10 +75,10 @@ Backend::Backend() {
             try {
                 std::filesystem::create_directories(path.parent_path());
                 if (!std::filesystem::exists(path.parent_path()))
-                    throw ls::error("unable to create configuration directory");
+                    throw ls::error("Unable to create configuration directory");
                 config.write(path);
             } catch (const std::exception& e) {
-                std::cerr << "unable to write configuration:\n- " << e.what() << "\n";
+                std::cerr << "Unable to write configuration:\n- " << e.what() << "\n";
             }
         }
     }).detach();

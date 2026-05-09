@@ -42,7 +42,8 @@ namespace vk {
         void blitImage(const vk::Vulkan& vk,
             const std::vector<vk::Barrier>& preBarriers,
             std::pair<VkImage, VkImage> images, VkExtent2D extent,
-            const std::vector<vk::Barrier>& postBarriers) const;
+            const std::vector<vk::Barrier>& postBarriers,
+            uint32_t srcLayer = 0, uint32_t dstLayer = 0) const;
 
         /// insert a bunch of barriers
         /// @param vk the vulkan instance
@@ -68,7 +69,8 @@ namespace vk {
         /// @param buffer the source buffer
         /// @param image the destination image
         void copyBufferToImage(const vk::Vulkan& vk,
-            const vk::Buffer& buffer, const vk::Image& image) const;
+            const vk::Buffer& buffer, const vk::Image& image,
+            uint32_t dstLayer = 0) const;
 
         /// end recording commands
         /// @param vk the vulkan instance

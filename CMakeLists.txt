@@ -6,14 +6,14 @@ include(GNUInstallDirs)
 option(LSFGVK_BUILD_VK_LAYER     "Build the Vulkan layer"            ON)
 option(LSFGVK_BUILD_UI           "Build the user interface"         OFF)
 option(LSFGVK_BUILD_CLI          "Build the command line interface"  ON)
-option(LSFGVK_INSTALL_DEVELOP    "Install development libraries and headers"      OFF)
+option(LSFGVK_INSTALL_LIBRARIES  "Install development libraries and headers"      OFF)
 option(LSFGVK_INSTALL_XDG_FILES  "Install the application icon and desktop files" OFF)
 set(LSFGVK_LAYER_LIBRARY_PATH liblsfg-vk-layer.so CACHE STRING "Change where Vulkan searches for the layer library")
-option(LSFGVK_TESTING_RENDERDOC  "Enable RenderDoc integration for testing purposes" OFF)
 # === READ HERE FOR BUILD OPTIONS ===
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_VISIBILITY_PRESET hidden)
 
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(CMAKE_SKIP_RPATH ON)
@@ -29,22 +29,18 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
         add_compile_options(
             # By default, enable all warnings
             -Weverything
+            -Wno-unknown-warning-option
             # Some warnings are incompatible with each other
             -Wno-pre-c++20-compat-pedantic
             -Wno-c++98-compat-pedantic
             -Wno-switch-default
             # Then there's code-style things I don't care about
             -Wno-missing-designated-field-initializers
-            -Wno-shadow
+            -Wno-unused-macros
             # And functional warning I don't care about either
-            -Wno-cast-function-type-strict
             -Wno-padded
         )
     endif()
-endif()
-
-if(LSFGVK_TESTING_RENDERDOC)
-    add_compile_definitions(LSFGVK_TESTING_RENDERDOC)
 endif()
 
 add_subdirectory(lsfg-vk-common)

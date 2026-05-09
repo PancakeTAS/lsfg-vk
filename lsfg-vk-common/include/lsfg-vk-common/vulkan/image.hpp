@@ -5,6 +5,7 @@
 #include "../helpers/pointers.hpp"
 #include "vulkan.hpp"
 
+#include <cstdint>
 #include <optional>
 
 #include <vulkan/vulkan_core.h>
@@ -26,7 +27,9 @@ namespace vk {
             VkFormat format = VK_FORMAT_R8G8B8A8_UNORM,
             VkImageUsageFlags usage = VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
             std::optional<int> importFd = std::nullopt,
-            std::optional<int*> exportFd = std::nullopt);
+            std::optional<int*> exportFd = std::nullopt,
+            uint32_t arrayLayers = 1
+        );
 
         /// get the image handle
         /// @return the image handle

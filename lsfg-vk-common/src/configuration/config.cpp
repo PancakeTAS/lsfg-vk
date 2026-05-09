@@ -30,7 +30,7 @@ void ConfigFile::createDefaultConfigFile(const std::filesystem::path& path) {
         ofs << R"(version = 2
 
 [global]
-# dll = '/media/games/Lossless Scaling/Lossless.dll' # if you don't have LS in the default location
+# dll = '/media/games/Lossless Scaling/lsfg-vk.dll' # if you don't have LS in the default location
 allow_fp16 = true # this will improve give a MASSIVE performance boost on AMD, but be super slow on older (!) NVIDIA GPUs
 
 [[profile]]

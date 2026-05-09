@@ -1,33 +1,23 @@
 set(BACKEND_SOURCES
-    "src/extraction/dll_reader.cpp"
-    "src/extraction/shader_registry.cpp"
-    "src/helpers/limits.cpp"
-    "src/helpers/managed_shader.cpp"
-    "src/helpers/utils.cpp"
-    "src/shaderchains/alpha0.cpp"
-    "src/shaderchains/alpha1.cpp"
-    "src/shaderchains/beta0.cpp"
-    "src/shaderchains/beta1.cpp"
-    "src/shaderchains/delta0.cpp"
-    "src/shaderchains/delta1.cpp"
-    "src/shaderchains/gamma0.cpp"
-    "src/shaderchains/gamma1.cpp"
-    "src/shaderchains/generate.cpp"
-    "src/shaderchains/mipmaps.cpp"
+    "src/modules/library/dll.cpp"
+    "src/modules/library.cpp"
+    "src/modules/pipeline.cpp"
+    "src/utility/pipelines.cpp"
+    "src/utility/vkhelper.cpp"
     "src/lsfgvk.cpp")
 
 add_library(lsfg-vk-backend STATIC ${BACKEND_SOURCES})
 
 target_include_directories(lsfg-vk-backend
-    PUBLIC include)
+    PUBLIC include
+    PRIVATE src)
 
-target_link_libraries(lsfg-vk-backend
-    PUBLIC lsfg-vk-common)
+target_compile_options(lsfg-vk-backend PUBLIC
+    $<$<CXX_COMPILER_ID:Clang>:-fconstexpr-steps=4290000000>
+    $<$<CXX_COMPILER_ID:GNU>:-fconstexpr-ops-limit=4290000000>
+)
 
-set_target_properties(lsfg-vk-backend PROPERTIES
-    CXX_VISIBILITY_PRESET hidden)
-
-if(LSFGVK_INSTALL_DEVELOP)
+if(LSFGVK_INSTALL_LIBRARIES)
     install(TARGETS lsfg-vk-backend
         ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}")
     install(DIRECTORY "include/lsfg-vk-backend/"

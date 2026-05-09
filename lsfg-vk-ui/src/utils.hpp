@@ -6,9 +6,11 @@
 
 namespace lsfgvk::ui {
 
-    /// get the list of available GPUs, automatically
-    /// switching to PCI IDs if there are duplicates
-    /// @return list of available GPUs
-    QStringList getAvailableGPUs();
+    ///
+    /// Query all GPUs available on the system.
+    ///
+    /// @return List of available GPUs
+    ///
+    QStringList queryGPUs();
 
 }

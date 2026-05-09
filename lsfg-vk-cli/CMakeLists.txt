@@ -6,12 +6,14 @@ set(CLI_SOURCES
 
 add_executable(lsfg-vk-cli ${CLI_SOURCES})
 
+target_include_directories(lsfg-vk-cli SYSTEM
+    PRIVATE thirdparty/include)
+
 target_link_libraries(lsfg-vk-cli
     PUBLIC lsfg-vk-common
     PUBLIC lsfg-vk-backend)
 
 target_compile_options(lsfg-vk-cli PRIVATE
-    -Wno-unknown-warning-option
     -Wno-unsafe-buffer-usage) # CLI parsing
 
 install(TARGETS lsfg-vk-cli

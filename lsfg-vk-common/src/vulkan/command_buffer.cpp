@@ -105,7 +105,8 @@ void CommandBuffer::dispatch(const vk::Vulkan& vk,
 void CommandBuffer::blitImage(const vk::Vulkan& vk,
         const std::vector<vk::Barrier>& preBarriers,
         std::pair<VkImage, VkImage> images, VkExtent2D extent,
-        const std::vector<vk::Barrier>& postBarriers) const {
+        const std::vector<vk::Barrier>& postBarriers,
+        uint32_t srcLayer, uint32_t dstLayer) const {
     vk.df().CmdPipelineBarrier(*this->commandBuffer,
         VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
         0,
@@ -117,7 +118,8 @@ void CommandBuffer::blitImage(const vk::Vulkan& vk,
     const VkImageBlit region{
         .srcSubresource = {
             .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-            .layerCount = 1
+            .baseArrayLayer = srcLayer,
+            .layerCount = 1,
         },
         .srcOffsets = {
             { 0, 0, 0 },
@@ -126,6 +128,7 @@ void CommandBuffer::blitImage(const vk::Vulkan& vk,
         },
         .dstSubresource = {
             .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+            .baseArrayLayer = dstLayer,
             .layerCount = 1
         },
         .dstOffsets = {
@@ -151,7 +154,8 @@ void CommandBuffer::blitImage(const vk::Vulkan& vk,
 }
 
 void CommandBuffer::copyBufferToImage(const vk::Vulkan& vk,
-        const vk::Buffer& buffer, const vk::Image& image) const {
+        const vk::Buffer& buffer, const vk::Image& image,
+        uint32_t dstLayer) const {
     const VkImageMemoryBarrier barrier{
         .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
         .srcAccessMask = VK_ACCESS_NONE,
@@ -179,6 +183,7 @@ void CommandBuffer::copyBufferToImage(const vk::Vulkan& vk,
         .bufferImageHeight = 0,
         .imageSubresource = {
             .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+            .baseArrayLayer = dstLayer,
             .layerCount = 1
         },
         .imageExtent = {

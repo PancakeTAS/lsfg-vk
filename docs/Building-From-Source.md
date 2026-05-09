@@ -76,7 +76,7 @@ However, lsfg-vk provides several CMake options to customize the build process:
 - `LSFGVK_BUILD_VK_LAYER`: Set to `On` to build the Vulkan layer (default is `On`).
 - `LSFGVK_BUILD_UI`: Set to `On` to build the user interface (default is `Off`).
 - `LSFGVK_BUILD_CLI`: Set to `On` to build the command-line interface (default is `On`).
-- `LSFGVK_INSTALL_DEVELOP`: Set to `On` to install development files like headers and libraries (default is `Off`).
+- `LSFGVK_INSTALL_LIBRARIES`: Set to `On` to install development files like headers and libraries (default is `Off`).
 - `LSFGVK_INSTALL_XDG_FILES`: Set to `On` to install XDG desktop files and icons (default is `Off`).
 - `LSFGVK_LAYER_LIBRARY_PATH`: Override the path to the Vulkan layer library (by default, Vulkan will search the systems library path).
 

@@ -25,3 +25,5 @@ Checks:
 - -portability-avoid-pragma-once
 # Qt requires use of raw pointers in many places
 - -cppcoreguidelines-owning-memory
+# Qt seems to break some ranges algorithms in GCC
+- -modernize-use-ranges

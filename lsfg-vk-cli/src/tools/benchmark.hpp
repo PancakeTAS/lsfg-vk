@@ -7,7 +7,9 @@
 
 namespace lsfgvk::cli::benchmark {
 
-    /// options for the "benchmark" command
+    ///
+    /// Options for the "benchmark" command
+    ///
     struct Options {
         std::optional<std::string> dll;
         bool allow_fp16{false};
@@ -22,8 +24,12 @@ namespace lsfgvk::cli::benchmark {
         int duration{10};
     };
 
-    /// run the "benchmark" command
-    /// @param opts the command options
+    ///
+    /// Run the "benchmark" command
+    ///
+    /// @param opts Command options
+    /// @return Exit code
+    ///
     int run(const Options& opts);
 
 }
