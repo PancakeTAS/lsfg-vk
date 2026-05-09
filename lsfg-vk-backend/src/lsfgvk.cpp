@@ -5,7 +5,6 @@
 #include "modules/pipeline.hpp"
 #include "utility/pipelines.hpp"
 #include "utility/vkhelper.hpp"
-#include "vulkan/vulkan.hpp"
 
 #include <cstdint>
 #include <filesystem>

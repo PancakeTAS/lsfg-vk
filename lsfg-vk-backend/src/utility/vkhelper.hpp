@@ -5,6 +5,9 @@
 #define VULKAN_HPP_DISPATCH_LOADER_DYNAMIC 1
 #define VULKAN_HPP_NO_DEFAULT_DISPATCHER 1
 #define VULKAN_HPP_NO_CONSTRUCTORS 1
+#define VULKAN_HPP_NO_SETTERS 1
+#define VULKAN_HPP_NO_SPACESHIP_OPERATOR 1
+#define VULKAN_HPP_NO_TO_STRING 1
 #include <vulkan/vulkan.hpp> // IWYU pragma: export
 
 // IWYU pragma: begin_exports
