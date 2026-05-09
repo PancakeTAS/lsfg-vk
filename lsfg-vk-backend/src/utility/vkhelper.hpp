@@ -3,6 +3,7 @@
 #pragma once
 
 #define VULKAN_HPP_DISPATCH_LOADER_DYNAMIC 1
+#define VULKAN_HPP_TYPESAFE_CONVERSION 0
 #define VULKAN_HPP_NO_DEFAULT_DISPATCHER 1
 #define VULKAN_HPP_NO_CONSTRUCTORS 1
 #define VULKAN_HPP_NO_SETTERS 1
@@ -272,7 +273,7 @@ namespace vkhelper {
         const vk::detail::DispatchLoaderDynamic& dld,
         const vk::Device& device,
         const vk::PhysicalDevice& physdev,
-        size_t size,
+        vk::DeviceSize size,
         std::bitset<32> types,
         bool hostVisible = false
     );

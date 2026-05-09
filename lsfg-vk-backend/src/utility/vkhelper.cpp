@@ -411,7 +411,7 @@ vk::UniqueDeviceMemory vkhelper::allocateMemory(
     const vk::detail::DispatchLoaderDynamic& dld,
     const vk::Device& device,
     const vk::PhysicalDevice& physdev,
-    size_t size,
+    vk::DeviceSize size,
     std::bitset<32> types,
     bool hostVisible
 ) {

@@ -110,7 +110,7 @@ Pipeline::Pipeline(
     };
 
     // Create the Vulkan images
-    size_t alignment{};
+    vk::DeviceSize alignment{};
     uint32_t types{~0U};
 
     const vk::Extent2D flowExtent{
@@ -643,7 +643,7 @@ Pipeline::Pipeline(
         for (const auto& sampledImage : stage.sampledImages) {
             const auto& image = this->m_images.at(sampledImage);
             for (const auto& subimage : image.subimages) {
-                const vk::Image& imageHandle{*subimage.image};
+                auto imageHandle{static_cast<const VkImage>(*subimage.image)}; // NOLINT (32-bit)
                 if (stageBarriers.contains(imageHandle)) {
                     stageBarriers[imageHandle].dstAccessMask = vk::AccessFlagBits2::eShaderRead;
                     continue;
@@ -666,7 +666,7 @@ Pipeline::Pipeline(
         for (const auto& storageImage : stage.storageImages) {
             const auto& image = this->m_images.at(storageImage);
             for (const auto& subimage : image.subimages) {
-                const vk::Image& imageHandle{*subimage.image};
+                auto imageHandle{static_cast<const VkImage>(*subimage.image)}; // NOLINT (32-bit)
                 if (stageBarriers.contains(imageHandle)) {
                     stageBarriers[imageHandle].dstAccessMask = vk::AccessFlagBits2::eShaderWrite;
                     continue;
@@ -726,7 +726,7 @@ Pipeline::Pipeline(
         for (const auto& sampledImage : stage.sampledImages) {
             const auto& image = this->m_images.at(sampledImage);
             for (const auto& subimage : image.subimages) {
-                stageBarriers[*subimage.image] = {
+                stageBarriers[static_cast<VkImage>(*subimage.image)] = {
                     .srcStageMask = vk::PipelineStageFlagBits2::eComputeShader,
                     .srcAccessMask = vk::AccessFlagBits2::eShaderRead,
                     .dstStageMask = vk::PipelineStageFlagBits2::eComputeShader,
@@ -743,7 +743,7 @@ Pipeline::Pipeline(
         for (const auto& storageImage : stage.storageImages) {
             const auto& image = this->m_images.at(storageImage);
             for (const auto& subimage : image.subimages) {
-                stageBarriers[*subimage.image] = {
+                stageBarriers[static_cast<VkImage>(*subimage.image)] = {
                     .srcStageMask = vk::PipelineStageFlagBits2::eComputeShader,
                     .srcAccessMask = vk::AccessFlagBits2::eShaderWrite,
                     .dstStageMask = vk::PipelineStageFlagBits2::eComputeShader,
