@@ -22,19 +22,19 @@ Instance::Instance(
     bool allowFP16
 ) {
     // Create Vulkan context
-    vk::detail::DispatchLoaderDynamic dld{};
+    auto dld{std::make_unique<vk::detail::DispatchLoaderDynamic>()};
 
-    auto instance{vkhelper::createInstance(dld)};
-    auto physdev{vkhelper::findPhysicalDevice(dld, *instance, deviceId)};
+    auto instance{vkhelper::createInstance(*dld)};
+    auto physdev{vkhelper::findPhysicalDevice(*dld, *instance, deviceId)};
 
-    const uint32_t qfi{vkhelper::findComputeQueueFamilyIndex(dld, physdev)};
-    const bool fp16{allowFP16 && vkhelper::checkHalfPrecisionSupport(dld, physdev)};
+    const uint32_t qfi{vkhelper::findComputeQueueFamilyIndex(*dld, physdev)};
+    const bool fp16{allowFP16 && vkhelper::checkHalfPrecisionSupport(*dld, physdev)};
 
-    auto [device, queue] = vkhelper::createDevice(dld, physdev, qfi, fp16);
+    auto [device, queue] = vkhelper::createDevice(*dld, physdev, qfi, fp16);
 
     // Construct instance
     library::ShaderLibrary library{
-        dld,
+        *dld,
         *device,
         fp16,
         lsfgvkDllPath
@@ -42,7 +42,7 @@ Instance::Instance(
 
     this->m_priv = std::make_unique<priv::Instance>(priv::Instance {
         .vk = {
-            .dld = dld,
+            .dld = std::move(dld),
             .instance = std::move(instance),
             .physdev = physdev,
             .device = std::move(device),
@@ -64,7 +64,7 @@ Context::Context(
     const auto& vk{instance.m_priv->vk};
 
     pipeline::Pipeline pipeline{
-        vk.dld,
+        *vk.dld,
         *vk.device,
         vk.physdev,
         vk.queue,
@@ -80,9 +80,9 @@ Context::Context(
     this->m_priv = std::make_unique<priv::Context>(priv::Context {
         .instance = std::ref(*instance.m_priv),
         .pipeline = std::move(pipeline),
-        .syncSemaphore = { vkhelper::createTimelineSemaphore(vk.dld, *vk.device, true), 0 },
-        .internalSemaphores = { vkhelper::createTimelineSemaphore(vk.dld, *vk.device), 0 },
-        .fence = vkhelper::createFence(vk.dld, *vk.device),
+        .syncSemaphore = { vkhelper::createTimelineSemaphore(*vk.dld, *vk.device, true), 0 },
+        .internalSemaphores = { vkhelper::createTimelineSemaphore(*vk.dld, *vk.device), 0 },
+        .fence = vkhelper::createFence(*vk.dld, *vk.device),
     });
 }
 
@@ -92,15 +92,15 @@ FileDescriptors Context::exportFds() const {
 
     return{
         .sourceFd = vkhelper::exportMemoryFd(
-            vk.dld, *vk.device,
+            *vk.dld, *vk.device,
             pipeline.getExternalInputs().front().memory
         ),
         .destinationFd = vkhelper::exportMemoryFd(
-            vk.dld, *vk.device,
+            *vk.dld, *vk.device,
             pipeline.getExternalOutputs().front().memory
         ),
         .syncFd = vkhelper::exportSemaphoreFd(
-            vk.dld, *vk.device,
+            *vk.dld, *vk.device,
             *this->m_priv->syncSemaphore.first
         )
     };
@@ -116,9 +116,9 @@ void Context::dispatch(uint32_t total) {
         ctx.firstIteration = false;
         mapped->iteration = 0;
     } else {
-        if (vk.device->waitForFences(*ctx.fence, true, UINT64_MAX, vk.dld) != vk::Result::eSuccess)
+        if (vk.device->waitForFences(*ctx.fence, true, UINT64_MAX, *vk.dld) != vk::Result::eSuccess)
             throw std::runtime_error("Unable to wait for completion of previous iteration");
-        vk.device->resetFences(*ctx.fence, vk.dld);
+        vk.device->resetFences(*ctx.fence, *vk.dld);
         mapped->iteration++;
     }
 
@@ -151,14 +151,14 @@ void Context::dispatch(uint32_t total) {
             .pSignalSemaphores = &*internal.first
         }},
         nullptr,
-        vk.dld
+        *vk.dld
     );
 
     // Dispatch main passes
     uint64_t prevInternal{};
     for (uint32_t i = 0; i < total; i++) {
         const auto& transCmdbuf{ctx.pipeline.buildTransCmdbuf(
-            vk.dld, *vk.device,
+            *vk.dld, *vk.device,
             mapped->iteration,
             i, total
         )};
@@ -187,7 +187,7 @@ void Context::dispatch(uint32_t total) {
                 .pSignalSemaphores = &*internal.first
             }},
             nullptr,
-            vk.dld
+            *vk.dld
         );
 
         // Dispatch main pass
@@ -208,7 +208,7 @@ void Context::dispatch(uint32_t total) {
                 .pSignalSemaphores = &*sync.first
             }},
             i == (total - 1) ? *ctx.fence : nullptr,
-            vk.dld
+            *vk.dld
         );
     }
 }
@@ -217,7 +217,7 @@ void Context::idle() const {
     const auto& ctx{*this->m_priv};
     const auto& vk{ctx.instance.get().vk};
 
-    vk.device->waitIdle(vk.dld);
+    vk.device->waitIdle(*vk.dld);
 }
 
 Context::~Context() {

@@ -21,7 +21,7 @@ namespace lsfgvk::priv {
         /// Vulkan context
         struct Vulkan {
             /// Vulkan dispatch loader
-            vk::detail::DispatchLoaderDynamic dld;
+            std::unique_ptr<vk::detail::DispatchLoaderDynamic> dld;
             /// Vulkan instance (1.2)
             vk::UniqueInstance instance;
             /// Vulkan physical device
