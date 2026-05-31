@@ -13,11 +13,11 @@
 
 1. Before proceeding, please make sure you have [Lossless Scaling](https://store.steampowered.com/app/993090/Lossless_Scaling/) installed on Steam.
 2. Head to the [GitHub Releases](https://github.com/PancakeTAS/lsfg-vk/releases) page and download the file named "lsfg-vk-2.0.0-x86_64.tar.xz".
-3. Open a terminal in the folder where you downloaded the file and run the following command:
+3. Open a terminal in the directory where you downloaded the file and run the following command:
 ```bash
 tar -xvf lsfg-vk-2.0.0-linux.tar.xz -C ~/.local
 ```
-This will extract lsfg-vk to the `~/.local` folder. Please **keep track of the files that were extracted**, in case you wish to uninstall lsfg-vk later.
+This will extract lsfg-vk to the `~/.local` directory. Please **keep track of the files that were extracted**, in case you wish to uninstall lsfg-vk later.
 
 4. The graphical interface of lsfg-vk requires Qt6 and Qt6 Quick in order to run. If you do not have these installed, install the following packages:
 ```bash
