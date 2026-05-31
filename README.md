@@ -15,7 +15,7 @@
 2. Head to the [GitHub Releases](https://github.com/PancakeTAS/lsfg-vk/releases) page and download the file named "lsfg-vk-2.0.0-x86_64.tar.xz".
 3. Open a terminal in the folder where you downloaded the file and run the following command:
 ```bash
-tar -xvf lsfg-vk-2.0.0-x86_64.tar.xz -C ~/.local
+tar -xvf lsfg-vk-2.0.0-linux.tar.xz -C ~/.local
 ```
 This will extract lsfg-vk to the `~/.local` folder. Please **keep track of the files that were extracted**, in case you wish to uninstall lsfg-vk later.
 
