@@ -1,4 +1,4 @@
-# Building lsfg-vk from Source
+# Building lsfg-vk From Source
 This guide provides step-by-step instructions on how to build the lsfg-vk project from source code.
 
 >[!IMPORTANT]
@@ -14,14 +14,14 @@ This guide provides step-by-step instructions on how to build the lsfg-vk projec
 Before you begin, ensure you have the required packages installed on your system.
 
 You will need the following dependencies:
-- Typical build tools, such as `git`, `curl`, etc.
-- A C++ compiler that supports C++20 or later
+- Common build tools, such as `git`, `curl`, etc.
+- A C++ compiler that supports the C++20 standard or later
 - CMake (version 3.10 or higher)
 - Ninja build system (other build systems may work, but Ninja is recommended)
 - Vulkan SDK
 - Qt6 and Qt6Quick (only needed when building lsfg-vk-ui)
 
-The list of required packages may vary depending on your operating system. Below are the installation commands for some common Linux distributions.
+The list of required packages may vary depending on your operating system. Below are the installation commands for some common Linux distributions:
 ```bash
 # On Debian/Ubuntu, use:
 sudo apt-get install -y \
@@ -43,7 +43,7 @@ sudo pacman -S --needed \
     qt6-base qt6-declarative
 ```
 
-### Building & Installing lsfg-vk
+### Building and Installing lsfg-vk
 
 1. **Clone the Repository**
 
@@ -58,9 +58,9 @@ Optionally, you can checkout a specific release tag:
 git checkout tags/vX.Y.Z
 ```
 
-2. **Configure the build with CMake**
+2. **Configure the Build With CMake**
 
-The recommended way to configure lsfg-vk is this:
+The recommended way to configure lsfg-vk is:
 ```bash
 cmake -B build -G Ninja \
     -DCMAKE_BUILD_TYPE=Release \
@@ -71,10 +71,10 @@ cmake -B build -G Ninja \
 ```
 
 However, lsfg-vk provides several CMake options to customize the build process:
-- `CMAKE_BUILD_TYPE`: Set to `Release` for optimized builds or `Debug` for debugging builds.
+- `CMAKE_BUILD_TYPE`: Set to `Release` for optimized builds or `Debug` to build for debugging.
 - `CMAKE_INSTALL_PREFIX`: Specify the installation directory (default is `/usr/local`).
 - `LSFGVK_BUILD_VK_LAYER`: Set to `On` to build the Vulkan layer (default is `On`).
-- `LSFGVK_BUILD_UI`: Set to `On` to build the user interface (default is `Off`).
+- `LSFGVK_BUILD_UI`: Set to `On` to build the graphical user interface (default is `Off`).
 - `LSFGVK_BUILD_CLI`: Set to `On` to build the command-line interface (default is `On`).
 - `LSFGVK_INSTALL_DEVELOP`: Set to `On` to install development files like headers and libraries (default is `Off`).
 - `LSFGVK_INSTALL_XDG_FILES`: Set to `On` to install XDG desktop files and icons (default is `Off`).
@@ -96,4 +96,4 @@ Install the built files to the specified installation prefix:
 sudo cmake --install build
 ```
 
-Keep track of the installed files, in order to uninstall them later if needed.
+Keep track of installed files in case you wish to uninstall them later.

@@ -4,11 +4,11 @@ If you want to use **lsfg-vk** with Flatpak applications, you must install the V
 
 ## Installation
 
-You can install lsfg-vk for Flatpak through three different methods.
+There are three different ways of installing lsfg-vk for Flatpak.
 
-### Through Flathub
+### 1. Through Flathub
 
-The main lsfg-vk layer is available on Flathub and can be installed with the following commands (you can omit the `--user` in a system installation):
+The main lsfg-vk layer is available on Flathub and can be installed with the following commands (omit `--user` for a system-wide installation):
 ```bash
 flatpak install --user org.freedesktop.Platform.VulkanLayer.lsfgvk//24.08
 flatpak install --user org.freedesktop.Platform.VulkanLayer.lsfgvk//25.08
@@ -16,11 +16,11 @@ flatpak install --user org.freedesktop.Platform.VulkanLayer.lsfgvk//25.08
 
 If you require an older runtime (23.08), you must install it manually as shown in the next section. Similarly, if you want to install the graphical configuration editor **lsfg-vk-ui**, you must also install it manually.
 
-### Through GitHub Releases
+### 2. Through GitHub Releases
 
-Head over to the [GitHub Releases](https://github.com/PancakeTAS/lsfg-vk/releases) page and download the Flatpak files for the Vulkan layer and/or the graphical configuration editor.
+Head over to the lsfg-vk [GitHub Releases](https://github.com/PancakeTAS/lsfg-vk/releases) page and download the Flatpak files for the Vulkan layer and/or the graphical configuration editor.
 
-It can be installed with the following commands (you can omit the `--user` in a system installation):
+It can be installed with the following commands (omit`--user` for a system-wide installation):
 ```bash
 tar -xf lsfg-vk-2.0.0-flatpaks-x86_64.tar.xz
 flatpak --user install ./org.freedesktop.Platform.VulkanLayer.lsfg-vk-23.08.flatpak
@@ -34,7 +34,7 @@ You can then run the graphical configuration editor with:
 flatpak run gay.pancake.lsfg_vk_ui
 ```
 
-### Through Custom Build
+### 3. Through Custom Build
 
 If you want to build lsfg-vk yourself, install `flatpak-builder` and run the following commands:
 ```bash
@@ -53,9 +53,9 @@ flatpak-builder --force-clean --user --install-deps-from=flathub --install flatp
 
 ## Configuration
 
-Before using lsfg-vk with Flatpak applications, you need to give them access to the configuration directory, as well as Lossless Scaling.
+Before using lsfg-vk with Flatpak applications, you need to give them access to the configuration directory, as well as to Lossless Scaling.
 ```bash
-export appid=  # e.g. io.mpv.Mpv
+export appid=  # e.g., io.mpv.Mpv
 mkdir -p ~/.config/lsfg-vk
 flatpak override --user --filesystem=/home/$USER/.config/lsfg-vk:rw $appid
 flatpak override --user --filesystem=/home/$USER/local/share/Steam/steamapps/common:ro $appid
