@@ -369,7 +369,7 @@ namespace {
             for (size_t i = 0; i < count; ++i)
                 constantBuffers.emplace_back(vk,
                     backend::getDefaultConstantBuffer(
-                        i, count, hdr
+                        i, count, flow
                     )
                 );
 
