@@ -2,6 +2,7 @@
 
 #include "utils.hpp"
 
+#include <algorithm>
 #include <array>
 #include <cstddef>
 #include <cstdint>
@@ -22,9 +23,11 @@ ConstantBuffer backend::getDefaultConstantBuffer(
 }
 
 VkExtent2D backend::shift_extent(VkExtent2D extent, uint32_t i) {
+    // clamp to 1, mirroring the standard mip chain size formula. without this,
+    // small swapchains produce zero-sized mip levels further down the chain.
     return VkExtent2D{
-        .width = extent.width >> i,
-        .height = extent.height >> i
+        .width = std::max(1U, extent.width >> i),
+        .height = std::max(1U, extent.height >> i)
     };
 }
 
