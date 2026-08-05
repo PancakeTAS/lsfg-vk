@@ -94,6 +94,9 @@ namespace {
         auto res = vk.df().AllocateMemory(vk.dev(), &memoryInfo, VK_NULL_HANDLE, &handle);
         if (res != VK_SUCCESS)
             throw ls::vulkan_error(res, "vkAllocateMemory() failed");
+        if (handle == VK_NULL_HANDLE)
+            throw ls::vulkan_error(VK_ERROR_OUT_OF_DEVICE_MEMORY,
+                "vkAllocateMemory() succeeded but returned a null handle");
 
         res = vk.df().BindImageMemory(vk.dev(), image, handle, 0);
         if (res != VK_SUCCESS)
